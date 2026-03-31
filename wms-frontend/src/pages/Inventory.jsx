@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ProductModal from '../components/modals/ProductModal';
 
 import addIcon from '../components/common/icons/add.png';
 import fixIcon from '../components/common/icons/fix.png';
@@ -87,6 +88,8 @@ export default function Inventory() {
                     </tbody>
                 </table>
             </div>
+            {/* Nơi nhúng Modal Thêm Sản Phẩm */}
+            <ProductModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
         </div>
     );
 }
