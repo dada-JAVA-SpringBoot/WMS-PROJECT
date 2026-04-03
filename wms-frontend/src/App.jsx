@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import Sidebar from './components/layout/Sidebar';
+import Sidebar from './components/layout/sidebar';
 import Inventory from './pages/Inventory';
-import Home from "./pages/Home.jsx";
+import Home from './pages/Home.jsx';
+import Staff from './pages/Staff.jsx';
+import Statistical from './pages/Statistical.jsx';
+import Account from './pages/Account.jsx';
 
 function App() {
     // Trạng thái lưu tab đang được chọn, mặc định mở tab Sản phẩm (products)
@@ -27,11 +30,11 @@ function App() {
             case 'supplier':
                 return <div className="p-8 text-2xl font-bold">Màn hình Nhà cung cấp (Đang xây dựng...)</div>;
             case 'staff':
-                return <div className="p-8 text-2xl font-bold">Màn hình Nhân viên (Đang xây dựng...)</div>;
+                return <Staff />;
             case 'account':
-                return <div className="p-8 text-2xl font-bold">Màn hình Tài khoản (Đang xây dựng...)</div>;
+                return <Account />;
             case 'statistical':
-                return <div className="p-8 text-2xl font-bold">Màn hình Thống kê (Đang xây dựng...)</div>;
+                return <Statistical />;
             case 'authority':
                 return <div className="p-8 text-2xl font-bold">Màn hình Phân quyền (Đang xây dựng...)</div>;
             default:
