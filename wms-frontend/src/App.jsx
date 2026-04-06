@@ -5,6 +5,9 @@ import Home from './pages/Home.jsx';
 import Staff from './pages/Staff.jsx';
 import Statistical from './pages/Statistical.jsx';
 import Account from './pages/Account.jsx';
+import AttributesPage from "./pages/AttributesPage.jsx";
+import ImportReceiptsPage from "./pages/ImportReceipts.jsx";
+import WarehouseAreaPage from "./pages/WarehouseArea.jsx";
 
 function App() {
     // Trạng thái lưu tab đang được chọn, mặc định mở tab Sản phẩm (products)
@@ -18,11 +21,11 @@ function App() {
             case 'home':
                 return <Home />;
             case 'attribute':
-                return <div className="p-8 text-2xl font-bold">Màn hình Thuộc tính (Đang xây dựng...)</div>;
+                return <AttributesPage />;
             case 'warehouse-area':
-                return <div className="p-8 text-2xl font-bold">Màn hình Khu vực kho (Đang xây dựng...)</div>;
+                return <WarehouseAreaPage />;
             case 'inbound':
-                return <div className="p-8 text-2xl font-bold">Màn hình Phiếu nhập (Đang xây dựng...)</div>;
+                return <ImportReceiptsPage />;
             case 'outbound':
                 return <div className="p-8 text-2xl font-bold">Màn hình Phiếu xuất (Đang xây dựng...)</div>;
             case 'client':
