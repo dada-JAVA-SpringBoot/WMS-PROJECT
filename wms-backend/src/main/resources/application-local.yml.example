@@ -1,0 +1,9 @@
+// FILE MẪU: Đổi tên file này thành application-local.yml trước khi chạy code
+// FILE application-local.yml mặc định bị gitignore vì chứa mật khẩu của bạn. trong file .env
+// phải có DB_LOCAL_PASSWORD=<Mật khẩu trong file này>
+spring:
+  datasource:
+    url: jdbc:sqlserver://localhost:1433;databaseName=wms_db;encrypt=true;trustServerCertificate=true;
+    username: sa
+    password: <NHẬP_MẬT_KHẨU_SQL_SERVER_TRONG_DOCKER_CỦA_BẠN_VÀO_ĐÂY>
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
