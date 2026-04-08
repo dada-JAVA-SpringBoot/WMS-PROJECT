@@ -13,15 +13,16 @@ import Client from './pages/Client.jsx';
 import ExportReceipts from "./pages/DeliveryNote.jsx";
 
 function App() {
-    const [activeTab, setActiveTab] = useState('products');
+    // 1. Chỉ khai báo State một lần
+    const [activeTab, setActiveTab] = useState('home');
 
-
+    // 2. Hàm hiển thị nội dung (Switch-case gọn gàng)
     const renderContent = () => {
         switch (activeTab) {
-            case 'products':
-                return <Inventory />;
             case 'home':
                 return <Home />;
+            case 'products':
+                return <Inventory />;
             case 'attribute':
                 return <AttributesPage />;
             case 'warehouse-area':
@@ -31,9 +32,9 @@ function App() {
             case 'outbound':
                 return <ExportReceipts />;
             case 'client':
-                return <Client />
+                return <Client />;
             case 'supplier':
-                return <Supplier />
+                return <Supplier />;
             case 'staff':
                 return <Staff />;
             case 'account':
@@ -47,14 +48,14 @@ function App() {
         }
     };
 
+    // 3. Layout chuẩn: 1 Sidebar và 1 Main content
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden">
-
+            {/* Cột trái: Sidebar cố định */}
             <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-
+            {/* Cột phải: Nội dung chính */}
             <main className="flex-1 flex flex-col overflow-hidden">
-
                 <div className="flex-1 overflow-auto">
                     {renderContent()}
                 </div>

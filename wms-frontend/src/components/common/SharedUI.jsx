@@ -6,18 +6,15 @@ export const IconPlaceholder = ({ className = "w-10 h-10" }) => (
     </div>
 );
 
-
 export const ActionButton = ({ label, iconSrc, icon, onClick }) => (
     <button
         onClick={onClick}
         className="flex flex-col items-center gap-1 group bg-transparent border-none cursor-pointer transition-transform active:scale-90"
     >
         <div className="w-12 h-12 flex items-center justify-center rounded-xl group-hover:bg-gray-100 transition duration-200">
-
             {iconSrc ? (
                 <img src={iconSrc} alt={label} className="w-9 h-9 object-contain" />
             ) : (
-
                 icon || <IconPlaceholder className="w-9 h-9" />
             )}
         </div>
@@ -27,16 +24,13 @@ export const ActionButton = ({ label, iconSrc, icon, onClick }) => (
     </button>
 );
 
-
 export const TableToolbar = ({ actions = [], showSearch = true }) => (
     <div className="flex items-center justify-between bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-
         <div className="flex gap-8">
             {actions.map((action, index) => (
                 <ActionButton key={index} {...action} />
             ))}
         </div>
-
 
         {showSearch && (
             <div className="flex items-center gap-3">

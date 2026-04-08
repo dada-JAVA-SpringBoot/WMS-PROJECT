@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+HEAD
+
+
+# Ignore local config files
+*-local.yml
+*-local.properties
+
+.env
+397930922c8ce70d8675183a6de1636b43c84bef
