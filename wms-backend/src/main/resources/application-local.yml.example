@@ -3,7 +3,12 @@
 // phải có DB_LOCAL_PASSWORD=<Mật khẩu trong file này>
 spring:
   datasource:
-    url: jdbc:sqlserver://localhost:1433;databaseName=wms_db;encrypt=true;trustServerCertificate=true;
+    url: jdbc:sqlserver://localhost:14333;databaseName=WMS_DB;encrypt=true;trustServerCertificate=true;
     username: sa
-    password: <NHẬP_MẬT_KHẨU_SQL_SERVER_TRONG_DOCKER_CỦA_BẠN_VÀO_ĐÂY>
+    password: <NHẬP_MẬT_KHẨU_SQL_SERVER_ĐÃ_THỐNG_NHẤT>
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  jpa:
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl

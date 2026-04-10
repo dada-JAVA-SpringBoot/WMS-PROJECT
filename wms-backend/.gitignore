@@ -38,5 +38,5 @@ HEAD
 *-local.yml
 *-local.properties
 
-.env
+../wms-database/.env
 397930922c8ce70d8675183a6de1636b43c84bef
