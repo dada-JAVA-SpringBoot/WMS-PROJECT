@@ -1,12 +1,12 @@
--- Tạo Database WMS nếu chưa có
+-- ==============================================================================
+-- DATABASE WMS - BẢN CHUẨN HÓA KIẾN TRÚC VÀ LOGIC
+-- ==============================================================================
 CREATE DATABASE WMS_DB;
 GO
-
 USE WMS_DB;
 GO
 
--- Tạo bảng mẫu
--- 1. Bảng Khách hàng & Nhà cung cấp
+-- 1. BẢNG DANH MỤC ĐỐI TÁC
 CREATE TABLE Suppliers (
 Id INT IDENTITY(1,1) PRIMARY KEY,
 SupplierCode VARCHAR(50) UNIQUE NOT NULL,
@@ -23,167 +23,226 @@ Phone VARCHAR(20),
 Address NVARCHAR(500)
 );
 
--- 2. Bảng Sản phẩm (Products)
+-- 2. BẢNG SẢN PHẨM (Đã xóa cột SupplierCodes để chuẩn hóa)
 CREATE TABLE Products (
 Id INT IDENTITY(1,1) PRIMARY KEY,
 Sku VARCHAR(50) UNIQUE NOT NULL,
 Barcode VARCHAR(100),
 Name NVARCHAR(255) NOT NULL,
-BaseUnit NVARCHAR(50) NOT NULL, -- Ví dụ: Hộp, Thùng, Cái
+BaseUnit NVARCHAR(50) NOT NULL,
 CategoryId INT,
-CreatedAt DATETIME2 DEFAULT GETDATE()
+CreatedAt DATETIME2 DEFAULT GETDATE(),
+Weight DECIMAL(10,2) NULL,
+Length DECIMAL(10,2) NULL,
+Width DECIMAL(10,2) NULL,
+Height DECIMAL(10,2) NULL,
+StorageTemp NVARCHAR(50) DEFAULT N'Bình thường',
+SafetyStock INT DEFAULT 0,
+IsFragile BIT DEFAULT 0,
+ImageUrl NVARCHAR(MAX) NULL,
+Status VARCHAR(20) DEFAULT 'ACTIVE'
 );
 
--- 3. Bảng Quản lý Số Lô (Batches) - Cực kỳ quan trọng cho FEFO
+-- 3. BẢNG TRUNG GIAN SẢN PHẨM & NHÀ CUNG CẤP (N-N)
+CREATE TABLE ProductSuppliers (
+ProductId INT FOREIGN KEY REFERENCES Products(Id),
+SupplierId INT FOREIGN KEY REFERENCES Suppliers(Id),
+IsDefault BIT DEFAULT 0,
+PRIMARY KEY (ProductId, SupplierId)
+);
+
+-- 4. BẢNG QUẢN LÝ LÔ HÀNG
 CREATE TABLE Batches (
 Id INT IDENTITY(1,1) PRIMARY KEY,
 ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
 BatchCode VARCHAR(100) NOT NULL,
 ManufactureDate DATE,
-ExpiryDate DATE NOT NULL, -- Dùng để Sort khi xuất FEFO
+ExpiryDate DATE NOT NULL,
 CreatedAt DATETIME2 DEFAULT GETDATE(),
-CONSTRAINT UQ_Product_Batch UNIQUE (ProductId, BatchCode) -- 1 SP không trùng mã Lô
-);
--- 4. Bảng Kho Tổng (Warehouses)
-CREATE TABLE Warehouses (
-Id INT IDENTITY(1,1) PRIMARY KEY,
-WarehouseCode VARCHAR(50) UNIQUE NOT NULL,
-Name NVARCHAR(255) NOT NULL,
-Address NVARCHAR(500)
+CONSTRAINT UQ_Product_Batch UNIQUE (ProductId, BatchCode)
 );
 
--- 5. Bảng Vị trí chi tiết (Locations / Bins)
+-- 5. BẢNG KHO VÀ VỊ TRÍ
+CREATE TABLE Warehouses (
+ Id INT IDENTITY(1,1) PRIMARY KEY,
+ WarehouseCode VARCHAR(50) UNIQUE NOT NULL,
+ Name NVARCHAR(255) NOT NULL,
+ Address NVARCHAR(500)
+);
+
 CREATE TABLE Locations (
 Id INT IDENTITY(1,1) PRIMARY KEY,
 WarehouseId INT NOT NULL FOREIGN KEY REFERENCES Warehouses(Id),
-Zone NVARCHAR(50),  -- Khu vực
-Aisle NVARCHAR(50), -- Dãy
-Rack NVARCHAR(50),  -- Kệ
-Level NVARCHAR(50), -- Tầng
-BinCode VARCHAR(50) UNIQUE NOT NULL -- Mã định danh ô kệ (VD: WH1-A-01)
+Zone NVARCHAR(50), Aisle NVARCHAR(50), Rack NVARCHAR(50), Level NVARCHAR(50),
+BinCode VARCHAR(50) UNIQUE NOT NULL
 );
--- 6. Bảng Tồn kho tức thời (Inventory)
--- Lưu ý: Gom nhóm theo Product + Location + Batch
+
+-- 6. BẢNG TỒN KHO THỰC TẾ
 CREATE TABLE Inventory (
 Id BIGINT IDENTITY(1,1) PRIMARY KEY,
 ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
 LocationId INT NOT NULL FOREIGN KEY REFERENCES Locations(Id),
 BatchId INT NOT NULL FOREIGN KEY REFERENCES Batches(Id),
-QuantityOnHand DECIMAL(18,2) DEFAULT 0, -- Số lượng thực tế (Dùng Decimal phòng trường hợp hàng cân ký)
-QuantityAllocated DECIMAL(18,2) DEFAULT 0, -- Số lượng giữ chỗ chờ xuất
+QuantityOnHand DECIMAL(18,2) DEFAULT 0,
+QuantityAllocated DECIMAL(18,2) DEFAULT 0,
 LastUpdated DATETIME2 DEFAULT GETDATE(),
 CONSTRAINT UQ_Inventory_Stock UNIQUE (ProductId, LocationId, BatchId)
 );
 
--- 7. Bảng Sổ kho / Thẻ kho (Inventory Transactions) - Audit Log
+-- 7. BẢNG SỔ KHO LỊCH SỬ (AUDIT)
 CREATE TABLE InventoryTransactions (
-Id BIGINT IDENTITY(1,1) PRIMARY KEY,
-ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
-LocationId INT NOT NULL FOREIGN KEY REFERENCES Locations(Id),
-BatchId INT NOT NULL FOREIGN KEY REFERENCES Batches(Id),
-TransactionType VARCHAR(20) NOT NULL, -- INBOUND, OUTBOUND, TRANSFER, ADJUSTMENT
-QuantityChange DECIMAL(18,2) NOT NULL, -- Số lượng thay đổi (+ hoặc -)
-ReferenceId BIGINT, -- ID của chi tiết phiếu nhập/xuất tương ứng
-CreatedBy INT, -- ID nhân viên thao tác
-CreatedAt DATETIME2 DEFAULT GETDATE()
+ Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+ ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
+ LocationId INT NOT NULL FOREIGN KEY REFERENCES Locations(Id),
+ BatchId INT NOT NULL FOREIGN KEY REFERENCES Batches(Id),
+ TransactionType VARCHAR(20) NOT NULL,
+ QuantityChange DECIMAL(18,2) NOT NULL,
+ ReferenceId BIGINT,
+ CreatedBy INT,
+ CreatedAt DATETIME2 DEFAULT GETDATE()
 );
--- 8. Phiếu Nhập kho (Inbound Orders)
+
+-- 8. BẢNG GIAO DỊCH NHẬP / XUẤT KHO
 CREATE TABLE InboundOrders (
 Id BIGINT IDENTITY(1,1) PRIMARY KEY,
 ReceiptCode VARCHAR(50) UNIQUE NOT NULL,
 SupplierId INT FOREIGN KEY REFERENCES Suppliers(Id),
-Status VARCHAR(20) DEFAULT 'DRAFT', -- DRAFT, COMPLETED, CANCELLED
+Status VARCHAR(20) DEFAULT 'DRAFT',
 ReceiptDate DATETIME2,
 CreatedBy INT,
 CreatedAt DATETIME2 DEFAULT GETDATE()
 );
 
--- 9. Chi tiết Phiếu Nhập
 CREATE TABLE InboundOrderDetails (
-Id BIGINT IDENTITY(1,1) PRIMARY KEY,
-InboundOrderId BIGINT NOT NULL FOREIGN KEY REFERENCES InboundOrders(Id),
-ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
-BatchId INT NOT NULL FOREIGN KEY REFERENCES Batches(Id),
-LocationId INT NOT NULL FOREIGN KEY REFERENCES Locations(Id), -- Cất vào ô nào
-Quantity DECIMAL(18,2) NOT NULL
+   Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+   InboundOrderId BIGINT NOT NULL FOREIGN KEY REFERENCES InboundOrders(Id),
+   ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
+   BatchId INT NOT NULL FOREIGN KEY REFERENCES Batches(Id),
+   LocationId INT NOT NULL FOREIGN KEY REFERENCES Locations(Id),
+   Quantity DECIMAL(18,2) NOT NULL
 );
 
--- 10. Phiếu Xuất kho (Outbound Orders)
+-- 9. BẢNG PHIẾU XUẤT KHO (Liên kết trực tiếp với Khách hàng)
 CREATE TABLE OutboundOrders (
 Id BIGINT IDENTITY(1,1) PRIMARY KEY,
 IssueCode VARCHAR(50) UNIQUE NOT NULL,
-CustomerId INT FOREIGN KEY REFERENCES Customers(Id),
-Status VARCHAR(20) DEFAULT 'DRAFT', -- DRAFT, ALLOCATED, PICKED, SHIPPED
+CustomerId INT FOREIGN KEY REFERENCES Customers(Id), -- ĐÂY CHÍNH LÀ NƠI KÉO DÂY LIÊN KẾT
+Status VARCHAR(20) DEFAULT 'DRAFT', -- Trạng thái: DRAFT, ALLOCATED, PICKED, SHIPPED
 IssueDate DATETIME2,
 CreatedBy INT,
 CreatedAt DATETIME2 DEFAULT GETDATE()
 );
 
--- 11. Chi tiết Phiếu Xuất
+-- 10. CHI TIẾT PHIẾU XUẤT KHO
 CREATE TABLE OutboundOrderDetails (
 Id BIGINT IDENTITY(1,1) PRIMARY KEY,
 OutboundOrderId BIGINT NOT NULL FOREIGN KEY REFERENCES OutboundOrders(Id),
 ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
-BatchId INT NOT NULL FOREIGN KEY REFERENCES Batches(Id), -- Lấy từ lô nào
-LocationId INT NOT NULL FOREIGN KEY REFERENCES Locations(Id), -- Lấy từ ô kệ nào
+BatchId INT NOT NULL FOREIGN KEY REFERENCES Batches(Id), -- Xuất từ Lô nào (FEFO)
+LocationId INT NOT NULL FOREIGN KEY REFERENCES Locations(Id), -- Lấy hàng từ Ô kệ nào
 Quantity DECIMAL(18,2) NOT NULL
 );
+GO
+
+-- Chỉ mục tối ưu hóa
 CREATE NONCLUSTERED INDEX IX_Batches_ExpiryDate ON Batches(ExpiryDate ASC);
 CREATE NONCLUSTERED INDEX IX_Inventory_Lookup ON Inventory(ProductId, LocationId, BatchId);
 GO
 
--- Thêm dữ liệu mẫu
--- 1. Thêm Nhà cung cấp
-INSERT INTO Suppliers (SupplierCode, Name, Phone, Address) VALUES
-('SUP-VNM', N'Công ty Cổ phần Sữa Việt Nam (Vinamilk)', '19001568', N'Quận 7, TP.HCM'),
-('SUP-ORION', N'Công ty TNHH Thực phẩm Orion Vina', '0274356789', N'Bến Cát, Bình Dương');
 
--- 2. Thêm Khách hàng
+-- ==============================================================================
+-- INSERT DỮ LIỆU MẪU CƠ BẢN (HOÀN THIỆN ĐẦY ĐỦ LOGIC WMS)
+-- ==============================================================================
+
+-- 1. THÊM NHÀ CUNG CẤP & KHÁCH HÀNG
+INSERT INTO Suppliers (SupplierCode, Name, Phone, Address) VALUES
+('SUP-VNM', N'Công ty CP Sữa Việt Nam (Vinamilk)', '0281234567', N'Quận 7, TP.HCM'),
+('SUP-MSN', N'Tập đoàn Masan', '0287654321', N'Quận 1, TP.HCM'),
+('SUP-SS', N'Samsung Electronics VN', '0909123456', N'KCNC Quận 9, TP.HCM'),
+('SUP-CP', N'Công ty CP Chăn Nuôi C.P', '0988777666', N'Biên Hòa, Đồng Nai');
+
 INSERT INTO Customers (CustomerCode, Name, Phone, Address) VALUES
-('CUS-WINMART', N'Chuỗi siêu thị WinMart', '19008888', N'Hai Bà Trưng, Hà Nội'),
+('CUS-WIN', N'Chuỗi siêu thị WinMart', '19008888', N'Hai Bà Trưng, Hà Nội'),
 ('CUS-COOP', N'Siêu thị Co.opmart', '19005555', N'Quận 1, TP.HCM');
 
--- 3. Thêm Sản phẩm
-INSERT INTO Products (Sku, Barcode, Name, BaseUnit, CategoryId) VALUES
-('MILK-1L', '8934567890123', N'Sữa tươi tiệt trùng Vinamilk 1L', N'Hộp', 1),
-('CHOCOPIE-12', '8938765432109', N'Bánh Chocopie hộp 12 cái', N'Hộp', 2);
-
--- 4. Thêm Số Lô (Giả lập lô sữa cận date và lô date xa)
-INSERT INTO Batches (ProductId, BatchCode, ManufactureDate, ExpiryDate) VALUES
-(1, 'LOT-M-001', '2023-10-01', '2024-04-01'), -- ID=1: Sữa Lô 1 (Cận Date)
-(1, 'LOT-M-002', '2023-12-01', '2024-06-01'), -- ID=2: Sữa Lô 2 (Date xa)
-(2, 'LOT-C-001', '2023-11-01', '2024-11-01'); -- ID=3: Bánh Lô 1
-
--- 5. Thêm Kho Tổng
-INSERT INTO Warehouses (WarehouseCode, Name, Address) VALUES
-    ('WH-HN', N'Kho Tổng Miền Bắc', N'KCN Tiên Sơn, Bắc Ninh');
-
--- 6. Thêm Vị trí lưu trữ (Ô kệ)
+-- 2. THÊM KHO & VỊ TRÍ
+INSERT INTO Warehouses (WarehouseCode, Name, Address) VALUES ('WH-MAIN', N'Kho Tổng Trung Tâm', N'KCN Tân Bình, TP.HCM');
 INSERT INTO Locations (WarehouseId, Zone, Aisle, Rack, Level, BinCode) VALUES
-(1, 'A', '01', '01', '1', 'WH1-A-01-01-1'), -- ID=1: Khu A, Kệ 1, Tầng 1
-(1, 'A', '01', '01', '2', 'WH1-A-01-01-2'), -- ID=2: Khu A, Kệ 1, Tầng 2
-(1, 'B', '02', '01', '1', 'WH1-B-02-01-1'); -- ID=3: Khu B, Kệ 2, Tầng 1
--- 7. Khởi tạo Tồn kho ban đầu
--- Giả sử cất 2 lô sữa ở 2 tầng khác nhau, bánh để ở khu B
+   (1, 'A', '01', '01', '1', 'WH1-A-01-01-1'),
+   (1, 'B', '02', '01', '1', 'WH1-B-02-01-1'),
+   (1, 'C', '03', '01', '1', 'WH1-C-03-01-1');
+
+-- 3. THÊM 10 SẢN PHẨM
+INSERT INTO Products (Sku, Barcode, Name, BaseUnit, CategoryId, Weight, Length, Width, Height, StorageTemp, SafetyStock, IsFragile, ImageUrl, Status) VALUES
+ ('MILK-1L', '89301', N'Sữa tươi Vinamilk 1L', N'Hộp', 1, 1.05, 10, 7, 20, N'Bình thường', 500, 0, 'https://placehold.co/600/e0f2fe/0369a1?text=Sua+Vinamilk', 'ACTIVE'),
+ ('CHINSU-1', '89302', N'Nước mắm Chinsu 500ml', N'Chai', 1, 0.6, 6, 6, 25, N'Bình thường', 300, 1, 'https://placehold.co/600/fee2e2/991b1b?text=Chinsu', 'ACTIVE'),
+ ('TV-65', '89303', N'Smart TV Samsung 65"', N'Cái', 3, 25.0, 145, 15, 85, N'Bình thường', 10, 1, 'https://placehold.co/600/1e3a8a/eff6ff?text=TV+Samsung', 'ACTIVE'),
+ ('PORK-CP', '89304', N'Thịt heo CP (Khay 500g)', N'Khay', 4, 0.5, 20, 15, 3, N'Kho Lạnh', 100, 0, 'https://placehold.co/600/fecdd3/be123c?text=Thit+Heo', 'ACTIVE'),
+ ('MILK-180', '89305', N'Sữa tươi Vinamilk 180ml', N'Lốc', 1, 0.8, 15, 10, 12, N'Bình thường', 200, 0, 'https://placehold.co/600/e0f2fe/0369a1?text=Sua+180ml', 'ACTIVE'),
+ ('NOODLE-O', '89306', N'Mì Omachi (Thùng 30 gói)', N'Thùng', 2, 2.5, 40, 30, 20, N'Bình thường', 400, 0, 'https://placehold.co/600/fef08a/854d0e?text=Omachi', 'ACTIVE'),
+ ('EGG-CP', '89307', N'Trứng gà CP (Vỉ 10)', N'Vỉ', 4, 0.6, 25, 10, 7, N'Bình thường', 100, 1, 'https://placehold.co/600/fefce8/a16207?text=Trung+Ga', 'ACTIVE'),
+ ('PHONE-SS', '89308', N'Samsung Galaxy S24', N'Cái', 3, 0.2, 15, 7, 1, N'Bình thường', 50, 1, 'https://placehold.co/600/374151/f3f4f6?text=Galaxy+S24', 'ACTIVE'),
+ ('SAUSAGE', '89309', N'Xúc xích CP tiệt trùng', N'Gói', 4, 0.2, 10, 5, 2, N'Kho Mát', 150, 0, 'https://placehold.co/600/fecdd3/be123c?text=Xuc+Xich', 'ACTIVE'),
+ ('TUNA-01', '89310', N'Cá ngừ đóng hộp', N'Hộp', 1, 0.2, 8, 8, 4, N'Bình thường', 300, 0, 'https://placehold.co/600/bfdbfe/1e40af?text=Ca+Ngu', 'INACTIVE');
+
+-- 4. LIÊN KẾT NHÀ CUNG CẤP (N-N)
+INSERT INTO ProductSuppliers (ProductId, SupplierId) VALUES
+   (1, 1), (5, 1), -- Vinamilk
+   (2, 2), (6, 2), -- Masan
+   (3, 3), (8, 3), -- Samsung
+   (4, 4), (7, 4), (9, 4), -- C.P
+   (10, 2);
+
+-- 5. TẠO LÔ HÀNG ĐẦY ĐỦ CHO TẤT CẢ SẢN PHẨM (Nhiều hạn sử dụng)
+INSERT INTO Batches (ProductId, BatchCode, ManufactureDate, ExpiryDate) VALUES
+    (1, 'LOT-M1-OLD', '2023-01-01', '2023-07-01'), -- SP1: Sữa 1L (Đã hết hạn)
+    (1, 'LOT-M1-NEW', '2024-01-01', '2024-07-01'), -- SP1: Sữa 1L (Còn hạn)
+    (2, 'LOT-C1-001', '2023-12-01', '2024-12-01'), -- SP2: Chinsu
+    (3, 'LOT-TV-001', '2024-01-10', '2034-01-10'), -- SP3: TV
+    (4, 'LOT-P-001', '2024-03-01', '2024-03-15'),  -- SP4: Thịt heo (Sắp hết hạn)
+    (5, 'LOT-M180-A', '2024-02-01', '2024-08-01'), -- SP5: Sữa 180ml
+    (5, 'LOT-M180-B', '2024-03-01', '2024-09-01'), -- SP5: Sữa 180ml
+    (6, 'LOT-OMC-1', '2024-01-01', '2024-10-01'),  -- SP6: Omachi
+    (7, 'LOT-EGG-1', '2024-04-01', '2024-04-20'),  -- SP7: Trứng gà
+    (8, 'LOT-S24-1', '2024-02-15', '2034-02-15'),  -- SP8: Điện thoại
+    (9, 'LOT-XX-1', '2024-01-20', '2024-06-20'),   -- SP9: Xúc xích
+    (10,'LOT-TUN-1','2023-10-01', '2026-10-01');   -- SP10: Cá ngừ (Ngừng kinh doanh nhưng vẫn còn tồn)
+
+-- 6. TỒN KHO THỰC TẾ & HÀNG ĐANG GIỮ CHỖ (QuantityAllocated)
+-- Lưu ý: Cột cuối cùng là QuantityAllocated (Số lượng đang bị giữ chờ xuất kho)
 INSERT INTO Inventory (ProductId, LocationId, BatchId, QuantityOnHand, QuantityAllocated) VALUES
-(1, 1, 1, 500.00, 0.00),  -- Sữa Lô 1 (Cận date) để ở Tầng 1: Tồn 500 hộp
-(1, 2, 2, 1000.00, 0.00), -- Sữa Lô 2 (Date xa) để ở Tầng 2: Tồn 1000 hộp
-(2, 3, 3, 2000.00, 0.00); -- Bánh để ở Khu B: Tồn 2000 hộp
+    (1, 1, 1, 100, 0),   -- 100 hộp sữa hết hạn (Không giữ chỗ)
+    (1, 2, 2, 500, 50),  -- 500 hộp sữa mới -> ĐANG GIỮ CHỖ 50 hộp
+    (2, 1, 3, 300, 100), -- 300 chai Chinsu -> ĐANG GIỮ CHỖ 100 chai
+    (3, 3, 4, 20, 2),    -- 20 cái TV -> ĐANG GIỮ CHỖ 2 cái
+    (4, 2, 5, 50, 0),    -- 50 khay thịt (Không giữ)
+    (5, 1, 6, 200, 0),   -- 200 lốc sữa 180ml (Lô A)
+    (5, 2, 7, 300, 20),  -- 300 lốc sữa 180ml (Lô B) -> ĐANG GIỮ CHỖ 20
+    (6, 1, 8, 400, 0),   -- 400 thùng Omachi
+    (7, 2, 9, 80, 15),   -- 80 vỉ trứng -> ĐANG GIỮ CHỖ 15
+    (8, 3, 10, 45, 5),   -- 45 cái S24 -> ĐANG GIỮ CHỖ 5
+    (9, 1, 11, 150, 0),  -- 150 gói xúc xích
+    (10, 2, 12, 200, 0); -- 200 hộp cá ngừ
 
--- 8. Ghi log Sổ kho cho đợt tồn kho ban đầu (Audit Log)
-INSERT INTO InventoryTransactions (ProductId, LocationId, BatchId, TransactionType, QuantityChange, ReferenceId, CreatedBy) VALUES
-(1, 1, 1, 'INBOUND', 500.00, NULL, 1),
-(1, 2, 2, 'INBOUND', 1000.00, NULL, 1),
-(2, 3, 3, 'INBOUND', 2000.00, NULL, 1);
+-- 7. GHI LOG PHIẾU NHẬP (Tạo nguồn gốc hàng hóa)
+INSERT INTO InboundOrders (ReceiptCode, SupplierId, Status, ReceiptDate) VALUES
+     ('RC-2401-001', 1, 'COMPLETED', '2024-01-05'),
+     ('RC-2402-002', 2, 'COMPLETED', '2024-02-10');
 
--- 9. Giả lập tạo 1 Phiếu Xuất (Khách hàng Winmart mua 700 hộp sữa)
-INSERT INTO OutboundOrders (IssueCode, CustomerId, Status, IssueDate, CreatedBy) VALUES
-('OUT-202401-001', 1, 'DRAFT', GETDATE(), 1);
+INSERT INTO InventoryTransactions (ProductId, LocationId, BatchId, TransactionType, QuantityChange)
+SELECT ProductId, LocationId, BatchId, 'INBOUND', QuantityOnHand FROM Inventory;
 
--- 10. Giả lập Backend chạy thuật toán FEFO để tạo Chi tiết Phiếu Xuất
--- Backend thấy Winmart cần 700 hộp. Lô 1 cận date chỉ còn 500 hộp -> Lấy hết Lô 1.
--- Còn thiếu 200 hộp -> Lấy tiếp từ Lô 2.
+-- 8. TẠO PHIẾU XUẤT KHO (Làm rõ lý do tại sao lại có hàng "Giữ chỗ")
+-- Trạng thái 'ALLOCATED' nghĩa là hệ thống đã khóa tồn kho nhưng chưa đem ra khỏi cửa
+INSERT INTO OutboundOrders (IssueCode, CustomerId, Status, IssueDate) VALUES
+    ('OUT-2404-W01', 1, 'ALLOCATED', GETDATE());
+
+-- Chi tiết phiếu xuất (Khớp chính xác với số lượng Allocated ở bảng Inventory bên trên)
 INSERT INTO OutboundOrderDetails (OutboundOrderId, ProductId, BatchId, LocationId, Quantity) VALUES
-(1, 1, 1, 1, 500.00), -- Lệnh nhặt 500 hộp từ Lô 1, Tầng 1
-(1, 1, 2, 2, 200.00); -- Lệnh nhặt 200 hộp từ Lô 2, Tầng 2
+       (1, 1, 2, 2, 50),   -- Xuất 50 Sữa 1L (Lô M1-NEW)
+       (1, 2, 3, 1, 100),  -- Xuất 100 Chinsu
+       (1, 3, 4, 3, 2),    -- Xuất 2 TV
+       (1, 5, 7, 2, 20),   -- Xuất 20 Sữa 180ml
+       (1, 7, 9, 2, 15),   -- Xuất 15 Trứng
+       (1, 8, 10, 3, 5);   -- Xuất 5 Điện thoại
 GO

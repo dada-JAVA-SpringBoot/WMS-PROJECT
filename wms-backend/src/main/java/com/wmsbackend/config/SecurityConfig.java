@@ -13,7 +13,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Tắt bảo vệ CSRF (thường dùng khi làm API cho React/Vue)
+                // Tắt bảo vệ CSRF
                 .csrf(csrf -> csrf.disable())
                 // Cho phép tất cả các request đi qua mà không cần đăng nhập
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
