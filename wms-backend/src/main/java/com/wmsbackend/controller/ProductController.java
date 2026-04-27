@@ -20,7 +20,7 @@ public class ProductController {
     private ProductRepository productRepository;
 
     // 1. Lấy danh sách sản phẩm
-    @GetMapping
+    @GetMapping("/details")
     public List<ProductDTO> getProducts() {
         return productRepository.findAllProductsWithTotalStock();
     }

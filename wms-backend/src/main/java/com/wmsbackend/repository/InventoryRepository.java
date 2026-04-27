@@ -15,7 +15,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     // Câu lệnh này tương đương với:
     // SELECT loc.BinCode, b.BatchCode, b.ExpiryDate, i.QuantityOnHand, i.QuantityAllocated
     // FROM Inventory i JOIN Locations loc JOIN Batches b WHERE i.ProductId = ?
-
+    Inventory findByProductIdAndLocationIdAndBatchId(Integer productId, Integer locationId, Integer batchId);
     @Query("SELECT new com.wmsbackend.dto.InventoryDetailDTO(l.binCode, b.batchCode, b.expiryDate, i.quantityOnHand, i.quantityAllocated) " +
             "FROM Inventory i " +
             "JOIN Location l ON i.locationId = l.id " +

@@ -4,6 +4,8 @@ import com.wmsbackend.entity.*;
 import com.wmsbackend.repository.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -65,13 +67,11 @@ public class InboundOrderController {
                 stock.setProductId(item.getProductId());
                 stock.setLocationId(item.getLocationId());
                 stock.setBatchId(item.getBatchId());
-                // Cap nhat theo so luong thuc nhan (QuantityReceived)
                 stock.setQuantityOnHand(item.getQuantityReceived());
             } else {
-                stock.setQuantityOnHand(stock.getQuantityOnHand() + item.getQuantityReceived());
+                BigDecimal currentQty = (stock.getQuantityOnHand() != null) ? stock.getQuantityOnHand() : BigDecimal.ZERO;
+                stock.setQuantityOnHand(currentQty.add(item.getQuantityReceived()));
             }
-            stock.setLastUpdated(LocalDateTime.now());
-            inventoryRepo.save(stock);
         }
 
         return "Nhập kho thành công: " + savedOrder.getReceiptCode();

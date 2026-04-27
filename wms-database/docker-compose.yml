@@ -1,13 +1,13 @@
 version: '3.8'
 services:
   sql-server:
-    build: .
+    image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: wms-sql-server
     ports:
-      - "14333:1433"
+      - "1435:1433"
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "${DB_LOCAL_PASSWORD}"
+      MSSQL_SA_PASSWORD: 'WmsPassword123!@#'
     volumes:
       - wms-data:/var/opt/mssql
 
