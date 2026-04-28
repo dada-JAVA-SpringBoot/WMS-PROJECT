@@ -25,7 +25,7 @@ public class MasterDataController {
         this.locationRepo = locationRepo;
     }
 
-    @GetMapping("/suppliers")
+    @GetMapping("/master-data/suppliers")
     public List<Supplier> getAllSuppliers() {
         return supplierRepo.findAll();
     }
