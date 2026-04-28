@@ -5,7 +5,7 @@
 
 # 2. Đợi 15 giây để SQL Server khởi động hoàn tất
 echo "Đang chờ SQL Server khởi động..."
-sleep 15s
+sleep 30s
 
 # 3. Chạy file setup.sql bằng công cụ sqlcmd
 echo "Đang khởi tạo cấu trúc Bảng và Dữ liệu mẫu..."

@@ -28,6 +28,7 @@ public class OutboundOrder {
     @Column(name = "CreatedAt", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
+
     // Getter Setter
 
     public Long getId() {

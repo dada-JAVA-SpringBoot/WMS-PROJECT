@@ -1,26 +1,21 @@
-package com.wmsbackend.entity;
+package com.wmsbackend.dto;
 
-import jakarta.persistence.*;
-
-@Entity
-@Table(name = "Customers")
-public class Customer {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class CustomerDTO {
     private Integer id;
-
-    @Column(name = "CustomerCode", unique = true, nullable = false)
     private String customerCode;
-
-    @Column(name = "Name", nullable = false)
     private String name;
-
-    @Column(name = "Phone")
     private String phone;
-
-    @Column(name = "Address")
     private String address;
+
+    public CustomerDTO() {}
+
+    public CustomerDTO(Integer id, String customerCode, String name, String phone, String address) {
+        this.id = id;
+        this.customerCode = customerCode;
+        this.name = name;
+        this.phone = phone;
+        this.address = address;
+    }
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }

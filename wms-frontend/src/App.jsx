@@ -10,7 +10,7 @@ import ImportReceiptsPage from "./pages/ImportReceipts.jsx";
 import WarehouseAreaPage from "./pages/WarehouseArea.jsx";
 import Supplier from './pages/Supplier.jsx';
 import Client from './pages/Client.jsx';
-import ExportReceipts from "./pages/DeliveryNote.jsx";
+import ExportReceipts from "./pages/OutboundOrder.jsx";
 
 function App() {
     // 1. Chỉ khai báo State một lần

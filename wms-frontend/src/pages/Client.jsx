@@ -1,73 +1,198 @@
-import React from 'react';
-import { TableToolbar, IconPlaceholder } from '../components/common/SharedUI';
-import addIcon from "../components/common/icons/add.png";
-import infoIcon from "../components/common/icons/info.png";
-import deleteIcon from "../components/common/icons/delete.png";
-import excelIcon from "../components/common/icons/excel.png";
-import fixIcon from "../components/common/icons/fix.png";
-import excel1Icon from "../components/common/icons/excel1.png";
+import React, { useState, useEffect, useRef } from 'react';
+import { TableToolbar } from '../components/common/SharedUI';
+import ClientModal from '../components/modals/ClientModal';
+import addIcon from '../components/common/icons/add.png';
+import fixIcon from '../components/common/icons/fix.png';
+import deleteIcon from '../components/common/icons/delete.png';
+import excelIcon from '../components/common/icons/excel.png';
+import excel1Icon from '../components/common/icons/excel1.png';
+
+const API = 'http://localhost:8080/api/customers';
 
 export default function Client() {
-    const data = [
-        { id: 1, name: 'Nguyễn Văn A', phone: '0387913347', address: 'Bình Định' },
-        { id: 2, name: 'Trần Nhất Nhất', phone: '0123456789', address: 'TP.HCM' },
-    ];
+    const [data, setData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [selected, setSelected] = useState(null);   // row đang chọn
+    const [search, setSearch] = useState('');
+    const [searchBy, setSearchBy] = useState('all');
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editData, setEditData] = useState(null);
+    const debounceRef = useRef(null);
+
+    // ── Fetch data ──────────────────────────────────────────
+    const fetchData = async (keyword = '') => {
+        setLoading(true);
+        try {
+            const url = keyword.trim() ? `${API}?keyword=${encodeURIComponent(keyword)}` : API;
+            const res = await fetch(url);
+            const json = await res.json();
+            setData(json);
+        } catch {
+            setData([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { fetchData(); }, []);
+
+    // ── Search (debounce 300ms) ─────────────────────────────
+    const handleSearchChange = (val) => {
+        setSearch(val);
+        clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => fetchData(val), 300);
+    };
+
+    // ── Client-side filter khi searchBy != 'all' ───────────
+    const filtered = searchBy === 'all' ? data : data.filter(row => {
+        const q = search.toLowerCase();
+        if (searchBy === 'name') return row.name?.toLowerCase().includes(q);
+        if (searchBy === 'code') return row.customerCode?.toLowerCase().includes(q);
+        if (searchBy === 'phone') return row.phone?.toLowerCase().includes(q);
+        if (searchBy === 'address') return row.address?.toLowerCase().includes(q);
+        return true;
+    });
+
+    // ── CRUD handlers ───────────────────────────────────────
+    const handleAdd = () => { setEditData(null); setModalOpen(true); };
+
+    const handleEdit = () => {
+        if (!selected) return alert('Vui lòng chọn một khách hàng để chỉnh sửa!');
+        setEditData(selected);
+        setModalOpen(true);
+    };
+
+    const handleDelete = async () => {
+        if (!selected) return alert('Vui lòng chọn một khách hàng để xóa!');
+        if (!window.confirm(`Xác nhận xóa khách hàng "${selected.name}"?`)) return;
+        try {
+            await fetch(`${API}/${selected.id}`, { method: 'DELETE' });
+            setSelected(null);
+            fetchData(search);
+        } catch {
+            alert('Xóa thất bại, vui lòng thử lại!');
+        }
+    };
+
+    // ── Toolbar actions ─────────────────────────────────────
     const toolbarActions = [
-        {
-            label: 'Thêm',
-            iconSrc: addIcon,
-            onClick: () => alert('Thêm phiếu xuất')
-        },
-        {
-            label: 'Chi tiết',
-            iconSrc: infoIcon,
-            onClick: () => {}
-        },
-        {
-            label: 'Xóa',
-            iconSrc: deleteIcon,
-            onClick: () => {}
-        },
-        {
-            label: 'Nhập Excel',
-            iconSrc: excelIcon,
-            onClick: () => {}
-        },
-        {
-            label: 'Xuất Excel',
-            iconSrc: excel1Icon,
-            onClick: () => {}
-        },
+        { label: 'Thêm',       iconSrc: addIcon,    onClick: handleAdd },
+        { label: 'Chỉnh sửa',  iconSrc: fixIcon,    onClick: handleEdit },
+        { label: 'Xóa',        iconSrc: deleteIcon, onClick: handleDelete },
+        { label: 'Nhập Excel', iconSrc: excelIcon,  onClick: () => {} },
+        { label: 'Xuất Excel', iconSrc: excel1Icon, onClick: () => {} },
     ];
 
+    // ── Custom toolbar (override search của SharedUI) ────────
     return (
-        <div className="p-8 bg-gray-50 h-full">
+        <div className="p-8 bg-gray-50 h-full flex flex-col">
             <h1 className="text-2xl font-bold text-gray-800 mb-6">Quản lý khách hàng</h1>
 
-            <TableToolbar actions={toolbarActions} />
-
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mt-6">
-                <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b">
-                    <tr className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        <th className="px-6 py-4 text-center">Mã</th>
-                        <th className="px-6 py-4">Tên khách hàng</th>
-                        <th className="px-6 py-4">Số điện thoại</th>
-                        <th className="px-6 py-4">Địa chỉ</th>
-                    </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                    {data.map((row) => (
-                        <tr key={row.id} className="hover:bg-blue-50/50 transition cursor-pointer">
-                            <td className="px-6 py-4 text-sm text-center text-gray-400">{row.id}</td>
-                            <td className="px-6 py-4 text-sm font-bold text-[#1192a8]">{row.name}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">{row.phone}</td>
-                            <td className="px-6 py-4 text-sm text-gray-500">{row.address}</td>
-                        </tr>
+            {/* Toolbar */}
+            <div className="flex items-center justify-between bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+                <div className="flex gap-8">
+                    {toolbarActions.map((action, i) => (
+                        <button
+                            key={i}
+                            onClick={action.onClick}
+                            className="flex flex-col items-center gap-1 group bg-transparent border-none cursor-pointer transition-transform active:scale-90"
+                        >
+                            <div className="w-12 h-12 flex items-center justify-center rounded-xl group-hover:bg-gray-100 transition duration-200">
+                                <img src={action.iconSrc} alt={action.label} className="w-9 h-9 object-contain" />
+                            </div>
+                            <span className="text-[10px] font-bold text-[#00529c] uppercase tracking-tighter group-hover:text-[#1192a8] transition text-center whitespace-nowrap">
+                                {action.label}
+                            </span>
+                        </button>
                     ))}
-                    </tbody>
-                </table>
+                </div>
+                <div className="flex items-center gap-3">
+                    <select
+                        value={searchBy}
+                        onChange={e => setSearchBy(e.target.value)}
+                        className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1192a8]/20 focus:border-[#1192a8] bg-white text-gray-600 cursor-pointer"
+                    >
+                        <option value="all">Tất cả</option>
+                        <option value="name">Theo tên</option>
+                        <option value="code">Theo mã</option>
+                        <option value="phone">Theo SĐT</option>
+                        <option value="address">Theo địa chỉ</option>
+                    </select>
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={e => handleSearchChange(e.target.value)}
+                        className="border border-gray-200 rounded-xl px-5 py-2.5 w-72 text-sm focus:outline-none focus:ring-2 focus:ring-[#1192a8]/20 focus:border-[#1192a8] transition-all"
+                        placeholder="Nhập nội dung tìm kiếm..."
+                    />
+                    <button
+                        onClick={() => { setSearch(''); fetchData(''); }}
+                        className="bg-[#1192a8] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-teal-700 hover:shadow-lg hover:shadow-teal-500/30 flex items-center gap-2 transition-all active:scale-95"
+                    >
+                        <span className="text-lg">↻</span> Làm mới
+                    </button>
+                </div>
             </div>
+
+            {/* Table */}
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mt-6 flex-1">
+                {loading ? (
+                    <div className="flex items-center justify-center h-48 text-gray-400 text-sm">Đang tải dữ liệu...</div>
+                ) : (
+                    <table className="w-full text-left border-collapse">
+                        <thead className="bg-gray-50 border-b">
+                            <tr className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
+                                <th className="px-6 py-4 text-center w-16">STT</th>
+                                <th className="px-6 py-4 w-36">Mã khách hàng</th>
+                                <th className="px-6 py-4">Tên khách hàng</th>
+                                <th className="px-6 py-4">Số điện thoại</th>
+                                <th className="px-6 py-4">Địa chỉ</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {filtered.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-400 text-sm">
+                                        Không tìm thấy dữ liệu phù hợp
+                                    </td>
+                                </tr>
+                            ) : filtered.map((row, idx) => (
+                                <tr
+                                    key={row.id}
+                                    onClick={() => setSelected(selected?.id === row.id ? null : row)}
+                                    onDoubleClick={() => { setEditData(row); setModalOpen(true); }}
+                                    className={`transition-colors cursor-pointer group
+                                        ${selected?.id === row.id
+                                            ? 'bg-teal-50 border-l-4 border-l-[#1192a8]'
+                                            : 'hover:bg-blue-50/50'
+                                        }`}
+                                >
+                                    <td className="px-6 py-4 text-sm text-center text-gray-400 font-medium">{idx + 1}</td>
+                                    <td className="px-6 py-4 text-sm font-mono text-gray-500">{row.customerCode}</td>
+                                    <td className="px-6 py-4 text-sm font-bold text-[#1192a8] group-hover:text-teal-600">{row.name}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-600 font-mono">{row.phone || '—'}</td>
+                                    <td className="px-6 py-4 text-xs text-gray-500 italic max-w-xs truncate">{row.address || '—'}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+
+            {/* Selected hint */}
+            {selected && (
+                <p className="mt-2 text-xs text-gray-400 text-right">
+                    Đã chọn: <span className="text-[#1192a8] font-semibold">{selected.name}</span> — Double-click để sửa nhanh
+                </p>
+            )}
+
+            {/* Modal */}
+            <ClientModal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                onSaved={() => fetchData(search)}
+                editData={editData}
+            />
         </div>
     );
 }

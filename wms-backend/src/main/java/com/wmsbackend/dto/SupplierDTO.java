@@ -1,30 +1,23 @@
-// ===== Supplier.java (Entity) =====
-package com.wmsbackend.entity;
+package com.wmsbackend.dto;
 
-import jakarta.persistence.*;
-
-@Entity
-@Table(name = "Suppliers")
-public class Supplier {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class SupplierDTO {
     private Integer id;
-
-    @Column(name = "SupplierCode", unique = true, nullable = false)
     private String supplierCode;
-
-    @Column(name = "Name", nullable = false)
     private String name;
-
-    @Column(name = "Phone")
     private String phone;
-
-    @Column(name = "Address")
     private String address;
+    private Integer totalImportQuantity;
 
-    @Column(name = "TotalImportQuantity")
-    private Integer totalImportQuantity = 0;
+    public SupplierDTO() {}
+
+    public SupplierDTO(Integer id, String supplierCode, String name, String phone, String address, Integer totalImportQuantity) {
+        this.id = id;
+        this.supplierCode = supplierCode;
+        this.name = name;
+        this.phone = phone;
+        this.address = address;
+        this.totalImportQuantity = totalImportQuantity;
+    }
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -44,4 +37,3 @@ public class Supplier {
     public Integer getTotalImportQuantity() { return totalImportQuantity; }
     public void setTotalImportQuantity(Integer totalImportQuantity) { this.totalImportQuantity = totalImportQuantity; }
 }
- 
