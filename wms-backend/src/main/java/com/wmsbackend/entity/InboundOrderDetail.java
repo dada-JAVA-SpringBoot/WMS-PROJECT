@@ -23,7 +23,7 @@ public class InboundOrderDetail {
     private Integer locationId;
 
     @Column(name = "Quantity", nullable = false)
-    private BigDecimal quantity;
+    private BigDecimal quantityReceived;
 
     // Getter Setter
 
@@ -67,11 +67,11 @@ public class InboundOrderDetail {
         this.locationId = locationId;
     }
 
-    public BigDecimal getQuantity() {
-        return quantity;
+    public BigDecimal getQuantityReceived() {
+        return quantityReceived;
     }
 
-    public void setQuantity(BigDecimal quantity) {
-        this.quantity = quantity;
+    public void setQuantity(BigDecimal quantityReceived) {
+        this.quantityReceived = quantityReceived;
     }
 }
