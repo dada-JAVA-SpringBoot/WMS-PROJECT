@@ -1,0 +1,165 @@
+import React, { useState, useEffect } from 'react';
+
+const API = 'http://localhost:8080/api/customers';
+
+export default function ClientModal({ isOpen, onClose, onSaved, editData }) {
+    const isEdit = !!editData;
+
+    const emptyForm = { customerCode: '', name: '', phone: '', address: '' };
+    const [form, setForm] = useState(emptyForm);
+    const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState({});
+
+    useEffect(() => {
+        if (isOpen) {
+            setForm(editData ? {
+                customerCode: editData.customerCode || '',
+                name: editData.name || '',
+                phone: editData.phone || '',
+                address: editData.address || '',
+            } : emptyForm);
+            setErrors({});
+        }
+    }, [isOpen, editData]);
+
+    if (!isOpen) return null;
+
+    const validate = () => {
+        const e = {};
+        if (!form.customerCode.trim()) e.customerCode = 'Vui lòng nhập mã khách hàng';
+        if (!form.name.trim()) e.name = 'Vui lòng nhập tên khách hàng';
+        return e;
+    };
+
+    const handleChange = (field, value) => {
+        setForm(prev => ({ ...prev, [field]: value }));
+        if (errors[field]) setErrors(prev => ({ ...prev, [field]: undefined }));
+    };
+
+    const handleSubmit = async () => {
+        const e = validate();
+        if (Object.keys(e).length > 0) { setErrors(e); return; }
+        setLoading(true);
+        try {
+            const method = isEdit ? 'PUT' : 'POST';
+            const url = isEdit ? `${API}/${editData.id}` : API;
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(form),
+            });
+            if (!res.ok) throw new Error('Lỗi server');
+            onSaved();
+            onClose();
+        } catch (err) {
+            alert('Có lỗi xảy ra: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden animate-fade-in">
+
+                {/* Header */}
+                <div className="bg-gradient-to-r from-[#00529c] to-[#1192a8] px-8 py-5 flex items-center justify-between">
+                    <div>
+                        <h2 className="text-white font-bold text-lg">
+                            {isEdit ? 'Chỉnh sửa khách hàng' : 'Thêm khách hàng mới'}
+                        </h2>
+                        <p className="text-white/70 text-xs mt-0.5">
+                            {isEdit ? `Đang sửa: ${editData.name}` : 'Điền thông tin để tạo khách hàng'}
+                        </p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="text-white/70 hover:text-white text-2xl leading-none transition-colors"
+                    >×</button>
+                </div>
+
+                {/* Body */}
+                <div className="px-8 py-6 space-y-5">
+                    <Field
+                        label="Mã khách hàng"
+                        required
+                        value={form.customerCode}
+                        onChange={v => handleChange('customerCode', v)}
+                        placeholder="VD: CUS-001"
+                        error={errors.customerCode}
+                        disabled={isEdit}
+                    />
+                    <Field
+                        label="Tên khách hàng"
+                        required
+                        value={form.name}
+                        onChange={v => handleChange('name', v)}
+                        placeholder="VD: Nguyễn Văn A"
+                        error={errors.name}
+                    />
+                    <Field
+                        label="Số điện thoại"
+                        value={form.phone}
+                        onChange={v => handleChange('phone', v)}
+                        placeholder="VD: 0987654321"
+                        type="tel"
+                    />
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                            Địa chỉ
+                        </label>
+                        <textarea
+                            rows={2}
+                            value={form.address}
+                            onChange={e => handleChange('address', e.target.value)}
+                            placeholder="VD: 123 Đường ABC, Quận 1, TP.HCM"
+                            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1192a8]/25 focus:border-[#1192a8] transition-all resize-none"
+                        />
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-8 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                    <button
+                        onClick={onClose}
+                        className="px-6 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-100 transition-all"
+                    >
+                        Hủy
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        className="px-7 py-2.5 rounded-xl text-sm font-bold text-white bg-[#1192a8] hover:bg-teal-700 hover:shadow-lg hover:shadow-teal-500/30 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                        {loading && <span className="animate-spin text-base">↻</span>}
+                        {isEdit ? 'Lưu thay đổi' : 'Thêm mới'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function Field({ label, value, onChange, placeholder, error, required, type = 'text', disabled = false }) {
+    return (
+        <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                {label} {required && <span className="text-red-500">*</span>}
+            </label>
+            <input
+                type={type}
+                value={value}
+                onChange={e => onChange(e.target.value)}
+                placeholder={placeholder}
+                disabled={disabled}
+                className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 transition-all
+                    ${disabled ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : 'bg-white'}
+                    ${error
+                        ? 'border-red-400 focus:ring-red-200 focus:border-red-400'
+                        : 'border-gray-200 focus:ring-[#1192a8]/25 focus:border-[#1192a8]'
+                    }`}
+            />
+            {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+        </div>
+    );
+}

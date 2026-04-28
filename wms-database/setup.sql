@@ -12,7 +12,8 @@ Id INT IDENTITY(1,1) PRIMARY KEY,
 SupplierCode VARCHAR(50) UNIQUE NOT NULL,
 Name NVARCHAR(255) NOT NULL,
 Phone VARCHAR(20),
-Address NVARCHAR(500)
+Address NVARCHAR(500),
+TotalImportQuantity INT DEFAULT 0
 );
 
 CREATE TABLE Customers (
@@ -142,11 +143,33 @@ BatchId INT NOT NULL FOREIGN KEY REFERENCES Batches(Id), -- Xuất từ Lô nào
 LocationId INT NOT NULL FOREIGN KEY REFERENCES Locations(Id), -- Lấy hàng từ Ô kệ nào
 Quantity DECIMAL(18,2) NOT NULL
 );
+
+--11
+CREATE TABLE Staff (
+                       Id              INT IDENTITY(1,1) PRIMARY KEY,
+                       EmployeeCode    VARCHAR(50)      UNIQUE NOT NULL,
+                       FullName        NVARCHAR(255)    NOT NULL,
+                       Gender          VARCHAR(10)      NOT NULL DEFAULT 'MALE',       -- MALE | FEMALE
+                       DateOfBirth     DATE             NULL,
+                       Phone           VARCHAR(20)      NULL,
+                       Email           VARCHAR(255)     NULL,
+                       HireDate        DATE             NOT NULL DEFAULT CAST(GETDATE() AS DATE),
+                       ContractType    VARCHAR(20)      NOT NULL DEFAULT 'FULL_TIME',  -- FULL_TIME | PART_TIME | PROBATION | INTERN
+                       WarehouseRole   VARCHAR(30)      NOT NULL DEFAULT 'INBOUND_STAFF',
+    -- WAREHOUSE_KEEPER | INBOUND_STAFF | OUTBOUND_STAFF | INVENTORY_CHECKER | WAREHOUSE_MANAGER
+                       WorkStatus      VARCHAR(20)      NOT NULL DEFAULT 'OFF_SHIFT',
+    -- ON_SHIFT | OFF_SHIFT | RESIGNED
+                       Notes           NVARCHAR(500)    NULL,
+                       CreatedAt       DATETIME2        DEFAULT GETDATE()
+);
 GO
 
 -- Chỉ mục tối ưu hóa
 CREATE NONCLUSTERED INDEX IX_Batches_ExpiryDate ON Batches(ExpiryDate ASC);
 CREATE NONCLUSTERED INDEX IX_Inventory_Lookup ON Inventory(ProductId, LocationId, BatchId);
+-- Chỉ mục tối ưu tìm kiếm
+CREATE NONCLUSTERED INDEX IX_Staff_WorkStatus ON Staff(WorkStatus);
+CREATE NONCLUSTERED INDEX IX_Staff_Role ON Staff(WarehouseRole);
 GO
 
 
@@ -245,4 +268,18 @@ INSERT INTO OutboundOrderDetails (OutboundOrderId, ProductId, BatchId, LocationI
        (1, 5, 7, 2, 20),   -- Xuất 20 Sữa 180ml
        (1, 7, 9, 2, 15),   -- Xuất 15 Trứng
        (1, 8, 10, 3, 5);   -- Xuất 5 Điện thoại
+
+--
+INSERT INTO Staff (EmployeeCode, FullName, Gender, DateOfBirth, Phone, Email, HireDate, ContractType, WarehouseRole, WorkStatus, Notes)
+VALUES
+    ('EMP-001', N'Nguyễn Minh Tuấn',   'MALE',   '1990-05-15', '0901234561', 'tuan.nm@wms.vn',    '2021-03-01', 'FULL_TIME',  'WAREHOUSE_MANAGER',   'ON_SHIFT',  N'Quản lý ca sáng'),
+    ('EMP-002', N'Trần Thị Lan',       'FEMALE', '1995-08-22', '0901234562', 'lan.tt@wms.vn',     '2022-01-10', 'FULL_TIME',  'WAREHOUSE_KEEPER',    'ON_SHIFT',  N'Phụ trách khu A'),
+    ('EMP-003', N'Lê Văn Hùng',        'MALE',   '1993-11-30', '0901234563', 'hung.lv@wms.vn',    '2022-06-15', 'FULL_TIME',  'INBOUND_STAFF',       'ON_SHIFT',  N'Ca sáng thứ 2-6'),
+    ('EMP-004', N'Phạm Thị Hoa',       'FEMALE', '1998-03-10', '0901234564', 'hoa.pt@wms.vn',     '2023-02-20', 'PART_TIME',  'OUTBOUND_STAFF',      'OFF_SHIFT', N'Làm ca chiều T3,T5,T7'),
+    ('EMP-005', N'Hoàng Đức Mạnh',     'MALE',   '1991-07-18', '0901234565', 'manh.hd@wms.vn',    '2020-11-01', 'FULL_TIME',  'INVENTORY_CHECKER',   'OFF_SHIFT', N'Kiểm kê định kỳ cuối tháng'),
+    ('EMP-006', N'Nguyễn Thị Thu',     'FEMALE', '2000-12-05', '0901234566', 'thu.nt@wms.vn',     '2024-01-08', 'INTERN',     'INBOUND_STAFF',       'ON_SHIFT',  N'Thực tập sinh khóa 2024'),
+    ('EMP-007', N'Võ Văn Tài',         'MALE',   '1988-04-25', '0901234567', 'tai.vv@wms.vn',     '2019-05-15', 'FULL_TIME',  'WAREHOUSE_KEEPER',    'RESIGNED',  N'Kết thúc hợp đồng 31/12/2023'),
+    ('EMP-008', N'Đặng Thị Mỹ Linh',   'FEMALE', '1997-09-14', '0901234568', 'linh.dtm@wms.vn',   '2023-07-01', 'PROBATION',  'OUTBOUND_STAFF',      'ON_SHIFT',  N'Đang trong thời gian thử việc'),
+    ('EMP-009', N'Bùi Quang Vinh',     'MALE',   '1994-01-20', '0901234569', 'vinh.bq@wms.vn',    '2021-09-10', 'FULL_TIME',  'INVENTORY_CHECKER',   'OFF_SHIFT', N'Phụ trách khu B và C'),
+    ('EMP-010', N'Trương Thị Ngọc',    'FEMALE', '2001-06-03', '0901234570', 'ngoc.tt@wms.vn',    '2024-03-01', 'INTERN',     'OUTBOUND_STAFF',      'OFF_SHIFT', N'Thực tập sinh khóa Spring 2024');
 GO
