@@ -443,6 +443,14 @@ export default function WarehouseAreaPage() {
                     >
                         Làm mới bộ lọc
                     </button>
+
+                    <div className="flex flex-wrap gap-2 mt-4">
+                        <StatusLegend label="Trống" value={statusCounts.EMPTY || 0} className="bg-gray-100 text-gray-600 border-gray-200" />
+                        <StatusLegend label="Chật" value={statusCounts.FULL || 0} className="bg-amber-100 text-amber-800 border-amber-200" />
+                        <StatusLegend label="Phân bổ" value={statusCounts.ALLOCATED || 0} className="bg-blue-100 text-blue-700 border-blue-200" />
+                        <StatusLegend label="Dự kiến" value={statusCounts.EXPECTED || 0} className="bg-violet-100 text-violet-700 border-violet-200" />
+                        <StatusLegend label="Đang dùng" value={statusCounts.OCCUPIED || 0} className="bg-cyan-100 text-cyan-700 border-cyan-200" />
+                    </div>
                 </div>
 
                 <div className="sticky top-6">
@@ -522,13 +530,7 @@ export default function WarehouseAreaPage() {
                         <div>
                             <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Danh sách vị trí</p>
                                 <h3 className="text-sm font-bold text-gray-800">Sắp xếp theo khu vực, lối, kệ, tầng, loại kho</h3>
-                            <div className="flex flex-wrap gap-2 mt-3">
-                                <StatusLegend label="Trống" value={statusCounts.EMPTY || 0} className="bg-gray-100 text-gray-600 border-gray-200" />
-                                <StatusLegend label="Chật" value={statusCounts.FULL || 0} className="bg-amber-100 text-amber-800 border-amber-200" />
-                                <StatusLegend label="Phân bổ" value={statusCounts.ALLOCATED || 0} className="bg-blue-100 text-blue-700 border-blue-200" />
-                                <StatusLegend label="Dự kiến" value={statusCounts.EXPECTED || 0} className="bg-violet-100 text-violet-700 border-violet-200" />
-                                <StatusLegend label="Đang dùng" value={statusCounts.OCCUPIED || 0} className="bg-cyan-100 text-cyan-700 border-cyan-200" />
-                            </div>
+
                         </div>
                         <div className="text-right">
                             <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Kết quả</p>
@@ -565,7 +567,7 @@ export default function WarehouseAreaPage() {
                                                 onClick={() => setSelectedLocationId(location.id)}
                                                 onDoubleClick={() => openEditForm(location)}
                                                 onContextMenu={(e) => handleRowContextMenu(e, location)}
-                                                className={`text-left rounded-2xl border p-4 min-h-[150px] transition-all shadow-sm hover:shadow-md ${
+                                                className={`text-left rounded-2xl border p-6 min-h-[220px] transition-all shadow-sm hover:shadow-md ${
                                                     selectedLocationId === location.id
                                                         ? 'border-cyan-300 bg-cyan-50'
                                                         : 'border-gray-100 bg-white hover:border-cyan-200'
@@ -574,7 +576,7 @@ export default function WarehouseAreaPage() {
                                                 <div className="flex items-start justify-between gap-3 mb-3">
                                                     <div>
                                                         <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold"># {index + 1}</p>
-                                                        <h4 className="text-base font-black text-[#1192a8] uppercase truncate">
+                                                        <h4 className="text-lg font-black text-[#1192a8] uppercase truncate">
                                                             {location.binCode}
                                                         </h4>
                                                     </div>
