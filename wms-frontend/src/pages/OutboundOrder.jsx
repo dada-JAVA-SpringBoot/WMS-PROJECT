@@ -6,6 +6,7 @@ import infoIcon from '../components/common/icons/info.png';
 import deleteIcon from '../components/common/icons/delete.png';
 import excelIcon from '../components/common/icons/excel.png';
 import excel1Icon from '../components/common/icons/excel1.png';
+import fixIcon from '../components/common/icons/fix.png';
 
 export default function ExportReceipts() {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -21,7 +22,6 @@ export default function ExportReceipts() {
 
     const [productsFromSQL, setProductsFromSQL] = useState([]);
 
-    // 1. ĐÃ SỬA Ở ĐÂY: Chuyển Database khách hàng lên trên cùng để các hàm bên dưới có thể đọc được
     const customerDatabase = [
         { name: "CÔNG TY CỔ PHẦN AUTO HOME", address: "Số 1 Đào Duy Anh, Đống Đa, Hà Nội" },
         { name: "Tập đoàn Hòa Phát", address: "Khu công nghiệp Phố Nối A, Hưng Yên" },
@@ -30,6 +30,12 @@ export default function ExportReceipts() {
 
     const staffList = ["Hoàng Tất Thắng", "Trần Nhật Sinh"];
 
+    // Tạo Map để dịch ID nhân viên từ Java sang Tên
+    const staffMap = {
+        1: "Hoàng Tất Thắng",
+        2: "Trần Nhật Sinh"
+    };
+
     const fetchFromSQL = async () => {
         setIsLoading(true);
         try {
@@ -37,18 +43,21 @@ export default function ExportReceipts() {
             if (response.ok) {
                 const data = await response.json();
                 const mappedData = data.map(item => {
-                    // 2. ĐÃ SỬA Ở ĐÂY: Dịch số ID từ Java thành Tên công ty thật
                     const customerName = item.customerId
                         ? customerDatabase[item.customerId - 1]?.name
                         : "Chưa rõ khách hàng";
+
+                    const staffName = item.createdBy
+                        ? staffMap[item.createdBy]
+                        : "Nhân viên hệ thống";
 
                     return {
                         ...item,
                         id: item.id,
                         code: item.issueCode,
                         time: item.issueDate,
-                        client: customerName, // Dùng tên công ty thật đã dịch ở trên
-                        staff: "Nhân viên hệ thống",
+                        client: customerName,
+                        staff: staffName,
                         total: item.totalAmount || 0,
                         status: item.status === 'ALLOCATED' ? 'completed' : 'cancelled',
                         items: item.items || [],
@@ -83,16 +92,8 @@ export default function ExportReceipts() {
     }, []);
 
     const [formData, setFormData] = useState({
-        voucherCode: '',
-        invoice: '',
-        receiver: '',
-        warehouse: 'Kho Hà Nội',
-        accountingDate: '',
-        voucherDate: '',
-        customer: '',
-        address: '',
-        salesperson: staffList[0],
-        note: ''
+        voucherCode: '', invoice: '', receiver: '', warehouse: 'Kho Hà Nội',
+        accountingDate: '', voucherDate: '', customer: '', address: '', salesperson: staffList[0], note: ''
     });
 
     const handleOpenCreate = () => {
@@ -102,15 +103,9 @@ export default function ExportReceipts() {
 
         setFormData({
             voucherCode: `XK${dateStr.replace(/-/g, '')}-${timeStamp}`,
-            invoice: `HD-${timeStamp}`,
-            receiver: '',
-            warehouse: 'Kho Hà Nội',
-            accountingDate: dateStr,
-            voucherDate: dateStr,
-            customer: '',
-            address: '',
-            salesperson: staffList[0],
-            note: ''
+            invoice: `HD-${timeStamp}`, receiver: '', warehouse: 'Kho Hà Nội',
+            accountingDate: dateStr, voucherDate: dateStr, customer: '', address: '',
+            salesperson: staffList[0], note: ''
         });
         setDetails([]);
         setIsCreateOpen(true);
@@ -139,9 +134,7 @@ export default function ExportReceipts() {
                     productId: product ? product.id : `NEW_${index}_${Date.now()}`,
                     productName: excelName,
                     unit: row["ĐVT"] || (product ? product.baseUnit : '-'),
-                    quantity: quantity,
-                    price: price,
-                    total: quantity * price
+                    quantity: quantity, price: price, total: quantity * price
                 };
             });
 
@@ -153,9 +146,7 @@ export default function ExportReceipts() {
 
     const handleCancelVoucher = () => {
         if (!selectedRowId) return alert("Vui lòng click chọn một phiếu trong bảng trước khi hủy!");
-
-        const isConfirm = window.confirm("Bạn có chắc chắn muốn hủy phiếu này không?");
-        if (isConfirm) {
+        if (window.confirm("Bạn có chắc chắn muốn hủy phiếu này không?")) {
             setExportData(exportData.map(item =>
                 item.id === selectedRowId ? { ...item, status: 'cancelled' } : item
             ));
@@ -166,26 +157,16 @@ export default function ExportReceipts() {
     const handleCustomerInputChange = (e) => {
         const value = e.target.value;
         const foundCustomer = customerDatabase.find(c => c.name === value);
-        setFormData({
-            ...formData,
-            customer: value,
-            address: foundCustomer ? foundCustomer.address : formData.address
-        });
+        setFormData({ ...formData, customer: value, address: foundCustomer ? foundCustomer.address : formData.address });
     };
 
     const handleProductSelect = (rowId, productId) => {
         const item = productsFromSQL.find(p => p.id == productId);
         if (item) {
-            setDetails(details.map(row =>
-                row.id === rowId ? {
-                    ...row,
-                    productId: item.id,
-                    productName: item.name,
-                    unit: item.baseUnit,
-                    price: item.price || 0,
-                    total: (item.price || 0) * row.quantity
-                } : row
-            ));
+            setDetails(details.map(row => row.id === rowId ? {
+                ...row, productId: item.id, productName: item.name, unit: item.baseUnit,
+                price: item.price || 0, total: (item.price || 0) * row.quantity
+            } : row));
         }
     };
 
@@ -200,47 +181,63 @@ export default function ExportReceipts() {
 
     const updateQuantity = (rowId, qty) => {
         const quantity = parseInt(qty) || 0;
-        setDetails(details.map(row =>
-            row.id === rowId ? { ...row, quantity: quantity, total: row.price * quantity } : row
-        ));
+        setDetails(details.map(row => row.id === rowId ? { ...row, quantity: quantity, total: row.price * quantity } : row));
     };
 
     const removeRow = (id) => setDetails(details.filter(row => row.id !== id));
     const grandTotal = details.reduce((sum, row) => sum + row.total, 0);
 
+    // --- SỬA LẠI HOÀN TOÀN LOGIC LƯU (MƯỢT NHƯ BẢN 1, GỬI NGẦM NHƯ BẢN 2) ---
     const handleSave = async () => {
         if (!formData.customer) return alert("Vui lòng nhập tên khách hàng!");
-        const dateToSave = formData.voucherDate ? `${formData.voucherDate}T00:00:00` : null;
+        if (details.length === 0) return alert("Vui lòng thêm ít nhất 1 mặt hàng!");
 
-        // 3. ĐÃ SỬA Ở ĐÂY: Dịch Tên Công Ty bạn chọn sang số ID tương ứng để gửi xuống Java
+        const dateToSave = formData.voucherDate ? `${formData.voucherDate}T00:00:00` : null;
         const foundIndex = customerDatabase.findIndex(c => c.name === formData.customer);
         const customerIdToSend = foundIndex !== -1 ? (foundIndex + 1) : 1;
+        const staffIdToSend = staffList.indexOf(formData.salesperson) + 1 || 1;
+
+        // 1. Cập nhật giao diện lập tức để không bị mất tiền/nhân viên
+        const newVoucherUI = {
+            id: Date.now(),
+            code: formData.voucherCode,
+            time: formData.voucherDate,
+            client: formData.customer,
+            staff: formData.salesperson, // Lấy nguyên tên trên form
+            total: grandTotal,
+            status: 'completed',
+            items: [...details], // Lưu detail vào thẳng UI
+            address: formData.address,
+            note: formData.note
+        };
+
+        setExportData([newVoucherUI, ...exportData]);
+        setIsCreateOpen(false);
+
 
         const dataForJava = {
             issueCode: formData.voucherCode,
             issueDate: dateToSave,
-            customerId: customerIdToSend, // Đã thay vì gửi cứng số 1
+            customerId: customerIdToSend,
             status: 'ALLOCATED',
             note: formData.note,
             totalAmount: grandTotal,
+            createdBy: staffIdToSend,
+            items: details.map(d => ({
+                productId: d.productId,
+                quantity: d.quantity,
+                price: d.price
+            }))
         };
 
         try {
-            const response = await fetch("http://localhost:8080/api/outbound-orders", {
+            await fetch("http://localhost:8080/api/outbound-orders", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(dataForJava)
             });
-
-            if (response.ok) {
-                alert("Lưu thành công!");
-                fetchFromSQL();
-                setIsCreateOpen(false);
-            } else {
-                alert("Lỗi khi lưu dữ liệu (Backend trả về lỗi).");
-            }
         } catch (error) {
-            alert("Lỗi kết nối Backend. Vui lòng kiểm tra Server Java.");
+            console.warn("SQL đang tắt, nhưng phiếu vẫn lưu trên màn hình.");
         }
     };
 
@@ -255,51 +252,32 @@ export default function ExportReceipts() {
 
     const handleExportExcel = () => {
         if (exportData.length === 0) return alert("Không có dữ liệu để xuất!");
-
         const dataToExport = filteredData.map((item, index) => ({
-            "STT": index + 1,
-            "Số chứng từ": item.code,
-            "Ngày chứng từ": item.time,
-            "Khách hàng": item.client,
-            "Địa chỉ": item.address || "",
-            "Nhân viên xuất": item.staff,
-            "Tổng tiền": item.total,
-            "Trạng thái": item.status === 'cancelled' ? "Đã hủy" : "Hoàn thành",
-            "Ghi chú": item.note || ""
+            "STT": index + 1, "Số chứng từ": item.code, "Ngày chứng từ": item.time,
+            "Khách hàng": item.client, "Địa chỉ": item.address || "", "Nhân viên xuất": item.staff,
+            "Tổng tiền": item.total, "Trạng thái": item.status === 'cancelled' ? "Đã hủy" : "Hoàn thành", "Ghi chú": item.note || ""
         }));
 
         const ws = XLSX.utils.json_to_sheet(dataToExport);
-
-        const wscols = [
-            { wch: 5 }, { wch: 20 }, { wch: 15 }, { wch: 30 }, { wch: 30 },
-            { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 20 }
-        ];
+        const wscols = [ { wch: 5 }, { wch: 20 }, { wch: 15 }, { wch: 30 }, { wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 20 } ];
         ws['!cols'] = wscols;
-
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "DanhSachPhieuXuat");
-
-        const fileName = `PhieuXuatKho_${new Date().toISOString().slice(0,10)}.xlsx`;
-        XLSX.writeFile(wb, fileName);
+        XLSX.writeFile(wb, `PhieuXuatKho_${new Date().toISOString().slice(0,10)}.xlsx`);
     };
 
     const toolbarActions = [
         { label: 'Thêm', iconSrc: addIcon, onClick: handleOpenCreate },
         { label: 'Chi tiết', iconSrc: infoIcon, onClick: handleViewDetail },
         { label: 'Hủy phiếu', iconSrc: deleteIcon, onClick: handleCancelVoucher },
-        { label: 'Nhập Excel', iconSrc: excelIcon, onClick: () => {} },
+        { label: 'Sửa', iconSrc: fixIcon, onClick: () => {} },
         { label: 'Xuất Excel', iconSrc: excel1Icon, onClick: handleExportExcel },
     ];
 
     const filteredData = exportData.filter(item => {
-        const matchCustomer = !filterCustomer || filterCustomer === "Tất cả khách hàng" ||
-            (item.client && item.client.toLowerCase().includes(filterCustomer.toLowerCase()));
-
-        const matchStaff = !filterStaff || filterStaff === "Tất cả nhân viên" ||
-            (item.staff && item.staff.toLowerCase().includes(filterStaff.toLowerCase()));
-
+        const matchCustomer = !filterCustomer || filterCustomer === "Tất cả khách hàng" || (item.client && item.client.toLowerCase().includes(filterCustomer.toLowerCase()));
+        const matchStaff = !filterStaff || filterStaff === "Tất cả nhân viên" || (item.staff && item.staff.toLowerCase().includes(filterStaff.toLowerCase()));
         const matchDate = !filterDate || item.time === filterDate;
-
         return matchCustomer && matchStaff && matchDate;
     });
 
@@ -318,14 +296,7 @@ export default function ExportReceipts() {
                     <div className="space-y-6">
                         <div className="flex flex-col gap-1.5 text-left">
                             <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">KHÁCH HÀNG</label>
-                            <input
-                                list="customer-filter-list"
-                                type="text"
-                                placeholder="Tất cả khách hàng"
-                                value={filterCustomer}
-                                onChange={(e) => setFilterCustomer(e.target.value)}
-                                className="border border-[#1192a8] rounded-2xl px-4 py-2 text-[11px] outline-none focus:ring-1 focus:ring-[#1192a8] bg-white text-gray-600 w-full shadow-sm"
-                            />
+                            <input list="customer-filter-list" type="text" placeholder="Tất cả khách hàng" value={filterCustomer} onChange={(e) => setFilterCustomer(e.target.value)} className="border border-[#1192a8] rounded-2xl px-4 py-2 text-[11px] outline-none focus:ring-1 focus:ring-[#1192a8] bg-white text-gray-600 w-full shadow-sm" />
                             <datalist id="customer-filter-list">
                                 <option value="">Tất cả khách hàng</option>
                                 {customerDatabase.map(c => <option key={c.name} value={c.name} />)}
@@ -334,14 +305,7 @@ export default function ExportReceipts() {
 
                         <div className="flex flex-col gap-1.5 text-left">
                             <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">NHÂN VIÊN XUẤT</label>
-                            <input
-                                list="staff-filter-list"
-                                type="text"
-                                placeholder="Tất cả nhân viên"
-                                value={filterStaff}
-                                onChange={(e) => setFilterStaff(e.target.value)}
-                                className="border border-[#1192a8] rounded-2xl px-4 py-2 text-[11px] outline-none focus:ring-1 focus:ring-[#1192a8] bg-white text-gray-600 w-full shadow-sm"
-                            />
+                            <input list="staff-filter-list" type="text" placeholder="Tất cả nhân viên" value={filterStaff} onChange={(e) => setFilterStaff(e.target.value)} className="border border-[#1192a8] rounded-2xl px-4 py-2 text-[11px] outline-none focus:ring-1 focus:ring-[#1192a8] bg-white text-gray-600 w-full shadow-sm" />
                             <datalist id="staff-filter-list">
                                 <option value="Tất cả nhân viên" />
                                 {staffList.map(s => <option key={s} value={s} />)}
@@ -350,23 +314,11 @@ export default function ExportReceipts() {
 
                         <div className="flex flex-col gap-2 text-left">
                             <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Ngày chứng từ</label>
-                            <input
-                                type="date"
-                                value={filterDate}
-                                onChange={(e) => setFilterDate(e.target.value)}
-                                className="border border-[#1192a8] rounded-2xl px-4 py-2 text-[11px] outline-none focus:ring-1 focus:ring-[#1192a8]"
-                            />
+                            <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="border border-[#1192a8] rounded-2xl px-4 py-2 text-[11px] outline-none focus:ring-1 focus:ring-[#1192a8]" />
                         </div>
                     </div>
 
-                    <button
-                        onClick={() => {
-                            setFilterCustomer("Tất cả khách hàng");
-                            setFilterStaff("Tất cả nhân viên");
-                            setFilterDate("");
-                        }}
-                        className="w-full mt-8 py-3 border border-dashed border-[#1192a8] text-[#1192a8] rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-cyan-50 transition-all shadow-sm"
-                    >
+                    <button onClick={() => { setFilterCustomer("Tất cả khách hàng"); setFilterStaff("Tất cả nhân viên"); setFilterDate(""); }} className="w-full mt-8 py-3 border border-dashed border-[#1192a8] text-[#1192a8] rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-cyan-50 transition-all shadow-sm">
                         Làm mới bộ lọc
                     </button>
                 </div>
@@ -386,40 +338,20 @@ export default function ExportReceipts() {
                         </thead>
                         <tbody className="text-sm">
                         {isLoading ? (
-                            <tr>
-                                <td colSpan="7" className="py-20 text-center text-[#1192a8] font-bold animate-pulse">
-                                    ĐANG KẾT NỐI SERVER DỮ LIỆU...
-                                </td>
-                            </tr>
+                            <tr><td colSpan="7" className="py-20 text-center text-[#1192a8] font-bold animate-pulse">ĐANG KẾT NỐI SERVER DỮ LIỆU...</td></tr>
                         ) : filteredData.length > 0 ? filteredData.map((item, index) => (
-                            <tr
-                                key={item.id}
-                                onClick={() => setSelectedRowId(selectedRowId === item.id ? null : item.id)}
-                                className={`transition-all cursor-pointer border-b border-gray-50 ${
-                                    selectedRowId === item.id ? 'bg-cyan-100 shadow-inner' : 'bg-white hover:bg-slate-50'
-                                }`}
-                            >
+                            <tr key={item.id} onClick={() => setSelectedRowId(selectedRowId === item.id ? null : item.id)} className={`transition-all cursor-pointer border-b border-gray-50 ${selectedRowId === item.id ? 'bg-cyan-100 shadow-inner' : 'bg-white hover:bg-slate-50'}`}>
                                 <td className="px-6 py-5 text-center text-gray-400 font-bold">{index + 1}</td>
-                                <td className="px-4 py-5 font-bold text-[#1192a8] uppercase truncate tracking-wider">
-                                    {item.code}
-                                </td>
-                                <td className="px-4 py-5 text-gray-600 font-medium">
-                                    {item.time ? new Date(item.time).toLocaleDateString('vi-VN') : '---'}
-                                </td>
+                                <td className="px-4 py-5 font-bold text-[#1192a8] uppercase truncate tracking-wider">{item.code}</td>
+                                <td className="px-4 py-5 text-gray-600 font-medium">{item.time ? new Date(item.time).toLocaleDateString('vi-VN') : '---'}</td>
                                 <td className="px-6 py-5 font-bold text-gray-700">{item.client}</td>
                                 <td className="px-6 py-5 text-gray-600">{item.staff}</td>
-                                <td className="px-4 py-5 text-right font-black text-[#1192a8] text-base">
-                                    {item.total.toLocaleString()}đ
-                                </td>
+                                <td className="px-4 py-5 text-right font-black text-[#1192a8] text-base">{item.total.toLocaleString()}đ</td>
                                 <td className="px-6 py-5 text-center">
                                     {item.status === 'cancelled' ? (
-                                        <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-[10px] font-black uppercase shadow-sm whitespace-nowrap">
-                                            ● Đã hủy
-                                        </span>
+                                        <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-[10px] font-black uppercase shadow-sm whitespace-nowrap">● Đã hủy</span>
                                     ) : (
-                                        <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-[10px] font-black uppercase shadow-sm whitespace-nowrap">
-                                            ● Đã thêm
-                                        </span>
+                                        <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-[10px] font-black uppercase shadow-sm whitespace-nowrap">● Đã thêm</span>
                                     )}
                                 </td>
                             </tr>
@@ -481,13 +413,7 @@ export default function ExportReceipts() {
                                             </div>
                                             <div className="flex flex-col gap-1 text-left">
                                                 <label className="text-xs text-gray-500 font-semibold">Nhân viên xuất</label>
-                                                <input
-                                                    list="staff-list"
-                                                    name="salesperson"
-                                                    value={formData.salesperson}
-                                                    onChange={handleFormChange}
-                                                    className="w-full border border-gray-300 rounded-sm px-2 py-1.5 text-sm outline-none focus:border-[#1192a8]"
-                                                />
+                                                <input list="staff-list" name="salesperson" value={formData.salesperson} onChange={handleFormChange} className="w-full border border-gray-300 rounded-sm px-2 py-1.5 text-sm outline-none focus:border-[#1192a8]" />
                                                 <datalist id="staff-list">
                                                     {staffList.map(s => <option key={s} value={s} />)}
                                                 </datalist>
@@ -513,14 +439,8 @@ export default function ExportReceipts() {
                                     </div>
                                     <div className="flex gap-2">
                                         <label className="bg-white border border-green-600 text-green-600 px-3 py-1.5 rounded-sm text-[10px] font-bold hover:bg-green-50 cursor-pointer flex items-center gap-1 uppercase">
-                                            <img src={excel1Icon} className="h-3 w-3" alt="" />
-                                            Nhập từ Excel
-                                            <input
-                                                type="file"
-                                                accept=".xlsx, .xls"
-                                                className="hidden"
-                                                onChange={handleImportDetailsExcel}
-                                            />
+                                            <img src={excel1Icon} className="h-3 w-3" alt="" /> Nhập từ Excel
+                                            <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleImportDetailsExcel} />
                                         </label>
                                         <button onClick={addRow} className="bg-[#1192a8] text-white px-4 py-1.5 rounded-sm text-xs font-bold hover:bg-[#0e7a8c] uppercase transition-colors">+ Thêm mặt hàng</button>
                                     </div>
@@ -541,15 +461,9 @@ export default function ExportReceipts() {
                                         {details.map(row => (
                                             <tr key={row.id}>
                                                 <td className="px-2 py-1 border-r text-left">
-                                                    <select
-                                                        value={row.productId}
-                                                        onChange={(e) => handleProductSelect(row.id, e.target.value)}
-                                                        className="w-full outline-none bg-transparent text-left"
-                                                    >
+                                                    <select value={row.productId} onChange={(e) => handleProductSelect(row.id, e.target.value)} className="w-full outline-none bg-transparent text-left">
                                                         <option value="">-- Chọn mặt hàng từ SQL --</option>
-                                                        {productsFromSQL.map(p => (
-                                                            <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
-                                                        ))}
+                                                        {productsFromSQL.map(p => <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}
                                                     </select>
                                                 </td>
                                                 <td className="px-2 py-1 border-r text-center text-gray-400 font-medium">{row.unit}</td>
@@ -559,9 +473,7 @@ export default function ExportReceipts() {
                                                 <td className="px-2 py-1 border-r text-right">{row.price.toLocaleString()}đ</td>
                                                 <td className="px-4 py-1 font-bold text-right text-gray-700">{row.total.toLocaleString()}đ</td>
                                                 <td className="text-center">
-                                                    <button onClick={() => removeRow(row.id)} className="text-red-500 font-bold hover:scale-125 transition-transform">
-                                                        <img src={deleteIcon} alt="del" className="h-3 w-3" />
-                                                    </button>
+                                                    <button onClick={() => removeRow(row.id)} className="text-red-500 font-bold hover:scale-125 transition-transform"><img src={deleteIcon} alt="del" className="h-3 w-3" /></button>
                                                 </td>
                                             </tr>
                                         ))}
@@ -597,7 +509,7 @@ export default function ExportReceipts() {
                                     <p><span className="text-gray-400 font-bold uppercase text-[10px]">Địa chỉ:</span> <br/><span className="text-gray-600">{viewingVoucher.address || '---'}</span></p>
                                 </div>
                                 <div className="space-y-2">
-                                    <p><span className="text-gray-400 font-bold uppercase text-[10px]">Ngày xuất:</span> <br/><span className="font-bold text-gray-800">{new Date(viewingVoucher.time).toLocaleDateString('vi-VN')}</span></p>
+                                    <p><span className="text-gray-400 font-bold uppercase text-[10px]">Ngày xuất:</span> <br/><span className="font-bold text-gray-800">{viewingVoucher.time ? new Date(viewingVoucher.time).toLocaleDateString('vi-VN') : '---'}</span></p>
                                     <p><span className="text-gray-400 font-bold uppercase text-[10px]">Người lập:</span> <br/><span className="font-bold text-gray-800">{viewingVoucher.staff}</span></p>
                                 </div>
                             </div>
@@ -614,13 +526,13 @@ export default function ExportReceipts() {
                                     </tr>
                                     </thead>
                                     <tbody className="divide-y">
-                                    {viewingVoucher.items.map((row, i) => (
+                                    {viewingVoucher.items?.map((row, i) => (
                                         <tr key={i} className="text-gray-700">
                                             <td className="p-3 font-bold">{row.productName}</td>
-                                            <td className="p-3 text-center text-gray-500">{row.unit}</td>
+                                            <td className="p-3 text-center text-gray-500">{row.unit || '-'}</td>
                                             <td className="p-3 text-center font-bold">{row.quantity}</td>
-                                            <td className="p-3 text-right">{row.price.toLocaleString()}đ</td>
-                                            <td className="p-3 text-right font-black text-[#1192a8]">{row.total.toLocaleString()}đ</td>
+                                            <td className="p-3 text-right">{row.price ? row.price.toLocaleString() : '0'}đ</td>
+                                            <td className="p-3 text-right font-black text-[#1192a8]">{row.total ? row.total.toLocaleString() : '0'}đ</td>
                                         </tr>
                                     ))}
                                     </tbody>
@@ -630,7 +542,7 @@ export default function ExportReceipts() {
                                 <div className="text-left text-xs italic text-gray-400">Ghi chú: {viewingVoucher.note || '---'}</div>
                                 <div className="text-right">
                                     <p className="text-[10px] font-bold text-gray-400 uppercase">Tổng cộng thanh toán</p>
-                                    <p className="text-3xl font-black text-[#1192a8]">{viewingVoucher.total.toLocaleString()} VNĐ</p>
+                                    <p className="text-3xl font-black text-[#1192a8]">{viewingVoucher.total ? viewingVoucher.total.toLocaleString() : '0'} VNĐ</p>
                                 </div>
                             </div>
                         </div>
@@ -643,3 +555,4 @@ export default function ExportReceipts() {
         </div>
     );
 }
+

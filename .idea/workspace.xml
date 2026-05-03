@@ -5,15 +5,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7661f23e-b336-45c8-a5a3-5af4fc5b2f4a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wms-database/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/wms-database/.env.example" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wms-frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/package-lock.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources/data_sources_history.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/node_modules/.package-lock.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/components/common/icons/a1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/components/common/icons/a2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/components/common/icons/cup.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/components/common/icons/zalo.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/pages/LandingPage/LandingPage.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/pages/LandingPage/Sections/About.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/pages/LandingPage/Sections/Features.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/pages/LandingPage/Sections/Hero.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/pages/LandingPage/Sections/Pricing.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/node_modules/@tailwindcss/oxide-win32-x64-msvc/tailwindcss-oxide.win32-x64-msvc.node" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/resources/application-local.yml.example" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/App.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/OutboundOrder.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/OutboundOrder.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Supplier.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Supplier.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -78,13 +86,14 @@
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
     &quot;Spring Boot.WmsBackendApplication.executor&quot;: &quot;Run&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
     &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
     &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/Rei Kokutatsu/IdeaProjects/WMS-PROJECT/wms-database&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Lenovo/java1/WMS-PROJECT&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
