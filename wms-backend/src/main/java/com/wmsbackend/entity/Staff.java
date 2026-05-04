@@ -1,17 +1,27 @@
+// ===== Staff.java (cập nhật — thêm trường đăng nhập + ManyToMany Roles) =====
 package com.wmsbackend.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "Staff")
+@Getter @Setter
+@NoArgsConstructor
 public class Staff {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    // ── Thông tin cá nhân ──────────────────────────────────
     @Column(name = "EmployeeCode", unique = true, nullable = false)
     private String employeeCode;
 
@@ -19,7 +29,7 @@ public class Staff {
     private String fullName;
 
     @Column(name = "Gender")
-    private String gender = "MALE"; // MALE | FEMALE
+    private String gender = "MALE";
 
     @Column(name = "DateOfBirth")
     private LocalDate dateOfBirth;
@@ -34,14 +44,13 @@ public class Staff {
     private LocalDate hireDate;
 
     @Column(name = "ContractType")
-    private String contractType = "FULL_TIME"; // FULL_TIME | PART_TIME | PROBATION | INTERN
+    private String contractType = "FULL_TIME";
 
     @Column(name = "WarehouseRole")
     private String warehouseRole = "INBOUND_STAFF";
-    // WAREHOUSE_MANAGER | WAREHOUSE_KEEPER | INBOUND_STAFF | OUTBOUND_STAFF | INVENTORY_CHECKER
 
     @Column(name = "WorkStatus")
-    private String workStatus = "OFF_SHIFT"; // ON_SHIFT | OFF_SHIFT | RESIGNED
+    private String workStatus = "OFF_SHIFT";
 
     @Column(name = "Notes")
     private String notes;
@@ -49,44 +58,22 @@ public class Staff {
     @Column(name = "CreatedAt", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // ── Getters & Setters ──────────────────────────────────
+    // ── Trường đăng nhập (mới thêm) ───────────────────────
+    @Column(name = "Username", unique = true, length = 100)
+    private String username;
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
+    @Column(name = "Password", length = 255)
+    private String password;   // BCrypt hash
 
-    public String getEmployeeCode() { return employeeCode; }
-    public void setEmployeeCode(String employeeCode) { this.employeeCode = employeeCode; }
+    @Column(name = "Enabled")
+    private Boolean enabled = true;
 
-    public String getFullName() { return fullName; }
-    public void setFullName(String fullName) { this.fullName = fullName; }
-
-    public String getGender() { return gender; }
-    public void setGender(String gender) { this.gender = gender; }
-
-    public LocalDate getDateOfBirth() { return dateOfBirth; }
-    public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
-
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public LocalDate getHireDate() { return hireDate; }
-    public void setHireDate(LocalDate hireDate) { this.hireDate = hireDate; }
-
-    public String getContractType() { return contractType; }
-    public void setContractType(String contractType) { this.contractType = contractType; }
-
-    public String getWarehouseRole() { return warehouseRole; }
-    public void setWarehouseRole(String warehouseRole) { this.warehouseRole = warehouseRole; }
-
-    public String getWorkStatus() { return workStatus; }
-    public void setWorkStatus(String workStatus) { this.workStatus = workStatus; }
-
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    // ── Phân quyền (Many-to-Many với Roles) ───────────────
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "Staff_Roles",
+            joinColumns        = @JoinColumn(name = "StaffId"),
+            inverseJoinColumns = @JoinColumn(name = "RoleId")
+    )
+    private Set<Role> roles = new HashSet<>();
 }

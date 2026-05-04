@@ -5,15 +5,46 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7661f23e-b336-45c8-a5a3-5af4fc5b2f4a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wms-database/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/wms-database/.env.example" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wms-frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/package-lock.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/AuthController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/dto/LoginRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/dto/LoginResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/dto/RegisterRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/Role.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/RoleRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/security/JwtAuthFilter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/security/JwtUtil.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/security/StaffUserDetailsService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/api/axiosClient.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/components/PrivateRoute.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/context/AuthContext.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/hooks/useAuthFetch.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/pages/AccountManagement.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/pages/LoginPage.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/pages/UnauthorizedPage.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/node_modules/@tailwindcss/oxide-win32-x64-msvc/tailwindcss-oxide.win32-x64-msvc.node" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/structure.txt" beforeDir="false" afterPath="$PROJECT_DIR$/structure.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/CustomerController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/CustomerController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/InboundOrderController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/InboundOrderController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/InventoryController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/InventoryController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/MasterDataController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/MasterDataController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/OutboundOrderController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/OutboundOrderController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/ProductController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/ProductController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/StaffController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/StaffController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/SupplierController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/SupplierController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/Staff.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/Staff.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/StaffRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/StaffRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-database/setup.sql" beforeDir="false" afterPath="$PROJECT_DIR$/wms-database/setup.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/App.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Client.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Client.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/ImportReceipts.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/ImportReceipts.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Inventory.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Inventory.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/OutboundOrder.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/OutboundOrder.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Staff.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Staff.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Supplier.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Supplier.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -22,6 +53,14 @@
   </component>
   <component name="EmbeddingIndexingInfo">
     <option name="cachedIndexableFilesCount" value="56" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+        <option value="Interface" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -35,9 +74,12 @@
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/dada-JAVA-SpringBoot/WMS-PROJECT.git&quot;,
-    &quot;accountId&quot;: &quot;b7c106cb-2ea8-4378-9559-716a1cdfabe7&quot;
+    &quot;accountId&quot;: &quot;8bd39c0a-0524-4340-990e-74178ce93059&quot;
   }
 }</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/wms-backend/pom.xml" root0="SKIP_INSPECTION" />
+  </component>
   <component name="KubernetesApiPersistence">{}</component>
   <component name="KubernetesApiProvider">{
   &quot;isMigrated&quot;: true
@@ -65,39 +107,39 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
-    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
-    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
-    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;Spring Boot.WmsBackendApplication.executor&quot;: &quot;Run&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/Rei Kokutatsu/IdeaProjects/WMS-PROJECT/wms-database&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;SDKs&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;configurable.tailwindcss&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RequestMappingsPanelOrder0": "0",
+    "RequestMappingsPanelOrder1": "1",
+    "RequestMappingsPanelWidth0": "75",
+    "RequestMappingsPanelWidth1": "75",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "Spring Boot.WmsBackendApplication.executor": "Run",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "dart.analysis.tool.window.visible": "false",
+    "git-widget-placeholder": "admin-permission",
+    "ignore.virus.scanning.warn.message": "true",
+    "junie.onboarding.icon.badge.shown": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/Admin/Documents/nam2ky2/JAVA/WMS-PROJECT",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "SDKs",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "configurable.tailwindcss",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\Rei Kokutatsu\IdeaProjects\WMS-PROJECT\wms-database" />
@@ -125,8 +167,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.32098.37" />
-        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-IU-253.32098.37" />
+        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.31033.145" />
       </set>
     </attachedChunks>
   </component>
