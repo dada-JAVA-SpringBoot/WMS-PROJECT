@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useModalDismiss } from './useModalDismiss';
 
 const API = 'http://localhost:8080/api/suppliers';
 
 export default function SupplierModal({ isOpen, onClose, onSaved, editData }) {
     const isEdit = !!editData;
+    useModalDismiss(isOpen, onClose);
 
     const emptyForm = { supplierCode: '', name: '', phone: '', address: '' };
     const [form, setForm] = useState(emptyForm);

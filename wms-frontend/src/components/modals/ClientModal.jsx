@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useModalDismiss } from './useModalDismiss';
 
 const API = 'http://localhost:8080/api/customers';
 
 export default function ClientModal({ isOpen, onClose, onSaved, editData }) {
     const isEdit = !!editData;
+    useModalDismiss(isOpen, onClose);
 
     const emptyForm = { customerCode: '', name: '', phone: '', address: '' };
     const [form, setForm] = useState(emptyForm);

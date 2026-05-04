@@ -16,11 +16,17 @@ public class InboundOrder {
     @Column(name = "SupplierId")
     private Integer supplierId;
 
+    @Column(name = "ReferenceNumber", length = 100)
+    private String referenceNumber;
+
     @Column(name = "Status", length = 20)
     private String status;
 
     @Column(name = "ReceiptDate")
     private LocalDateTime receiptDate;
+
+    @Column(name = "TotalAmount")
+    private java.math.BigDecimal totalAmount;
 
     @Column(name = "CreatedBy")
     private Integer createdBy;
@@ -54,6 +60,14 @@ public class InboundOrder {
         this.supplierId = supplierId;
     }
 
+    public String getReferenceNumber() {
+        return referenceNumber;
+    }
+
+    public void setReferenceNumber(String referenceNumber) {
+        this.referenceNumber = referenceNumber;
+    }
+
     public String getStatus() {
         return status;
     }
@@ -68,6 +82,14 @@ public class InboundOrder {
 
     public void setReceiptDate(LocalDateTime receiptDate) {
         this.receiptDate = receiptDate;
+    }
+
+    public java.math.BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(java.math.BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
     }
 
     public Integer getCreatedBy() {

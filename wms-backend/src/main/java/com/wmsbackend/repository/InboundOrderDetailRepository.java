@@ -8,4 +8,5 @@ import java.util.List;
 @Repository
 public interface InboundOrderDetailRepository extends JpaRepository<InboundOrderDetail, Long> {
     List<InboundOrderDetail> findByInboundOrderId(Long inboundOrderId);
+    List<InboundOrderDetail> findByInboundOrderIdIn(List<Long> inboundOrderIds);
 }

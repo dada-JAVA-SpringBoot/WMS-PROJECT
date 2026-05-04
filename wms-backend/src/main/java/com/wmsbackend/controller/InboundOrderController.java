@@ -44,11 +44,14 @@ public class InboundOrderController {
     public String confirmInbound(@RequestBody InboundRequest request) {
         // Dung Getter de lay du lieu (Sua loi private access)
         InboundOrder order = request.getOrder();
-        List<InboundOrderDetail> details = request.getDetails();
+        List<InboundOrderDetail> details = request.getDetails() != null ? request.getDetails() : List.of();
 
         // luu thong tin
-        order.setCreatedAt(LocalDateTime.now());
-        if (order.getStatus() == null) order.setStatus("COMPLETED");
+        if (order.getReceiptDate() == null) {
+            order.setReceiptDate(LocalDateTime.now());
+        }
+        if (order.getStatus() == null || order.getStatus().isBlank()) order.setStatus("DRAFT");
+        order.setTotalAmount(calculateTotalAmount(details));
 
         // luu va lay
         InboundOrder savedOrder = orderRepo.save(order);
@@ -57,6 +60,10 @@ public class InboundOrderController {
         for (InboundOrderDetail item : details) {
             item.setInboundOrderId(savedOrder.getId());
             detailRepo.save(item);
+
+            if (!"COMPLETED".equalsIgnoreCase(savedOrder.getStatus())) {
+                continue;
+            }
 
             // cap nhat hang ton
             Inventory stock = inventoryRepo.findByProductIdAndLocationIdAndBatchId(
@@ -72,6 +79,8 @@ public class InboundOrderController {
                 BigDecimal currentQty = (stock.getQuantityOnHand() != null) ? stock.getQuantityOnHand() : BigDecimal.ZERO;
                 stock.setQuantityOnHand(currentQty.add(item.getQuantityReceived()));
             }
+
+            inventoryRepo.save(stock);
         }
 
         return "Nhập kho thành công: " + savedOrder.getReceiptCode();
@@ -83,11 +92,74 @@ public class InboundOrderController {
     public String cancelOrder(@PathVariable Long id) {
         InboundOrder order = orderRepo.findById(id).orElse(null);
         if (order != null) {
+            if ("COMPLETED".equalsIgnoreCase(order.getStatus())) {
+                applyInventoryDelta(order.getId(), -1);
+            }
             order.setStatus("CANCELED");
             orderRepo.save(order);
             return "Đã hủy phiếu " + order.getReceiptCode();
         }
         return "Không tìm thấy";
+    }
+
+    @PutMapping("/{id}/status")
+    @Transactional
+    public String updateStatus(@PathVariable Long id, @RequestBody StatusUpdateRequest request) {
+        InboundOrder order = orderRepo.findById(id).orElse(null);
+        if (order == null) {
+            return "Không tìm thấy";
+        }
+
+        String currentStatus = order.getStatus() != null ? order.getStatus() : "DRAFT";
+        String nextStatus = request.getStatus() != null ? request.getStatus().trim().toUpperCase() : "";
+        if (nextStatus.isBlank()) {
+            return "Trạng thái không hợp lệ";
+        }
+
+        if (!currentStatus.equalsIgnoreCase("COMPLETED") && nextStatus.equals("COMPLETED")) {
+            applyInventoryDelta(order.getId(), 1);
+        } else if (currentStatus.equalsIgnoreCase("COMPLETED") && !nextStatus.equals("COMPLETED")) {
+            applyInventoryDelta(order.getId(), -1);
+        }
+
+        order.setStatus(nextStatus);
+        orderRepo.save(order);
+        return "Đã cập nhật trạng thái phiếu " + order.getReceiptCode();
+    }
+
+    private void applyInventoryDelta(Long inboundOrderId, int direction) {
+        List<InboundOrderDetail> details = detailRepo.findByInboundOrderId(inboundOrderId);
+        for (InboundOrderDetail item : details) {
+            BigDecimal delta = item.getQuantityReceived() != null ? item.getQuantityReceived() : BigDecimal.ZERO;
+            Inventory stock = inventoryRepo.findByProductIdAndLocationIdAndBatchId(
+                    item.getProductId(), item.getLocationId(), item.getBatchId());
+
+            if (stock == null) {
+                if (direction < 0) {
+                    continue;
+                }
+                stock = new Inventory();
+                stock.setProductId(item.getProductId());
+                stock.setLocationId(item.getLocationId());
+                stock.setBatchId(item.getBatchId());
+                stock.setQuantityOnHand(delta);
+            } else {
+                BigDecimal currentQty = stock.getQuantityOnHand() != null ? stock.getQuantityOnHand() : BigDecimal.ZERO;
+                BigDecimal nextQty = currentQty.add(delta.multiply(BigDecimal.valueOf(direction)));
+                stock.setQuantityOnHand(nextQty.max(BigDecimal.ZERO));
+            }
+            inventoryRepo.save(stock);
+        }
+    }
+
+    private BigDecimal calculateTotalAmount(List<InboundOrderDetail> details) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (InboundOrderDetail item : details) {
+            BigDecimal quantity = item.getQuantityReceived() != null ? item.getQuantityReceived() : BigDecimal.ZERO;
+            BigDecimal unitPrice = item.getUnitPrice() != null ? item.getUnitPrice() : BigDecimal.ZERO;
+            total = total.add(quantity.multiply(unitPrice));
+        }
+        return total;
     }
 
     // xuat excel
@@ -115,5 +187,17 @@ class InboundRequest {
     }
     public void setDetails(List<InboundOrderDetail> details) {
         this.details = details;
+    }
+}
+
+class StatusUpdateRequest {
+    private String status;
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

@@ -3,6 +3,8 @@ import StaffModal from '../components/modals/StaffModal';
 import addIcon    from '../components/common/icons/add.png';
 import fixIcon    from '../components/common/icons/fix.png';
 import deleteIcon from '../components/common/icons/delete.png';
+import inboundIcon from '../components/common/icons/inbound.png';
+import outboundIcon from '../components/common/icons/outbound.png';
 import excelIcon  from '../components/common/icons/excel.png';
 import excel1Icon from '../components/common/icons/excel1.png';
 
@@ -55,7 +57,7 @@ function StatusDot({ status }) {
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : '—';
 
 // ── Main component ───────────────────────────────────────────────────────────
-export default function Staff() {
+export default function Staff({ onCreateInbound, onCreateOutbound }) {
     const [data, setData]           = useState([]);
     const [loading, setLoading]     = useState(true);
     const [selected, setSelected]   = useState(null);
@@ -123,10 +125,32 @@ export default function Staff() {
         } catch { alert('Xóa thất bại!'); }
     };
 
+    const handleCreateInbound = () => {
+        if (!selected) return alert('Vui lòng chọn một nhân viên để lập phiếu nhập!');
+        onCreateInbound?.({
+            kind: 'inbound',
+            source: 'staff',
+            staff: selected,
+            products: []
+        });
+    };
+
+    const handleCreateOutbound = () => {
+        if (!selected) return alert('Vui lòng chọn một nhân viên để lập phiếu xuất!');
+        onCreateOutbound?.({
+            kind: 'outbound',
+            source: 'staff',
+            staff: selected,
+            products: []
+        });
+    };
+
     const toolbarActions = [
         { label: 'Thêm',       iconSrc: addIcon,    onClick: handleAdd },
         { label: 'Chỉnh sửa',  iconSrc: fixIcon,    onClick: handleEdit },
         { label: 'Xóa',        iconSrc: deleteIcon, onClick: handleDelete },
+        { label: 'Phiếu nhập', iconSrc: inboundIcon,  onClick: handleCreateInbound },
+        { label: 'Phiếu xuất', iconSrc: outboundIcon, onClick: handleCreateOutbound },
         { label: 'Nhập Excel', iconSrc: excelIcon,  onClick: () => {} },
         { label: 'Xuất Excel', iconSrc: excel1Icon, onClick: () => {} },
     ];

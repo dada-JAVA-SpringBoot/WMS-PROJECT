@@ -5,15 +5,40 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7661f23e-b336-45c8-a5a3-5af4fc5b2f4a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wms-database/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/wms-database/.env.example" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wms-frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/WmsBackendApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/WmsBackendApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/InboundOrderController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/InboundOrderController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/InventoryController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/InventoryController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/MasterDataController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/MasterDataController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/ProductController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/ProductController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/dto/InventoryDetailDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/dto/InventoryDetailDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/dto/ProductDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/dto/ProductDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/InboundOrder.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/InboundOrder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/InboundOrderDetail.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/InboundOrderDetail.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/Location.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/Location.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/Product.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/Product.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/InboundOrderDetailRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/InboundOrderDetailRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/InboundOrderRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/InboundOrderRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/InventoryRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/InventoryRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/ProductRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/ProductRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-database/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/wms-database/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-database/setup.sql" beforeDir="false" afterPath="$PROJECT_DIR$/wms-database/setup.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/App.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/components/modals/ClientModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/components/modals/ClientModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/components/modals/ProductDetailModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/components/modals/ProductDetailModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/components/modals/ProductModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/components/modals/ProductModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/components/modals/StaffModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/components/modals/StaffModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/components/modals/SupplierModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/components/modals/SupplierModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/index.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Client.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Client.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Home.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Home.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/ImportReceipts.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/ImportReceipts.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Inventory.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Inventory.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/OutboundOrder.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/OutboundOrder.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Staff.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Staff.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Supplier.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Supplier.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/WarehouseArea.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/WarehouseArea.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,7 +46,8 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="56" />
+    <option name="cachedIndexableFilesCount" value="71" />
+    <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -68,6 +94,8 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Notification.DisplayName-DoNotAsk-DatabaseConfigFileWatcher.found&quot;: &quot;New/updated database configurations found&quot;,
+    &quot;Notification.DoNotAsk-DatabaseConfigFileWatcher.found&quot;: &quot;true&quot;,
     &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
     &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
     &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
@@ -84,16 +112,16 @@
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/Rei Kokutatsu/IdeaProjects/WMS-PROJECT/wms-database&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Rei Kokutatsu/IdeaProjects/WMS-PROJECT&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;SDKs&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;configurable.tailwindcss&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;ml.llm.LLMThirdPartyAiProvidersConfigurable&quot;,
     &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
@@ -142,6 +170,25 @@
       <workItem from="1777349070165" duration="1112000" />
       <workItem from="1777350267184" duration="32000" />
       <workItem from="1777350324223" duration="244000" />
+      <workItem from="1777350586851" duration="161000" />
+      <workItem from="1777359756780" duration="1506000" />
+      <workItem from="1777514291956" duration="11017000" />
+      <workItem from="1777543442322" duration="8169000" />
+      <workItem from="1777641958450" duration="4000" />
+      <workItem from="1777699783444" duration="2195000" />
+      <workItem from="1777702013287" duration="10084000" />
+      <workItem from="1777714900586" duration="6943000" />
+      <workItem from="1777723324552" duration="2102000" />
+      <workItem from="1777725460854" duration="132000" />
+      <workItem from="1777725636475" duration="768000" />
+      <workItem from="1777726439989" duration="6653000" />
+      <workItem from="1777775734856" duration="88000" />
+      <workItem from="1777778103073" duration="1024000" />
+      <workItem from="1777779181509" duration="769000" />
+      <workItem from="1777779980544" duration="1444000" />
+      <workItem from="1777853985867" duration="12082000" />
+      <workItem from="1777896822497" duration="2857000" />
+      <workItem from="1777902508341" duration="1027000" />
     </task>
     <servers />
   </component>

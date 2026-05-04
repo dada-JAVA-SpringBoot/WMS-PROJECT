@@ -5,11 +5,6 @@ export default function Home() {
         <div className="min-h-full flex flex-col bg-[#f4f9f9]">
             {/* Phần Header (Logo & Tiêu đề) */}
             <div className="flex flex-col items-center justify-center pt-12 pb-8 px-4 bg-white">
-                {/* Chỗ để bạn chèn Logo Lập trình Java */}
-                <div className="w-48 h-16 border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 mb-6 rounded">
-                    [Logo Image]
-                </div>
-
                 <h1 className="text-2xl font-extrabold text-[#1192a8] uppercase mb-4 text-center">
                     Hệ thống quản lý kho điện thoại theo mã imei
                 </h1>

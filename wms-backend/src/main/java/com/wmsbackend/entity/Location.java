@@ -27,6 +27,15 @@ public class Location {
     @Column(name = "BinCode", unique = true, nullable = false, length = 50)
     private String binCode;
 
+    @Column(name = "Capacity")
+    private Integer capacity;
+
+    @Column(name = "StorageType", length = 20)
+    private String storageType;
+
+    @Column(name = "ContainerType", length = 20)
+    private String containerType;
+
     // Getter Setter
 
     public Integer getId() {
@@ -84,4 +93,24 @@ public class Location {
     public void setBinCode(String binCode) {
         this.binCode = binCode;
     }
+
+    public Integer getCapacity() {
+        return capacity;
+    }
+
+    public void setCapacity(Integer capacity) {
+        this.capacity = capacity;
+    }
+
+    public String getStorageType() {
+        return storageType;
+    }
+
+    public void setStorageType(String storageType) {
+        this.storageType = storageType;
+    }
+
+    public String getContainerType() { return containerType; }
+
+    public void setContainerType(String containerType) { this.containerType = containerType; }
 }

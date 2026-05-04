@@ -3,6 +3,8 @@ package com.wmsbackend.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "Products")
@@ -12,25 +14,25 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "Sku", unique = true, nullable = false)
+    @Column(name = "Sku", length = 50, unique = true, nullable = false)
     private String sku;
 
-    @Column(name = "Barcode")
+    @Column(name = "Barcode", length = 100)
     private String barcode;
 
-    @Column(name = "Name", nullable = false)
+    @Column(name = "Name", length = 255, nullable = false)
     private String name;
 
-    @Column(name = "BaseUnit")
+    @Column(name = "BaseUnit", length = 50)
     private String baseUnit;
 
     @Column(name = "CategoryId")
     private Integer categoryId;
 
-    @Column(name = "ImageUrl")
+    @Column(name = "ImageUrl", columnDefinition = "NVARCHAR(MAX)")
     private String imageUrl;
 
-    @Column(name = "Status")
+    @Column(name = "Status", length = 20)
     private String status = "ACTIVE";
 
     // SỬ DỤNG @Formula ĐỂ TỰ ĐỘNG GỘP NHÀ CUNG CẤP (KHÔNG CẦN CỘT VẬT LÝ)
@@ -50,7 +52,7 @@ public class Product {
     @Column(name = "Height")
     private BigDecimal height;
 
-    @Column(name = "StorageTemp")
+    @Column(name = "StorageTemp", length = 50)
     private String storageTemp;
 
     @Column(name = "SafetyStock")
@@ -61,6 +63,11 @@ public class Product {
 
     @Column(name = "CreatedAt", insertable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    // THÊM DANH SÁCH QUY ĐỔI ĐƠN VỊ (One-to-Many)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JoinColumn(name = "ProductId")
+    private List<ProductUnitConversion> conversions = new ArrayList<>();
 
     // Getter Setter
 
@@ -132,10 +139,6 @@ public class Product {
         return supplierCodes;
     }
 
-    public void setSupplierCodes(String supplierCodes) {
-        this.supplierCodes = supplierCodes;
-    }
-
     public BigDecimal getWeight() {
         return weight;
     }
@@ -198,5 +201,13 @@ public class Product {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public List<ProductUnitConversion> getConversions() {
+        return conversions;
+    }
+
+    public void setConversions(List<ProductUnitConversion> conversions) {
+        this.conversions = conversions;
     }
 }

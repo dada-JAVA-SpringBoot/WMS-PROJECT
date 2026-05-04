@@ -15,6 +15,17 @@ import ExportReceipts from "./pages/OutboundOrder.jsx";
 function App() {
     // 1. Chỉ khai báo State một lần
     const [activeTab, setActiveTab] = useState('home');
+    const [workflow, setWorkflow] = useState(null);
+
+    const openWorkflow = (nextWorkflow) => {
+        if (!nextWorkflow?.kind) return;
+        setWorkflow(nextWorkflow);
+        setActiveTab(nextWorkflow.kind === 'inbound' ? 'inbound' : 'outbound');
+    };
+
+    const clearWorkflow = () => {
+        setWorkflow(null);
+    };
 
     // 2. Hàm hiển thị nội dung (Switch-case gọn gàng)
     const renderContent = () => {
@@ -22,21 +33,43 @@ function App() {
             case 'home':
                 return <Home />;
             case 'products':
-                return <Inventory />;
+                return (
+                    <Inventory
+                        onCreateInbound={(workflowData) => openWorkflow(workflowData)}
+                        onCreateOutbound={(workflowData) => openWorkflow(workflowData)}
+                    />
+                );
             case 'attribute':
                 return <AttributesPage />;
             case 'warehouse-area':
                 return <WarehouseAreaPage />;
             case 'inbound':
-                return <ImportReceiptsPage />;
+                return (
+                    <ImportReceiptsPage
+                        workflow={workflow}
+                        clearWorkflow={clearWorkflow}
+                        openWorkflow={openWorkflow}
+                    />
+                );
             case 'outbound':
-                return <ExportReceipts />;
+                return (
+                    <ExportReceipts
+                        workflow={workflow}
+                        clearWorkflow={clearWorkflow}
+                        openWorkflow={openWorkflow}
+                    />
+                );
             case 'client':
-                return <Client />;
+                return <Client onCreateOutbound={(workflowData) => openWorkflow(workflowData)} />;
             case 'supplier':
-                return <Supplier />;
+                return <Supplier onCreateInbound={(workflowData) => openWorkflow(workflowData)} />;
             case 'staff':
-                return <Staff />;
+                return (
+                    <Staff
+                        onCreateInbound={(workflowData) => openWorkflow(workflowData)}
+                        onCreateOutbound={(workflowData) => openWorkflow(workflowData)}
+                    />
+                );
             case 'account':
                 return <Account />;
             case 'statistical':

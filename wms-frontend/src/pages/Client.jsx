@@ -4,12 +4,13 @@ import ClientModal from '../components/modals/ClientModal';
 import addIcon from '../components/common/icons/add.png';
 import fixIcon from '../components/common/icons/fix.png';
 import deleteIcon from '../components/common/icons/delete.png';
+import outboundIcon from '../components/common/icons/outbound.png';
 import excelIcon from '../components/common/icons/excel.png';
 import excel1Icon from '../components/common/icons/excel1.png';
 
 const API = 'http://localhost:8080/api/customers';
 
-export default function Client() {
+export default function Client({ onCreateOutbound }) {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState(null);   // row đang chọn
@@ -74,11 +75,22 @@ export default function Client() {
         }
     };
 
+    const handleCreateOutbound = () => {
+        if (!selected) return alert('Vui lòng chọn một khách hàng để lập phiếu xuất!');
+        onCreateOutbound?.({
+            kind: 'outbound',
+            source: 'customer',
+            customer: selected,
+            products: []
+        });
+    };
+
     // ── Toolbar actions ─────────────────────────────────────
     const toolbarActions = [
         { label: 'Thêm',       iconSrc: addIcon,    onClick: handleAdd },
         { label: 'Chỉnh sửa',  iconSrc: fixIcon,    onClick: handleEdit },
         { label: 'Xóa',        iconSrc: deleteIcon, onClick: handleDelete },
+        { label: 'Phiếu xuất', iconSrc: outboundIcon, onClick: handleCreateOutbound },
         { label: 'Nhập Excel', iconSrc: excelIcon,  onClick: () => {} },
         { label: 'Xuất Excel', iconSrc: excel1Icon, onClick: () => {} },
     ];

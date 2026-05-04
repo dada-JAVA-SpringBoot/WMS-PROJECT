@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useModalDismiss } from './useModalDismiss';
 
 const API = 'http://localhost:8080/api/staff';
 
@@ -31,6 +32,7 @@ const emptyForm = {
 
 export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
     const isEdit = !!editData;
+    useModalDismiss(isOpen, onClose);
     const [form, setForm] = useState(emptyForm);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
