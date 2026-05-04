@@ -1,6 +1,12 @@
+// ================================================================
+// 4. Inventory.jsx — thay fetch → axiosClient
+// ================================================================
 import React, { useState, useEffect, useMemo } from 'react';
 import Barcode from 'react-barcode';
 import * as XLSX from 'xlsx';
+import axiosClient from '../api/axiosClient';
+
+// Modals
 import ProductModal from '../components/modals/ProductModal';
 import ProductDetailModal from '../components/modals/ProductDetailModal';
 import BulkEditModal from '../components/modals/BulkEditModal';
@@ -18,6 +24,7 @@ import infoIcon from '../components/common/icons/info.png';
 import excelIcon from '../components/common/icons/excel.png';
 import inboundIcon from '../components/common/icons/inbound.png';
 import outboundIcon from '../components/common/icons/outbound.png';
+import scanIcon from '../components/common/icons/scan.png';
 
 export default function Inventory({ onCreateInbound, onCreateOutbound }) {
     // 1. Quản lý State Modal
@@ -118,19 +125,14 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
     const [searchKeyword, setSearchKeyword] = useState('');
     const [searchType, setSearchType] = useState('Tất cả');
 
-    // Hàm gọi API lấy danh sách sản phẩm
+    // --- CÁC HÀM GỌI API ĐƯỢC CẬP NHẬT SANG AXIOSCLIENT ---
     const fetchProducts = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch("http://localhost:8080/api/products/details");
-            if (response.ok) {
-                const data = await response.json();
-                setProducts(data); // Đưa thẳng data thật vào state
-            } else {
-                throw new Error("Lỗi Server");
-            }
+            const res = await axiosClient.get('/api/products/details');
+            setProducts(res.data);
         } catch (error) {
-            console.warn("Không kết nối được Backend...", error);
+            console.warn('Không kết nối được Backend lấy sản phẩm...', error);
         } finally {
             setIsLoading(false);
         }
@@ -138,10 +140,8 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
 
     const fetchCategories = async () => {
         try {
-            const response = await fetch("http://localhost:8080/api/categories");
-            if (response.ok) {
-                setCategories(await response.json());
-            }
+            const res = await axiosClient.get('/api/categories');
+            setCategories(res.data);
         } catch (error) {
             console.warn("Không tải được danh mục...", error);
         }
@@ -149,10 +149,8 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
 
     const fetchSuppliers = async () => {
         try {
-            const response = await fetch("http://localhost:8080/api/suppliers");
-            if (response.ok) {
-                setSuppliers(await response.json());
-            }
+            const res = await axiosClient.get('/api/suppliers');
+            setSuppliers(res.data);
         } catch (error) {
             console.warn("Không tải được nhà cung cấp...", error);
         }
@@ -160,10 +158,8 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
 
     const fetchUnits = async () => {
         try {
-            const response = await fetch("http://localhost:8080/api/units");
-            if (response.ok) {
-                setUnits(await response.json());
-            }
+            const res = await axiosClient.get('/api/units');
+            setUnits(res.data);
         } catch (error) {
             console.warn("Không tải được đơn vị tính...", error);
         }
@@ -226,6 +222,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
             const safetyStock = item.safetyStock !== undefined && item.safetyStock !== null
                 ? Number(item.safetyStock)
                 : null;
+                
             const matchesStatus =
                 inventoryFilters.status === 'ALL' ||
                 item.status === inventoryFilters.status;
@@ -267,6 +264,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
             ).toLowerCase();
         };
         const compareByCategory = (a, b) => getCategorySortKey(a).localeCompare(getCategorySortKey(b), 'vi', { sensitivity: 'base', numeric: true });
+        
         const getAvailableStockSortKey = (item) => {
             const totalStock = Number(item.totalStock || 0);
             const allocatedStock = Number(item.allocatedStock ?? item.quantityAllocated ?? item.allocated ?? 0);
@@ -281,6 +279,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         const getUnitSortKey = (item) => normalizeUnitName(item.baseUnit);
         const getCreatedAtSortKey = (item) => parseDateValue(item.createdAt);
         const getNearestBatchExpirySortKey = (item) => parseDateValue(item.nearestBatchExpiryDate);
+        
         const sorters = {
             DEFAULT: (a, b) => compareByCategory(a, b) || compareNullableStrings(a.name, b.name, 'asc'),
             NAME_ASC: (a, b) => compareByCategory(a, b) || compareNullableStrings(a.name, b.name, 'asc'),
@@ -559,6 +558,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         setIsBulkEditModalOpen(true);
     };
 
+    // --- CẬP NHẬT GỌI AXIOS KHI XÓA SẢN PHẨM ---
     const handleDeleteProduct = async (productsToDelete = selectedProducts) => {
         if (!productsToDelete.length) {
             showMessage("Thiếu lựa chọn", "Vui lòng chọn ít nhất một sản phẩm trong bảng trước.");
@@ -572,13 +572,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         showConfirm("Xác nhận xóa", label, async () => {
             try {
                 for (const product of productsToDelete) {
-                    const response = await fetch(`http://localhost:8080/api/products/${product.id}`, {
-                        method: 'DELETE'
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`Delete failed for ${product.id}`);
-                    }
+                    await axiosClient.delete(`/api/products/${product.id}`);
                 }
 
                 setSelectedProductIds([]);
@@ -588,7 +582,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                 setSystemDialog(null);
             } catch (error) {
                 console.warn("Không thể xóa sản phẩm", error);
-                showMessage("Không thể xóa", "Không thể xóa sản phẩm này.");
+                showMessage("Không thể xóa", "Không thể xóa sản phẩm này do có thể đang liên kết với phiếu xuất/nhập.");
             }
         });
     };
@@ -767,7 +761,6 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
 
     return (
         <div className="p-6 h-full flex flex-col bg-gray-50">
-            {/* Thanh công cụ (Action Buttons Bar) */}
             <div className="flex items-center justify-between bg-white p-4 mb-4 rounded-xl shadow-sm border border-gray-100">
                 <div className="flex gap-6">
                     <div onClick={() => setIsAddModalOpen(true)}>
@@ -798,6 +791,10 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                     <div onClick={() => handleOpenDetail(selectedProducts)}>
                         <ActionButton iconSrc={infoIcon} label="CHI TIẾT" />
                     </div>
+                    {/* Add Scan icon from main branch for future integration */}
+                    <div>
+                         <ActionButton iconSrc={scanIcon} label="QUÉT MÃ" />
+                    </div>
                     <div onClick={() => handleCreateReceiptFlow('inbound')}>
                         <ActionButton iconSrc={inboundIcon} label="NHẬP KHO" />
                     </div>
@@ -811,7 +808,6 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                 <div className="text-xs text-gray-500 font-medium">
                     {selectedProducts.length > 0 ? `Đã chọn ${selectedProducts.length} sản phẩm` : 'Chưa chọn sản phẩm nào'}
                 </div>
-
                 <div className="flex items-center gap-3">
                     <button
                         type="button"
@@ -847,8 +843,6 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                     </button>
                 </div>
             </div>
-
-            {/* Khu vực Bảng dữ liệu (Table Area) */}
             <div className="bg-white flex-1 overflow-auto rounded-xl shadow-sm border border-gray-200">
                 {isLoading ? (
                     <div className="flex justify-center items-center h-full text-gray-500 font-medium">
@@ -865,10 +859,9 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                             <th className="p-4 font-bold text-right">{renderSortableHeader('Tồn an toàn', 'SAFETY', 'text-right')}</th>
                             <th className="p-4 font-bold text-left">{renderSortableHeader('Đơn vị', 'UNIT', 'text-left')}</th>
                             <th className="p-4 font-bold">Mã vạch</th>
-                            <th className="p-4 font-bold text-center">Trạng thái</th> {/* <-- CỘT MỚI THÊM --> */}
+                            <th className="p-4 font-bold text-center">Trạng thái</th>
                         </tr>
                         </thead>
-
                         <tbody className="divide-y divide-gray-200">
                         {filteredProducts.length > 0 ? (
                             filteredProducts.map((item, index) => {
@@ -984,7 +977,6 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                                             <span>N/A</span>
                                         )}
                                     </td>
-                                    {/* <-- CỘT DỮ LIỆU MỚI THÊM --> */}
                                     <td className="p-4 text-center">
                                         {item.status === 'ACTIVE' ? (
                                             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-1 rounded-full">
@@ -1221,38 +1213,38 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                 onClose={() => setSelectedProduct(null)}
             />
 
-                <RowContextMenu
-                    isOpen={!!contextMenu}
-                    x={contextMenu?.x || 0}
-                    y={contextMenu?.y || 0}
-                    products={contextMenu?.products || []}
-                    onClose={closeContextMenu}
-                    onDetail={() => {
-                        closeContextMenu();
-                        handleOpenDetail(contextMenu?.products || []);
-                    }}
-                    onEdit={() => {
-                        closeContextMenu();
-                        handleOpenEdit(contextMenu?.products || []);
-                    }}
-                    onDelete={() => {
-                        closeContextMenu();
-                        handleDeleteProduct(contextMenu?.products || []);
-                    }}
-                    onInbound={() => {
-                        closeContextMenu();
-                        handleCreateReceiptFlow('inbound');
-                    }}
-                    onOutbound={() => {
-                        closeContextMenu();
-                        handleCreateReceiptFlow('outbound');
-                    }}
-                    onCopy={() => {
-                        openCopyModal(contextMenu?.products || []);
-                    }}
-                    onRefresh={() => {
-                        closeContextMenu();
-                        fetchProducts();
+            <RowContextMenu
+                isOpen={!!contextMenu}
+                x={contextMenu?.x || 0}
+                y={contextMenu?.y || 0}
+                products={contextMenu?.products || []}
+                onClose={closeContextMenu}
+                onDetail={() => {
+                    closeContextMenu();
+                    handleOpenDetail(contextMenu?.products || []);
+                }}
+                onEdit={() => {
+                    closeContextMenu();
+                    handleOpenEdit(contextMenu?.products || []);
+                }}
+                onDelete={() => {
+                    closeContextMenu();
+                    handleDeleteProduct(contextMenu?.products || []);
+                }}
+                onInbound={() => {
+                    closeContextMenu();
+                    handleCreateReceiptFlow('inbound');
+                }}
+                onOutbound={() => {
+                    closeContextMenu();
+                    handleCreateReceiptFlow('outbound');
+                }}
+                onCopy={() => {
+                    openCopyModal(contextMenu?.products || []);
+                }}
+                onRefresh={() => {
+                    closeContextMenu();
+                    fetchProducts();
                 }}
                 onSelectAll={() => {
                     closeContextMenu();
@@ -1300,18 +1292,11 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
     );
 }
 
-// Nút Action Button dùng chung
 function ActionButton({ iconSrc, label }) {
     return (
         <button className="flex flex-col items-center gap-1 group bg-transparent border-none cursor-pointer">
-            <img
-                src={iconSrc}
-                alt={label}
-                className="w-9 h-9 group-hover:scale-110 transition duration-200 drop-shadow-sm"
-            />
-            <span className="text-[10px] font-bold text-[#00529c] uppercase tracking-wide group-hover:text-blue-600 transition">
-                {label}
-            </span>
+            <img src={iconSrc} alt={label} className="w-9 h-9 group-hover:scale-110 transition duration-200 drop-shadow-sm" />
+            <span className="text-[10px] font-bold text-[#00529c] uppercase tracking-wide group-hover:text-blue-600 transition">{label}</span>
         </button>
     );
 }

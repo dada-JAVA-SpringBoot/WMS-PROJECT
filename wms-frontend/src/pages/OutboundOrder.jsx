@@ -1,12 +1,17 @@
+// ================================================================
+// 6. OutboundOrder.jsx — thay fetch → axiosClient
+// ================================================================
 import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { ActionButton } from '../components/common/SharedUI';
 import VoucherContextMenu from '../components/modals/VoucherContextMenu';
+import axiosClient from '../api/axiosClient';
 import addIcon from '../components/common/icons/add.png';
 import infoIcon from '../components/common/icons/info.png';
 import deleteIcon from '../components/common/icons/delete.png';
-import excelIcon from '../components/common/icons/excel.png';
+import excelIcon  from '../components/common/icons/excel.png';
 import excel1Icon from '../components/common/icons/excel1.png';
+import fixIcon    from '../components/common/icons/fix.png';
 
 const createEmptyDetail = () => ({ id: Date.now(), productId: '', productName: '', unit: '-', quantity: 1, price: 0, total: 0 });
 
@@ -19,10 +24,13 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
     const [isLoading, setIsLoading] = useState(false);
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [contextMenu, setContextMenu] = useState(null);
+    
+    // States cho bộ lọc
     const [filterStaff, setFilterStaff] = useState("Tất cả nhân viên");
     const [filterDate, setFilterDate] = useState("");
     const [filterCustomer, setFilterCustomer] = useState("Tất cả khách hàng");
 
+    // Dữ liệu danh mục từ backend
     const [productsFromSQL, setProductsFromSQL] = useState([]);
     const [customers, setCustomers] = useState([]);
     const [staffs, setStaffs] = useState([]);
@@ -30,35 +38,33 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
     const fetchFromSQL = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch("http://localhost:8080/api/outbound-orders");
-            if (response.ok) {
-                const data = await response.json();
-                const mappedData = data.map(item => {
-                    const customerName = item.customerId
-                        ? customers.find(customer => customer.id === item.customerId)?.name || "Chưa rõ khách hàng"
-                        : "Chưa rõ khách hàng";
-                    const staffName = item.createdBy
-                        ? staffs.find(staff => staff.id === item.createdBy)?.fullName || "Nhân viên hệ thống"
-                        : "Nhân viên hệ thống";
+            const response = await axiosClient.get("/api/outbound-orders");
+            const data = response.data;
+            const mappedData = data.map(item => {
+                const customerName = item.customerId
+                    ? customers.find(customer => customer.id === item.customerId)?.name || "Chưa rõ khách hàng"
+                    : "Chưa rõ khách hàng";
+                const staffName = item.createdBy
+                    ? staffs.find(staff => staff.id === item.createdBy)?.fullName || "Nhân viên hệ thống"
+                    : "Nhân viên hệ thống";
 
-                    return {
-                        ...item,
-                        id: item.id,
-                        code: item.issueCode,
-                        time: item.issueDate,
-                        client: customerName, // Dùng tên công ty thật đã dịch ở trên
-                        staff: staffName,
-                        total: item.totalAmount || 0,
-                        status: item.status === 'ALLOCATED' ? 'completed' : 'cancelled',
-                        items: item.items || [],
-                        address: item.address || "",
-                        note: item.note || ""
-                    };
-                });
-                setExportData(mappedData);
-            }
+                return {
+                    ...item,
+                    id: item.id,
+                    code: item.issueCode,
+                    time: item.issueDate,
+                    client: customerName,
+                    staff: staffName,
+                    total: item.totalAmount || 0,
+                    status: item.status === 'ALLOCATED' ? 'completed' : 'cancelled',
+                    items: item.items || [],
+                    address: item.address || "",
+                    note: item.note || ""
+                };
+            });
+            setExportData(mappedData);
         } catch (error) {
-            console.warn("Lỗi kết nối API outbound-orders");
+            console.warn("Lỗi kết nối API outbound-orders", error);
         } finally {
             setIsLoading(false);
         }
@@ -66,23 +72,17 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
 
     const fetchProducts = async () => {
         try {
-            const response = await fetch("http://localhost:8080/api/products");
-            if (response.ok) {
-                const data = await response.json();
-                setProductsFromSQL(data);
-            }
-        } catch (error) {
-            console.warn("Lỗi kết nối API products");
+            const res = await axiosClient.get('/api/products');
+            setProductsFromSQL(res.data);
+        } catch { 
+            console.warn('Lỗi kết nối API products'); 
         }
     };
 
     const fetchCustomers = async () => {
         try {
-            const response = await fetch("http://localhost:8080/api/customers");
-            if (response.ok) {
-                const data = await response.json();
-                setCustomers(data);
-            }
+            const res = await axiosClient.get("/api/customers");
+            setCustomers(res.data);
         } catch (error) {
             console.warn("Lỗi kết nối API customers");
         }
@@ -90,11 +90,8 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
 
     const fetchStaffs = async () => {
         try {
-            const response = await fetch("http://localhost:8080/api/staff");
-            if (response.ok) {
-                const data = await response.json();
-                setStaffs(data);
-            }
+            const res = await axiosClient.get("/api/staff");
+            setStaffs(res.data);
         } catch (error) {
             console.warn("Lỗi kết nối API staff");
         }
@@ -109,9 +106,9 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
         fetchStaffs();
     }, []);
 
+    // Cập nhật lại tên KH và Staff khi danh mục tải xong
     useEffect(() => {
         if (!customers.length || !exportData.length) return;
-
         setExportData(prev => prev.map(item => ({
             ...item,
             client: item.customerId
@@ -122,7 +119,6 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
 
     useEffect(() => {
         if (!staffs.length || !exportData.length) return;
-
         setExportData(prev => prev.map(item => ({
             ...item,
             staff: item.createdBy
@@ -131,6 +127,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
         })));
     }, [staffs]);
 
+    // Lắng nghe workflow từ các màn hình khác chuyển sang
     useEffect(() => {
         if (workflow?.kind !== 'outbound') {
             return;
@@ -195,7 +192,6 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
     const handleImportDetailsExcel = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (event) => {
             const data = new Uint8Array(event.target.result);
@@ -215,9 +211,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                     productId: product ? product.id : `NEW_${index}_${Date.now()}`,
                     productName: excelName,
                     unit: row["ĐVT"] || (product ? product.baseUnit : '-'),
-                    quantity: quantity,
-                    price: price,
-                    total: quantity * price
+                    quantity: quantity, price: price, total: quantity * price
                 };
             });
 
@@ -229,9 +223,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
 
     const handleCancelVoucher = () => {
         if (!selectedRowId) return alert("Vui lòng click chọn một phiếu trong bảng trước khi hủy!");
-
-        const isConfirm = window.confirm("Bạn có chắc chắn muốn hủy phiếu này không?");
-        if (isConfirm) {
+        if (window.confirm("Bạn có chắc chắn muốn hủy phiếu này không?")) {
             setExportData(exportData.map(item =>
                 item.id === selectedRowId ? { ...item, status: 'cancelled' } : item
             ));
@@ -263,16 +255,10 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
     const handleProductSelect = (rowId, productId) => {
         const item = productsFromSQL.find(p => p.id == productId);
         if (item) {
-            setDetails(details.map(row =>
-                row.id === rowId ? {
-                    ...row,
-                    productId: item.id,
-                    productName: item.name,
-                    unit: item.baseUnit,
-                    price: item.price || 0,
-                    total: (item.price || 0) * row.quantity
-                } : row
-            ));
+            setDetails(details.map(row => row.id === rowId ? {
+                ...row, productId: item.id, productName: item.name, unit: item.baseUnit,
+                price: item.price || 0, total: (item.price || 0) * row.quantity
+            } : row));
         }
     };
 
@@ -287,9 +273,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
 
     const updateQuantity = (rowId, qty) => {
         const quantity = parseInt(qty) || 0;
-        setDetails(details.map(row =>
-            row.id === rowId ? { ...row, quantity: quantity, total: row.price * quantity } : row
-        ));
+        setDetails(details.map(row => row.id === rowId ? { ...row, quantity: quantity, total: row.price * quantity } : row));
     };
 
     const removeRow = (id) => setDetails(details.filter(row => row.id !== id));
@@ -297,12 +281,30 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
 
     const handleSave = async () => {
         if (!formData.customer) return alert("Vui lòng nhập tên khách hàng!");
-        const dateToSave = formData.voucherDate ? `${formData.voucherDate}T00:00:00` : null;
+        if (details.length === 0) return alert("Vui lòng thêm ít nhất 1 mặt hàng!");
 
+        const dateToSave = formData.voucherDate ? `${formData.voucherDate}T00:00:00` : null;
         const foundCustomer = customers.find(c => c.name === formData.customer);
         const customerIdToSend = formData.customerId || foundCustomer?.id || 1;
         const foundStaff = staffs.find(s => s.fullName === formData.salesperson);
         const staffIdToSend = formData.staffId || foundStaff?.id || 1;
+
+        // Cập nhật giao diện ngay lập tức
+        const newVoucherUI = {
+            id: Date.now(),
+            code: formData.voucherCode,
+            time: formData.voucherDate,
+            client: formData.customer,
+            staff: formData.salesperson,
+            total: grandTotal,
+            status: 'completed',
+            items: [...details],
+            address: formData.address,
+            note: formData.note
+        };
+
+        setExportData([newVoucherUI, ...exportData]);
+        setIsCreateOpen(false);
 
         const dataForJava = {
             issueCode: formData.voucherCode,
@@ -312,24 +314,17 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
             status: 'ALLOCATED',
             note: formData.note,
             totalAmount: grandTotal,
+            items: details.map(d => ({
+                productId: d.productId,
+                quantity: d.quantity,
+                price: d.price
+            }))
         };
 
         try {
-            const response = await fetch("http://localhost:8080/api/outbound-orders", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(dataForJava)
-            });
-
-            if (response.ok) {
-                alert("Lưu thành công!");
-                fetchFromSQL();
-                setIsCreateOpen(false);
-            } else {
-                alert("Lỗi khi lưu dữ liệu (Backend trả về lỗi).");
-            }
+            await axiosClient.post("/api/outbound-orders", dataForJava);
         } catch (error) {
-            alert("Lỗi kết nối Backend. Vui lòng kiểm tra Server Java.");
+            console.warn("Lỗi khi lưu phiếu xuất:", error);
         }
     };
 
@@ -380,32 +375,18 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
 
     const handleExportExcel = () => {
         if (exportData.length === 0) return alert("Không có dữ liệu để xuất!");
-
         const dataToExport = filteredData.map((item, index) => ({
-            "STT": index + 1,
-            "Số chứng từ": item.code,
-            "Ngày chứng từ": item.time,
-            "Khách hàng": item.client,
-            "Địa chỉ": item.address || "",
-            "Nhân viên xuất": item.staff,
-            "Tổng tiền": item.total,
-            "Trạng thái": item.status === 'cancelled' ? "Đã hủy" : "Hoàn thành",
-            "Ghi chú": item.note || ""
+            "STT": index + 1, "Số chứng từ": item.code, "Ngày chứng từ": item.time,
+            "Khách hàng": item.client, "Địa chỉ": item.address || "", "Nhân viên xuất": item.staff,
+            "Tổng tiền": item.total, "Trạng thái": item.status === 'cancelled' ? "Đã hủy" : "Hoàn thành", "Ghi chú": item.note || ""
         }));
 
         const ws = XLSX.utils.json_to_sheet(dataToExport);
-
-        const wscols = [
-            { wch: 5 }, { wch: 20 }, { wch: 15 }, { wch: 30 }, { wch: 30 },
-            { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 20 }
-        ];
+        const wscols = [ { wch: 5 }, { wch: 20 }, { wch: 15 }, { wch: 30 }, { wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 20 } ];
         ws['!cols'] = wscols;
-
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "DanhSachPhieuXuat");
-
-        const fileName = `PhieuXuatKho_${new Date().toISOString().slice(0,10)}.xlsx`;
-        XLSX.writeFile(wb, fileName);
+        XLSX.writeFile(wb, `PhieuXuatKho_${new Date().toISOString().slice(0,10)}.xlsx`);
     };
 
     const toolbarActions = [
@@ -417,14 +398,9 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
     ];
 
     const filteredData = exportData.filter(item => {
-        const matchCustomer = !filterCustomer || filterCustomer === "Tất cả khách hàng" ||
-            (item.client && item.client.toLowerCase().includes(filterCustomer.toLowerCase()));
-
-        const matchStaff = !filterStaff || filterStaff === "Tất cả nhân viên" ||
-            (item.staff && item.staff.toLowerCase().includes(filterStaff.toLowerCase()));
-
-        const matchDate = !filterDate || item.time === filterDate;
-
+        const matchCustomer = !filterCustomer || filterCustomer === "Tất cả khách hàng" || (item.client && item.client.toLowerCase().includes(filterCustomer.toLowerCase()));
+        const matchStaff = !filterStaff || filterStaff === "Tất cả nhân viên" || (item.staff && item.staff.toLowerCase().includes(filterStaff.toLowerCase()));
+        const matchDate = !filterDate || item.time === filterDate || (item.time && item.time.startsWith(filterDate));
         return matchCustomer && matchStaff && matchDate;
     });
 
@@ -473,23 +449,11 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
 
                         <div className="flex flex-col gap-2 text-left">
                             <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Ngày chứng từ</label>
-                            <input
-                                type="date"
-                                value={filterDate}
-                                onChange={(e) => setFilterDate(e.target.value)}
-                                className="border border-[#1192a8] rounded-2xl px-4 py-2 text-[11px] outline-none focus:ring-1 focus:ring-[#1192a8]"
-                            />
+                            <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="border border-[#1192a8] rounded-2xl px-4 py-2 text-[11px] outline-none focus:ring-1 focus:ring-[#1192a8]" />
                         </div>
                     </div>
 
-                    <button
-                        onClick={() => {
-                            setFilterCustomer("Tất cả khách hàng");
-                            setFilterStaff("Tất cả nhân viên");
-                            setFilterDate("");
-                        }}
-                        className="w-full mt-8 py-3 border border-dashed border-[#1192a8] text-[#1192a8] rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-cyan-50 transition-all shadow-sm"
-                    >
+                    <button onClick={() => { setFilterCustomer("Tất cả khách hàng"); setFilterStaff("Tất cả nhân viên"); setFilterDate(""); }} className="w-full mt-8 py-3 border border-dashed border-[#1192a8] text-[#1192a8] rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-cyan-50 transition-all shadow-sm">
                         Làm mới bộ lọc
                     </button>
                 </div>
@@ -509,11 +473,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                         </thead>
                         <tbody className="text-sm">
                         {isLoading ? (
-                            <tr>
-                                <td colSpan="7" className="py-20 text-center text-[#1192a8] font-bold animate-pulse">
-                                    ĐANG KẾT NỐI SERVER DỮ LIỆU...
-                                </td>
-                            </tr>
+                            <tr><td colSpan="7" className="py-20 text-center text-[#1192a8] font-bold animate-pulse">ĐANG KẾT NỐI SERVER DỮ LIỆU...</td></tr>
                         ) : filteredData.length > 0 ? filteredData.map((item, index) => (
                         <tr
                             key={item.id}
@@ -532,26 +492,16 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                             }`}
                         >
                                 <td className="px-6 py-5 text-center text-gray-400 font-bold">{index + 1}</td>
-                                <td className="px-4 py-5 font-bold text-[#1192a8] uppercase truncate tracking-wider">
-                                    {item.code}
-                                </td>
-                                <td className="px-4 py-5 text-gray-600 font-medium">
-                                    {item.time ? new Date(item.time).toLocaleDateString('vi-VN') : '---'}
-                                </td>
+                                <td className="px-4 py-5 font-bold text-[#1192a8] uppercase truncate tracking-wider">{item.code}</td>
+                                <td className="px-4 py-5 text-gray-600 font-medium">{item.time ? new Date(item.time).toLocaleDateString('vi-VN') : '---'}</td>
                                 <td className="px-6 py-5 font-bold text-gray-700">{item.client}</td>
                                 <td className="px-6 py-5 text-gray-600">{item.staff}</td>
-                                <td className="px-4 py-5 text-right font-black text-[#1192a8] text-base">
-                                    {item.total.toLocaleString()}đ
-                                </td>
+                                <td className="px-4 py-5 text-right font-black text-[#1192a8] text-base">{item.total.toLocaleString()}đ</td>
                                 <td className="px-6 py-5 text-center">
                                     {item.status === 'cancelled' ? (
-                                        <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-[10px] font-black uppercase shadow-sm whitespace-nowrap">
-                                            ● Đã hủy
-                                        </span>
+                                        <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-[10px] font-black uppercase shadow-sm whitespace-nowrap">● Đã hủy</span>
                                     ) : (
-                                        <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-[10px] font-black uppercase shadow-sm whitespace-nowrap">
-                                            ● Đã thêm
-                                        </span>
+                                        <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-[10px] font-black uppercase shadow-sm whitespace-nowrap">● Đã thêm</span>
                                     )}
                                 </td>
                             </tr>
@@ -570,22 +520,20 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                 </div>
             </div>
 
+            {/* Modal tạo phiếu xuất */}
             {isCreateOpen && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center backdrop-blur-sm p-4">
-                    <div className="bg-white rounded shadow-2xl w-full max-w-[1000px] flex flex-col max-h-[95vh]">
-                        <div className="px-5 py-3.5 flex justify-between items-center border-b border-gray-200">
-                            <div className="flex items-center gap-2">
-                                <img src={infoIcon} alt="logo" className="h-5 w-5 object-contain" />
-                                <h2 className="text-xl font-medium text-[#0e7c8a] uppercase"> Thêm Phiếu Xuất Kho</h2>
-                            </div>
-                            <button onClick={() => setIsCreateOpen(false)} className="text-gray-400 hover:text-red-500 text-2xl transition-colors">✕</button>
+                <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center backdrop-blur-sm p-2">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex flex-col max-h-[95vh] overflow-hidden">
+                        <div className="bg-[#1192a8] p-4 text-white flex justify-between items-center">
+                            <h2 className="font-bold uppercase tracking-widest text-sm">Lập phiếu xuất kho</h2>
+                            <button onClick={() => setIsCreateOpen(false)} className="text-xl hover:text-red-200">✕</button>
                         </div>
 
                         <div className="p-6 overflow-y-auto flex-1 space-y-6">
                             <div className="border border-[#1192a8] rounded-sm overflow-hidden">
                                 <div className="bg-[#1192a8] text-white px-3 py-1.5 text-xs font-bold uppercase flex items-center gap-2">
                                     <img src={addIcon} alt="add" className="h-3 w-3 brightness-0 invert" />
-                                    Thông Thông chung
+                                    Thông tin chung
                                 </div>
                                 <div className="p-5 grid grid-cols-2 gap-x-10 gap-y-4">
                                     <div className="space-y-4">
@@ -636,74 +584,52 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="border border-gray-200 rounded-sm overflow-hidden">
-                                <div className="bg-gray-100 px-4 py-2 border-b border-gray-200 flex justify-between items-center">
-                                    <div className="flex items-center gap-2">
-                                        <img src={excelIcon} alt="detail" className="h-4 w-4" />
-                                        <span className="text-sm font-bold text-gray-700 uppercase">Chi tiết hàng hóa</span>
-                                    </div>
+                            <div>
+                                <div className="flex justify-between items-center mb-2">
+                                    <h3 className="text-xs font-black text-gray-400 uppercase">Danh sách hàng hóa</h3>
                                     <div className="flex gap-2">
                                         <label className="bg-white border border-green-600 text-green-600 px-3 py-1.5 rounded-sm text-[10px] font-bold hover:bg-green-50 cursor-pointer flex items-center gap-1 uppercase">
-                                            <img src={excel1Icon} className="h-3 w-3" alt="" />
-                                            Nhập từ Excel
-                                            <input
-                                                type="file"
-                                                accept=".xlsx, .xls"
-                                                className="hidden"
-                                                onChange={handleImportDetailsExcel}
-                                            />
+                                            <img src={excel1Icon} className="h-3 w-3" alt="" /> Nhập từ Excel
+                                            <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleImportDetailsExcel} />
                                         </label>
-                                        <button onClick={addRow} className="bg-[#1192a8] text-white px-4 py-1.5 rounded-sm text-xs font-bold hover:bg-[#0e7a8c] uppercase transition-colors">+ Thêm mặt hàng</button>
+                                        <button onClick={addRow} className="bg-[#1192a8] text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-teal-700 transition">+ Thêm mặt hàng</button>
                                     </div>
                                 </div>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left text-xs border-collapse min-w-[600px]">
-                                        <thead className="bg-gray-50 font-bold text-gray-500 uppercase text-[9px] border-b">
+                                <table className="w-full text-left text-xs border-collapse">
+                                    <thead className="bg-gray-50 font-bold text-gray-500 uppercase text-[9px] border-b">
                                         <tr>
                                             <th className="px-4 py-2.5 border-r">Tên sản phẩm</th>
-                                            <th className="px-4 py-2.5 border-r w-20 text-center uppercase">ĐVT</th>
-                                            <th className="px-4 py-2.5 border-r w-24 text-center uppercase">Số lượng</th>
-                                            <th className="px-4 py-2.5 border-r w-32 text-right uppercase">Đơn giá</th>
-                                            <th className="px-4 py-2.5 w-32 text-right uppercase">Thành tiền</th>
+                                            <th className="px-4 py-2.5 border-r w-20 text-center">ĐVT</th>
+                                            <th className="px-4 py-2.5 border-r w-24 text-center">Số lượng</th>
+                                            <th className="px-4 py-2.5 border-r w-32 text-right">Đơn giá</th>
+                                            <th className="px-4 py-2.5 w-32 text-right">Thành tiền</th>
                                             <th className="w-10"></th>
                                         </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-200">
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
                                         {details.map(row => (
                                             <tr key={row.id}>
                                                 <td className="px-2 py-1 border-r text-left">
-                                                    <select
-                                                        value={row.productId}
-                                                        onChange={(e) => handleProductSelect(row.id, e.target.value)}
-                                                        className="w-full outline-none bg-transparent text-left"
-                                                    >
+                                                    <select value={row.productId} onChange={(e) => handleProductSelect(row.id, e.target.value)} className="w-full outline-none bg-transparent text-left">
                                                         <option value="">-- Chọn mặt hàng từ SQL --</option>
-                                                        {productsFromSQL.map(p => (
-                                                            <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
-                                                        ))}
+                                                        {productsFromSQL.map(p => <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}
                                                     </select>
                                                 </td>
-                                                <td className="px-2 py-1 border-r text-center text-gray-400 font-medium">{row.unit}</td>
-                                                <td className="px-2 py-1 border-r">
-                                                    <input type="number" value={row.quantity} onChange={(e) => updateQuantity(row.id, e.target.value)} className="w-full text-center outline-none focus:bg-cyan-50" />
-                                                </td>
+                                                <td className="px-2 py-1 border-r text-center text-gray-400">{row.unit}</td>
+                                                <td className="px-2 py-1 border-r"><input type="number" value={row.quantity} onChange={e => updateQuantity(row.id, e.target.value)} className="w-full text-center outline-none focus:bg-cyan-50" /></td>
                                                 <td className="px-2 py-1 border-r text-right">{row.price.toLocaleString()}đ</td>
                                                 <td className="px-4 py-1 font-bold text-right text-gray-700">{row.total.toLocaleString()}đ</td>
                                                 <td className="text-center">
-                                                    <button onClick={() => removeRow(row.id)} className="text-red-500 font-bold hover:scale-125 transition-transform">
-                                                        <img src={deleteIcon} alt="del" className="h-3 w-3" />
-                                                    </button>
+                                                    <button onClick={() => removeRow(row.id)} className="text-red-500 font-bold hover:scale-125 transition-transform"><img src={deleteIcon} alt="del" className="h-3 w-3" /></button>
                                                 </td>
                                             </tr>
                                         ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex justify-end gap-10">
-                                    <span className="font-bold text-gray-500 uppercase text-[10px] mt-1">Tổng cộng tiền hàng:</span>
-                                    <span className="font-black text-[#1192a8] text-xl">{grandTotal.toLocaleString()} VNĐ</span>
-                                </div>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex justify-end gap-10">
+                                <span className="font-bold text-gray-500 uppercase text-[10px] mt-1">Tổng cộng tiền hàng:</span>
+                                <span className="font-black text-[#1192a8] text-xl">{grandTotal.toLocaleString()} VNĐ</span>
                             </div>
                         </div>
 
@@ -729,7 +655,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                                     <p><span className="text-gray-400 font-bold uppercase text-[10px]">Địa chỉ:</span> <br/><span className="text-gray-600">{viewingVoucher.address || '---'}</span></p>
                                 </div>
                                 <div className="space-y-2">
-                                    <p><span className="text-gray-400 font-bold uppercase text-[10px]">Ngày xuất:</span> <br/><span className="font-bold text-gray-800">{new Date(viewingVoucher.time).toLocaleDateString('vi-VN')}</span></p>
+                                    <p><span className="text-gray-400 font-bold uppercase text-[10px]">Ngày xuất:</span> <br/><span className="font-bold text-gray-800">{viewingVoucher.time ? new Date(viewingVoucher.time).toLocaleDateString('vi-VN') : '---'}</span></p>
                                     <p><span className="text-gray-400 font-bold uppercase text-[10px]">Người lập:</span> <br/><span className="font-bold text-gray-800">{viewingVoucher.staff}</span></p>
                                 </div>
                             </div>
@@ -746,13 +672,13 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                                     </tr>
                                     </thead>
                                     <tbody className="divide-y">
-                                    {viewingVoucher.items.map((row, i) => (
+                                    {viewingVoucher.items?.map((row, i) => (
                                         <tr key={i} className="text-gray-700">
                                             <td className="p-3 font-bold">{row.productName}</td>
-                                            <td className="p-3 text-center text-gray-500">{row.unit}</td>
+                                            <td className="p-3 text-center text-gray-500">{row.unit || '-'}</td>
                                             <td className="p-3 text-center font-bold">{row.quantity}</td>
-                                            <td className="p-3 text-right">{row.price.toLocaleString()}đ</td>
-                                            <td className="p-3 text-right font-black text-[#1192a8]">{row.total.toLocaleString()}đ</td>
+                                            <td className="p-3 text-right">{row.price ? row.price.toLocaleString() : '0'}đ</td>
+                                            <td className="p-3 text-right font-black text-[#1192a8]">{row.total ? row.total.toLocaleString() : '0'}đ</td>
                                         </tr>
                                     ))}
                                     </tbody>
@@ -762,12 +688,9 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                                 <div className="text-left text-xs italic text-gray-400">Ghi chú: {viewingVoucher.note || '---'}</div>
                                 <div className="text-right">
                                     <p className="text-[10px] font-bold text-gray-400 uppercase">Tổng cộng thanh toán</p>
-                                    <p className="text-3xl font-black text-[#1192a8]">{viewingVoucher.total.toLocaleString()} VNĐ</p>
+                                    <p className="text-3xl font-black text-[#1192a8]">{viewingVoucher.total ? viewingVoucher.total.toLocaleString() : '0'} VNĐ</p>
                                 </div>
                             </div>
-                        </div>
-                        <div className="p-4 bg-gray-50 flex justify-end">
-                            <button onClick={() => setIsViewDetailOpen(false)} className="px-8 py-2 bg-gray-800 text-white rounded-lg text-xs font-bold uppercase hover:bg-black transition-all">Đóng</button>
                         </div>
                     </div>
                 </div>

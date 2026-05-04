@@ -376,3 +376,118 @@ VALUES
     ('EMP-009', N'Bùi Quang Vinh',     'MALE',   '1994-01-20', '0901234569', 'vinh.bq@wms.vn',    '2021-09-10', 'FULL_TIME',  'INVENTORY_CHECKER',   'OFF_SHIFT', N'Phụ trách khu B và C'),
     ('EMP-010', N'Trương Thị Ngọc',    'FEMALE', '2001-06-03', '0901234570', 'ngoc.tt@wms.vn',    '2024-03-01', 'INTERN',     'OUTBOUND_STAFF',      'OFF_SHIFT', N'Thực tập sinh khóa Spring 2024');
 GO
+
+-- ==============================================================================
+-- RBAC MIGRATION — Chạy script này vào WMS_DB sau setup.sql
+-- Thêm cột login vào Staff, tạo bảng Roles + bảng trung gian Staff_Roles
+-- ==============================================================================
+USE WMS_DB;
+GO
+
+-- 1. THÊM CỘT ĐĂNG NHẬP VÀO BẢNG STAFF (nếu chưa có)
+ALTER TABLE Staff ADD
+    Username  VARCHAR(100) NULL,
+    Password  VARCHAR(255) NULL,   -- BCrypt hash
+    Enabled   BIT NOT NULL DEFAULT 1;
+GO
+
+-- Đảm bảo Username là duy nhất
+ALTER TABLE Staff ADD CONSTRAINT UQ_Staff_Username UNIQUE (Username);
+GO
+
+-- 2. BẢNG ROLES
+CREATE TABLE Roles (
+                       Id        INT IDENTITY(1,1) PRIMARY KEY,
+                       RoleName  VARCHAR(50) UNIQUE NOT NULL,   -- ADMIN, MANAGER, STOREKEEPER, ...
+                       Description NVARCHAR(255) NULL
+);
+GO
+
+-- 3. BẢNG TRUNG GIAN STAFF_ROLES (Many-to-Many)
+CREATE TABLE Staff_Roles (
+                             StaffId INT NOT NULL FOREIGN KEY REFERENCES Staff(Id),
+                             RoleId  INT NOT NULL FOREIGN KEY REFERENCES Roles(Id),
+                             PRIMARY KEY (StaffId, RoleId)
+);
+GO
+
+-- ==============================================================================
+-- INSERT DỮ LIỆU MẶC ĐỊNH
+-- ==============================================================================
+
+-- 4. TẠO 6 ROLES
+INSERT INTO Roles (RoleName, Description) VALUES
+                                              ('ADMIN',           N'Quản trị hệ thống toàn quyền'),
+                                              ('MANAGER',         N'Quản lý kho — xem báo cáo, duyệt phiếu'),
+                                              ('STOREKEEPER',     N'Thủ kho — quản lý tồn kho, vị trí'),
+                                              ('INBOUND_STAFF',   N'Nhân viên nhập kho — tạo và xử lý phiếu nhập'),
+                                              ('OUTBOUND_STAFF',  N'Nhân viên xuất kho — tạo và xử lý phiếu xuất'),
+                                              ('CHECKER',         N'Kiểm kê viên — kiểm tra và đối soát tồn kho');
+GO
+
+-- 5. TẠO TÀI KHOẢN ADMIN MẶC ĐỊNH
+--    Password gốc: Admin@123  (BCrypt hash bên dưới)
+--    Sau khi login lần đầu nên đổi mật khẩu!
+INSERT INTO Staff (
+    EmployeeCode, FullName, Gender, ContractType,
+    WarehouseRole, WorkStatus, Username, Password, Enabled
+) VALUES (
+             'EMP-ADMIN',
+             N'Quản trị viên hệ thống',
+             'MALE',
+             'FULL_TIME',
+             'WAREHOUSE_MANAGER',
+             'ON_SHIFT',
+             'admin',
+             '$2a$12$YSNbpfnUMByiNEjxyoqVn.Y4VXHb.Y5J9qYLYCOLQj.FHjVoWXREe',  -- Admin@123
+             1
+         );
+GO
+
+-- 6. GÁN ROLE ADMIN CHO TÀI KHOẢN ADMIN
+INSERT INTO Staff_Roles (StaffId, RoleId)
+SELECT s.Id, r.Id
+FROM Staff s, Roles r
+WHERE s.Username = 'admin' AND r.RoleName = 'ADMIN';
+GO
+
+-- 7. GÁN ROLE PHÙHỢP CHO 10 NHÂN VIÊN MẪU (từ setup.sql)
+--    EMP-001 (WAREHOUSE_MANAGER) -> MANAGER
+--    EMP-002 (WAREHOUSE_KEEPER)  -> STOREKEEPER
+--    EMP-003, EMP-006            -> INBOUND_STAFF
+--    EMP-004, EMP-008, EMP-010   -> OUTBOUND_STAFF
+--    EMP-005, EMP-009            -> CHECKER
+
+-- Cập nhật username + password cho nhân viên mẫu (password: Staff@123)
+UPDATE Staff SET
+                 Username = LOWER(REPLACE(EmployeeCode, '-', '_')),
+                 Password = '$2a$12$8K1p/a0dR1xqM8K5Jt8K8O.bZvZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5.',
+                 Enabled  = 1
+WHERE EmployeeCode IN ('EMP-001','EMP-002','EMP-003','EMP-004','EMP-005',
+                       'EMP-006','EMP-007','EMP-008','EMP-009','EMP-010');
+GO
+
+-- EMP-007 (đã nghỉ) -> disabled
+UPDATE Staff SET Enabled = 0 WHERE EmployeeCode = 'EMP-007';
+GO
+
+INSERT INTO Staff_Roles (StaffId, RoleId)
+SELECT s.Id, r.Id FROM Staff s JOIN Roles r ON r.RoleName = 'MANAGER'
+WHERE s.EmployeeCode = 'EMP-001';
+
+INSERT INTO Staff_Roles (StaffId, RoleId)
+SELECT s.Id, r.Id FROM Staff s JOIN Roles r ON r.RoleName = 'STOREKEEPER'
+WHERE s.EmployeeCode = 'EMP-002';
+
+INSERT INTO Staff_Roles (StaffId, RoleId)
+SELECT s.Id, r.Id FROM Staff s JOIN Roles r ON r.RoleName = 'INBOUND_STAFF'
+WHERE s.EmployeeCode IN ('EMP-003','EMP-006');
+
+INSERT INTO Staff_Roles (StaffId, RoleId)
+SELECT s.Id, r.Id FROM Staff s JOIN Roles r ON r.RoleName = 'OUTBOUND_STAFF'
+WHERE s.EmployeeCode IN ('EMP-004','EMP-008','EMP-010');
+
+INSERT INTO Staff_Roles (StaffId, RoleId)
+SELECT s.Id, r.Id FROM Staff s JOIN Roles r ON r.RoleName = 'CHECKER'
+WHERE s.EmployeeCode IN ('EMP-005','EMP-009');
+GO

@@ -1,3 +1,6 @@
+// ================================================================
+// 1. ProductController.java
+// ================================================================
 package com.wmsbackend.controller;
 
 import com.wmsbackend.dto.ProductDTO;
@@ -5,9 +8,7 @@ import com.wmsbackend.entity.Product;
 import com.wmsbackend.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -15,7 +16,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
-@CrossOrigin("*") // Cho phép Frontend gọi API
 public class ProductController {
 
     @Autowired
@@ -24,8 +24,10 @@ public class ProductController {
     @Autowired
     private com.wmsbackend.repository.ProductUnitConversionRepository conversionRepository;
 
-    // 1. Lấy danh sách sản phẩm
+    // GET — tất cả role xem được sản phẩm
+    // (Lấy danh sách sản phẩm cùng tổng tồn kho)
     @GetMapping("/details")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','CHECKER')")
     public List<ProductDTO> getProducts() {
         List<ProductDTO> products = productRepository.findAllProductsWithTotalStock();
         // Gắn danh sách quy đổi cho từng sản phẩm
@@ -37,12 +39,21 @@ public class ProductController {
 
     // 1b. Lấy danh sách quy đổi đơn vị của một sản phẩm
     @GetMapping("/{id}/conversions")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','CHECKER')")
     public List<com.wmsbackend.entity.ProductUnitConversion> getConversions(@PathVariable Integer id) {
         return conversionRepository.findByProductId(id);
     }
 
-    // 2. Thêm mới sản phẩm
+    // GET — thống kê: ADMIN, MANAGER, STOREKEEPER, CHECKER
+    @GetMapping("/stats")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','CHECKER')")
+    public long getStats() {
+        return productRepository.count();
+    }
+
+    // POST — chỉ ADMIN
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Product createProduct(@RequestBody Product product) {
         if (product.getConversions() != null) {
             for (com.wmsbackend.entity.ProductUnitConversion conv : product.getConversions()) {
@@ -52,8 +63,9 @@ public class ProductController {
         return productRepository.save(product);
     }
 
-    // 3. Cập nhật sản phẩm
+    // 3. Cập nhật sản phẩm — chỉ ADMIN
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Product> updateProduct(@PathVariable Integer id, @RequestBody Product updatedProduct) {
         Optional<Product> existingOpt = productRepository.findById(id);
         if (existingOpt.isEmpty()) {
@@ -88,8 +100,9 @@ public class ProductController {
         return ResponseEntity.ok(productRepository.save(existing));
     }
 
-    // 3b. Cập nhật riêng barcode để hỗ trợ tạo mã tự động
+    // 3b. Cập nhật riêng barcode để hỗ trợ tạo mã tự động — chỉ ADMIN
     @PatchMapping("/{id}/barcode")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Product> updateBarcode(@PathVariable Integer id, @RequestBody BarcodeUpdateRequest request) {
         Optional<Product> existingOpt = productRepository.findById(id);
         if (existingOpt.isEmpty()) {
@@ -101,12 +114,14 @@ public class ProductController {
         return ResponseEntity.ok(productRepository.save(existing));
     }
 
-    // 3. Xóa sản phẩm
+    // DELETE — chỉ ADMIN
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteProduct(@PathVariable Integer id) {
         productRepository.deleteById(id);
     }
 
+    // Class hỗ trợ nhận Request cập nhật Barcode
     public static class BarcodeUpdateRequest {
         private String barcode;
 

@@ -1,6 +1,10 @@
+// ================================================================
+// 5. ImportReceipts.jsx — thay fetch → axiosClient
+// ================================================================
 import React, { useState, useEffect } from 'react';
 import { ActionButton } from '../components/common/SharedUI';
 import VoucherContextMenu from '../components/modals/VoucherContextMenu';
+import axiosClient from '../api/axiosClient';
 import addIcon from '../components/common/icons/add.png';
 import infoIcon from '../components/common/icons/info.png';
 import excelIcon from '../components/common/icons/excel.png';
@@ -42,15 +46,17 @@ const inboundStatusOptions = [
 ];
 
 export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
-    // qly state
-    const [receipts, setReceipts] = useState([]); // ds tu db
+    // Quản lý state danh sách
+    const [receipts, setReceipts] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedReceipt, setSelectedReceipt] = useState(null);
     const [selectedReceiptId, setSelectedReceiptId] = useState(null);
-    const [detailItems, setDetailItems] = useState([]); // chi tiet hang hoa
+    const [detailItems, setDetailItems] = useState([]); 
     const [contextMenu, setContextMenu] = useState(null);
+    
+    // Quản lý state bộ lọc
     const [filterType, setFilterType] = useState('Tất cả');
     const [filterKeyword, setFilterKeyword] = useState('');
     const [filterSupplier, setFilterSupplier] = useState('Tất cả nhà cung cấp');
@@ -58,14 +64,14 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
     const [filterDate, setFilterDate] = useState('');
     const [filterStatus, setFilterStatus] = useState('ALL');
 
-    // state danh muc tu db
+    // State danh mục từ DB
     const [suppliers, setSuppliers] = useState([]);
     const [products, setProducts] = useState([]);
     const [batches, setBatches] = useState([]);
     const [locations, setLocations] = useState([]);
     const [staffs, setStaffs] = useState([]);
 
-    // dlieu phieu moi
+    // Dữ liệu tạo phiếu mới
     const [supplierId, setSupplierId] = useState("");
     const [createdById, setCreatedById] = useState("");
     const [referenceNumber, setReferenceNumber] = useState("");
@@ -74,7 +80,6 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
     const [newItems, setNewItems] = useState([createEmptyLineItem()]);
     const [newBatchDrafts, setNewBatchDrafts] = useState([createEmptyBatchDraft()]);
 
-    // lay ds frontend
     useEffect(() => {
         fetchInitialData();
     }, []);
@@ -85,6 +90,7 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
         }
     }, [staffs, createdById]);
 
+    // Lắng nghe tín hiệu workflow (Tạo phiếu nhập từ màn hình khác)
     useEffect(() => {
         if (workflow?.kind !== 'inbound') {
             return;
@@ -108,105 +114,110 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
         clearWorkflow?.();
     }, [workflow, clearWorkflow]);
 
+    // Dùng Promise.all với axiosClient để tải dữ liệu song song
     const fetchInitialData = async () => {
         try {
             const [resInbound, resSup, resPro, resBat, resLoc, resStaff] = await Promise.all([
-                fetch('http://localhost:8080/api/inbound'),
-                fetch('http://localhost:8080/api/suppliers'),
-                fetch('http://localhost:8080/api/products/details'),
-                fetch('http://localhost:8080/api/batches'),
-                fetch('http://localhost:8080/api/location-overview'),
-                fetch('http://localhost:8080/api/staff')
+                axiosClient.get('/api/inbound'),
+                axiosClient.get('/api/suppliers'),
+                axiosClient.get('/api/products/details'),
+                axiosClient.get('/api/batches'),
+                axiosClient.get('/api/locations'),
+                axiosClient.get('/api/staff')
             ]);
 
-            if (resInbound.ok) setReceipts(await resInbound.json());
-            if (resSup.ok) setSuppliers(await resSup.json());
-            if (resPro.ok) setProducts(await resPro.json());
-            if (resBat.ok) setBatches(await resBat.json());
-            if (resLoc.ok) setLocations(await resLoc.json());
-            if (resStaff.ok) setStaffs(await resStaff.json());
+            setReceipts(resInbound.data);
+            setSuppliers(resSup.data);
+            setProducts(resPro.data);
+            setBatches(resBat.data);
+            setLocations(resLoc.data);
+            setStaffs(resStaff.data);
         } catch (error) {
-            console.error("Lỗi tải dữ liệu:", error);
+            console.error('Lỗi tải dữ liệu:', error);
         } finally {
             setLoading(false);
         }
     };
 
     const fetchReceipts = async () => {
-        const response = await fetch('http://localhost:8080/api/inbound');
-        if (response.ok) setReceipts(await response.json());
+        try {
+            const res = await axiosClient.get('/api/inbound');
+            setReceipts(res.data);
+        } catch (error) {
+            console.error("Lỗi khi làm mới phiếu nhập", error);
+        }
     };
 
     const closeContextMenu = () => setContextMenu(null);
 
-    // xem chi tiet khi click
     const handleViewDetail = async (receipt) => {
         setSelectedReceipt(receipt);
         try {
-            const response = await fetch(`http://localhost:8080/api/inbound/${receipt.id}/details`);
-            if (response.ok) {
-                const details = await response.json();
-                setDetailItems(details);
-                setIsDetailModalOpen(true);
-            }
-        } catch (error) {
-            alert("Không thấy chi tiết hàng");
+            const res = await axiosClient.get(`/api/inbound/${receipt.id}/details`);
+            setDetailItems(res.data);
+            setIsDetailModalOpen(true);
+        } catch { 
+            alert('Không thấy chi tiết hàng'); 
         }
     };
 
-    // logic luu phieu
+    const calculateTotal = () => newItems.reduce((sum, item) => sum + (parseFloat(item.qtyReceived) || 0) * (parseFloat(item.price) || 0), 0);
+
     const handleSaveReceipt = async () => {
         if (!supplierId || !createdById || newItems.some(item => !item.productId || !item.batchId || !item.locationId)) {
-            alert("Vui lòng chọn đủ");
+            alert("Vui lòng chọn đủ thông tin bắt buộc (Nhà cung cấp, Nhân viên, Sản phẩm, Lô, Vị trí)");
             return;
         }
-
+        
         const payload = {
             order: {
-                receiptCode: "PN-" + Date.now(),
+                receiptCode: 'PN-' + Date.now(),
                 supplierId: parseInt(supplierId),
-                referenceNumber: referenceNumber,
-                notes: notes,
+                referenceNumber,
+                notes,
                 totalAmount: calculateTotal(),
                 status: receiptStatus,
                 receiptDate: new Date().toISOString(),
                 createdBy: parseInt(createdById || workflow?.staff?.id || 1)
             },
             details: newItems.map(item => ({
-                productId: parseInt(item.productId),
-                batchId: parseInt(item.batchId),
-                locationId: parseInt(item.locationId),
-                quantityExpected: parseFloat(item.qtyExpected),
-                quantityReceived: parseFloat(item.qtyReceived),
-                quantity: parseFloat(item.qtyReceived),
-                unitPrice: parseFloat(item.price),
-                itemCondition: item.condition
-            }))
+                productId:         parseInt(item.productId),
+                batchId:           parseInt(item.batchId),
+                locationId:        parseInt(item.locationId),
+                quantityExpected:  parseFloat(item.qtyExpected),
+                quantityReceived:  parseFloat(item.qtyReceived),
+                quantity:          parseFloat(item.qtyReceived),
+                unitPrice:         parseFloat(item.price),
+                itemCondition:     item.condition,
+            })),
         };
 
         try {
-            const response = await fetch('http://localhost:8080/api/inbound/confirm', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (response.ok) {
-                alert("Thành công");
-                setShowCreateModal(false);
-                fetchReceipts();
-                resetForm();
-            }
-        } catch (error) {
-            alert("Lỗi kết nối Server");
+            await axiosClient.post('/api/inbound/confirm', payload);
+            alert('Lưu phiếu nhập thành công');
+            setShowCreateModal(false);
+            fetchReceipts();
+            resetForm();
+        } catch { 
+            alert('Lỗi kết nối Server khi lưu phiếu'); 
         }
     };
 
-    // xuat exel
+    // Xuất Excel an toàn qua Blob (kèm Token bảo mật)
     const handleExportExcel = () => {
-        window.open('http://localhost:8080/api/inbound/export', '_blank');
+        axiosClient.get('/api/inbound/export', { responseType: 'blob' })
+            .then(res => {
+                const url = window.URL.createObjectURL(new Blob([res.data]));
+                const a   = document.createElement('a');
+                a.href = url; 
+                a.download = `Danh_sach_phieu_nhap_${new Date().toISOString().slice(0, 10)}.xlsx`; 
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(() => alert('Xuất Excel thất bại'));
     };
 
+    // --- LOGIC LÔ HÀNG NHÁP ---
     const addBatchDraft = () => setNewBatchDrafts([...newBatchDrafts, createEmptyBatchDraft()]);
     const updateBatchDraft = (index, field, value) => {
         const updated = [...newBatchDrafts];
@@ -220,40 +231,32 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
             setNewBatchDrafts([createEmptyBatchDraft()]);
         }
     };
+    
     const saveBatchDrafts = async () => {
         const batchesToCreate = newBatchDrafts.filter(batch => batch.productId && batch.batchCode && batch.expiryDate);
         if (!batchesToCreate.length) {
-            alert("Vui lòng nhập ít nhất một lô hợp lệ.");
+            alert("Vui lòng nhập đầy đủ thông tin cho ít nhất một lô (Sản phẩm, Mã lô, Hạn dùng).");
             return;
         }
 
         try {
             for (const batch of batchesToCreate) {
-                const response = await fetch('http://localhost:8080/api/batches', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        productId: parseInt(batch.productId),
-                        batchCode: batch.batchCode,
-                        manufactureDate: batch.manufactureDate || null,
-                        expiryDate: batch.expiryDate
-                    })
+                await axiosClient.post('/api/batches', {
+                    productId: parseInt(batch.productId),
+                    batchCode: batch.batchCode,
+                    manufactureDate: batch.manufactureDate || null,
+                    expiryDate: batch.expiryDate
                 });
-
-                if (!response.ok) {
-                    throw new Error('Batch save failed');
-                }
             }
-
             setNewBatchDrafts([createEmptyBatchDraft()]);
-            await fetchInitialData();
-            alert("Đã thêm lô mới.");
+            await fetchInitialData(); // Reload lại danh mục lô
+            alert("Đã thêm lô mới thành công.");
         } catch (error) {
-            alert("Không thể lưu lô mới.");
+            alert("Không thể lưu lô mới. Vui lòng kiểm tra lại mã lô có bị trùng không.");
         }
     };
 
-
+    // --- LOGIC DÒNG CHI TIẾT ---
     const addLineItem = () => setNewItems([...newItems, createEmptyLineItem()]);
     const updateItem = (index, field, value) => {
         const updated = [...newItems];
@@ -274,21 +277,16 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
             alert('Vui lòng chọn một phiếu trong bảng trước!');
             return;
         }
-
         const receipt = receipts.find(item => item.id === selectedReceiptId);
         if (receipt) {
             handleViewDetail(receipt);
         }
     };
 
-    const handleCreateNew = () => {
-        setShowCreateModal(true);
-    };
+    const handleCreateNew = () => setShowCreateModal(true);
+    const handleRefresh = () => fetchReceipts();
 
-    const handleRefresh = () => {
-        fetchReceipts();
-    };
-
+    // Mapping ID sang Tên
     const getSupplierName = (supplierId) => {
         if (!supplierId) return 'Chưa rõ NCC';
         return suppliers.find(item => item.id === supplierId)?.name || 'Chưa rõ NCC';
@@ -321,16 +319,7 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
 
     const handleUpdateReceiptStatus = async (receiptId, nextStatus) => {
         try {
-            const response = await fetch(`http://localhost:8080/api/inbound/${receiptId}/status`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: nextStatus })
-            });
-
-            if (!response.ok) {
-                throw new Error('status update failed');
-            }
-
+            await axiosClient.put(`/api/inbound/${receiptId}/status`, { status: nextStatus });
             await fetchReceipts();
             if (selectedReceipt?.id === receiptId) {
                 setSelectedReceipt((current) => current ? { ...current, status: nextStatus } : current);
@@ -369,14 +358,12 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
         { label: 'Xuất Excel', iconSrc: excelIcon, onClick: handleExportExcel },
         { label: 'Làm mới', iconSrc: excel1Icon, onClick: handleRefresh }
     ];
-    const calculateTotal = () => newItems.reduce((sum, item) => sum + (item.qtyReceived * item.price), 0);
+
     const filteredReceipts = receipts.filter((receipt) => {
         const supplierName = getSupplierName(receipt.supplierId);
         const staffName = getStaffName(receipt.createdBy);
         const keyword = filterKeyword.trim().toLowerCase();
-        const receiptDate = receipt.receiptDate
-            ? new Date(receipt.receiptDate).toISOString().slice(0, 10)
-            : '';
+        const receiptDate = receipt.receiptDate ? new Date(receipt.receiptDate).toISOString().slice(0, 10) : '';
 
         const matchesType = (() => {
             if (!keyword) return true;
@@ -396,21 +383,14 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
             }
         })();
 
-        const matchesSupplier =
-            filterSupplier === 'Tất cả nhà cung cấp' ||
-            supplierName === filterSupplier;
-        const matchesStaff =
-            filterStaff === 'ALL' ||
-            String(receipt.createdBy || '') === filterStaff ||
-            staffName === filterStaff;
-        const matchesDate =
-            !filterDate || receiptDate === filterDate;
-        const matchesStatus =
-            filterStatus === 'ALL' ||
-            String(receipt.status || '').toUpperCase() === filterStatus;
+        const matchesSupplier = filterSupplier === 'Tất cả nhà cung cấp' || supplierName === filterSupplier;
+        const matchesStaff = filterStaff === 'ALL' || String(receipt.createdBy || '') === filterStaff || staffName === filterStaff;
+        const matchesDate = !filterDate || receiptDate === filterDate;
+        const matchesStatus = filterStatus === 'ALL' || String(receipt.status || '').toUpperCase() === filterStatus;
 
         return matchesType && matchesSupplier && matchesStaff && matchesDate && matchesStatus;
     });
+
     const resetForm = () => {
         setSupplierId("");
         setCreatedById("");
@@ -534,7 +514,7 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
                     </button>
                 </div>
 
-                {/* bang ds*/}
+                {/* Bảng danh sách phiếu nhập */}
                 <div className="flex-1 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                     <table className="w-full text-sm text-left">
                         <thead className="bg-gray-50 text-gray-500 uppercase text-[11px] font-bold">
@@ -592,7 +572,7 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
                 </div>
             </div>
 
-            {/* modal chi tiet phieu */}
+            {/* Modal chi tiết phiếu nhập */}
             {isDetailModalOpen && selectedReceipt && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
                     <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl p-6">
@@ -658,7 +638,7 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
                 onClose={closeContextMenu}
             />
 
-            {/* modal tao phieu */}
+            {/* Modal tạo phiếu mới */}
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
                     <div className="bg-white rounded-3xl w-full max-w-[95vw] max-h-[90vh] flex flex-col shadow-2xl">
@@ -670,18 +650,14 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
                             <div className="grid grid-cols-4 gap-4">
                                 <div>
                                     <label className="text-xs font-bold text-gray-400 uppercase">Nhà cung cấp</label>
-                                    <select
-                                        className="w-full border-2 border-gray-100 rounded-xl px-4 py-2 mt-1 focus:border-blue-500 outline-none"
-                                        value={supplierId}
-                                        onChange={(e) => setSupplierId(e.target.value)}
-                                    >
+                                    <select className="w-full border-2 border-gray-100 rounded-xl px-4 py-2 mt-1 focus:border-blue-500 outline-none" value={supplierId} onChange={e => setSupplierId(e.target.value)}>
                                         <option value="">-- Chọn NCC từ DB --</option>
                                         {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                     </select>
                                 </div>
                                 <div>
                                     <label className="text-xs font-bold text-gray-400 uppercase">Số PO / Tham chiếu</label>
-                                    <input className="w-full border-2 border-gray-100 rounded-xl px-4 py-2 mt-1 focus:border-blue-500 outline-none" placeholder="Ví dụ: PO-2026-001" value={referenceNumber} onChange={(e) => setReferenceNumber(e.target.value)} />
+                                    <input className="w-full border-2 border-gray-100 rounded-xl px-4 py-2 mt-1 focus:border-blue-500 outline-none" placeholder="Ví dụ: PO-2026-001" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)} />
                                 </div>
                                 <div>
                                     <label className="text-xs font-bold text-gray-400 uppercase">Trạng thái phiếu</label>
@@ -807,95 +783,94 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
                                 </div>
                             </div>
 
-                            {/* dong them sp  */}
                             <div className="border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
                                 <table className="w-full text-sm">
                                     <thead className="bg-gray-50 text-gray-500 uppercase text-[10px] font-bold">
-                                    <tr>
-                                        <th className="p-3 text-left">Sản phẩm</th>
-                                        <th className="p-3 text-center w-32">Số Lô (Batch)</th>
-                                        <th className="p-3 text-center w-32">Vị trí (Bin)</th>
-                                        <th className="p-3 text-center w-24">Dự kiến</th>
-                                        <th className="p-3 text-center w-24">Thực nhận</th>
-                                        <th className="p-3 text-right w-32">Đơn giá (đ)</th>
-                                        <th className="p-3 text-center w-16">Xóa</th>
-                                    </tr>
+                                        <tr>
+                                            <th className="p-3 text-left">Sản phẩm</th>
+                                            <th className="p-3 text-center w-32">Số Lô (Batch)</th>
+                                            <th className="p-3 text-center w-32">Vị trí (Bin)</th>
+                                            <th className="p-3 text-center w-24">Dự kiến</th>
+                                            <th className="p-3 text-center w-24">Thực nhận</th>
+                                            <th className="p-3 text-right w-32">Đơn giá (đ)</th>
+                                            <th className="p-3 text-center w-16">Xóa</th>
+                                        </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
-                                    {newItems.map((item, index) => (
-                                        <tr key={index} className="hover:bg-gray-50/50 transition-colors">
-                                            <td className="p-2">
-                                                <select
-                                                    className="w-full border-2 border-gray-100 rounded-xl px-2 py-2 outline-none focus:border-blue-500 transition-all bg-white"
-                                                    value={item.productId}
-                                                    onChange={(e) => updateItem(index, 'productId', e.target.value)}
-                                                >
-                                                    <option value="">Chọn SP...</option>
-                                                    {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                                                </select>
-                                            </td>
-                                            <td className="p-2">
-                                                <select
-                                                    className="w-full border-2 border-gray-100 rounded-xl px-2 py-2 outline-none focus:border-blue-500 bg-white"
-                                                    value={item.batchId}
-                                                    onChange={(e) => updateItem(index, 'batchId', e.target.value)}
-                                                >
-                                                    <option value="">Chọn Lô...</option>
-                                                    {batches.filter(b => b.productId == item.productId || !item.productId).map(b => (
-                                                        <option key={b.id} value={b.id}>{b.batchCode}</option>
-                                                    ))}
-                                                </select>
-                                            </td>
-                                            <td className="p-2">
-                                                <select
-                                                    className="w-full border-2 border-gray-100 rounded-xl px-2 py-2 outline-none focus:border-blue-500 bg-white"
-                                                    value={item.locationId}
-                                                    onChange={(e) => updateItem(index, 'locationId', e.target.value)}
-                                                >
-                                                    <option value="">Chọn Bin...</option>
-                                                    {locations.map(l => (
-                                                        <option key={l.id} value={l.id}>
-                                                            {l.binCode} [{l.containerType || 'N/A'}] (Sức chứa: {l.quantityOnHand || 0}/{l.capacity || 0})
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </td>
-                                            <td className="p-2">
-                                                <input
-                                                    type="number"
-                                                    className="w-full border-2 border-gray-100 rounded-xl px-2 py-2 text-center outline-none"
-                                                    value={item.qtyExpected}
-                                                    onChange={(e) => updateItem(index, 'qtyExpected', e.target.value)}
-                                                />
-                                            </td>
-                                            <td className="p-2">
-                                                <input
-                                                    type="number"
-                                                    className="w-full border-2 border-gray-100 rounded-xl px-2 py-2 text-center font-bold text-blue-600 outline-none"
-                                                    value={item.qtyReceived}
-                                                    onChange={(e) => updateItem(index, 'qtyReceived', e.target.value)}
-                                                />
-                                            </td>
-                                            <td className="p-2">
-                                                <input
-                                                    type="number"
-                                                    className="w-full border-2 border-gray-100 rounded-xl px-2 py-2 text-right font-mono outline-none"
-                                                    value={item.price}
-                                                    onChange={(e) => updateItem(index, 'price', e.target.value)}
-                                                />
-                                            </td>
-                                            <td className="p-2 text-center">
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        removeLineItem(index);
-                                                    }}
-                                                    className="w-8 h-8 flex items-center justify-center rounded-full text-red-400 hover:bg-red-50 hover:text-red-600 transition-all"
-                                                >✕</button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                        {newItems.map((item, index) => (
+                                            <tr key={index} className="hover:bg-gray-50/50 transition-colors">
+                                                <td className="p-2">
+                                                    <select
+                                                        className="w-full border-2 border-gray-100 rounded-xl px-2 py-2 outline-none focus:border-blue-500 transition-all bg-white"
+                                                        value={item.productId}
+                                                        onChange={(e) => updateItem(index, 'productId', e.target.value)}
+                                                    >
+                                                        <option value="">Chọn SP...</option>
+                                                        {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                                    </select>
+                                                </td>
+                                                <td className="p-2">
+                                                    <select
+                                                        className="w-full border-2 border-gray-100 rounded-xl px-2 py-2 outline-none focus:border-blue-500 bg-white"
+                                                        value={item.batchId}
+                                                        onChange={(e) => updateItem(index, 'batchId', e.target.value)}
+                                                    >
+                                                        <option value="">Chọn Lô...</option>
+                                                        {batches.filter(b => b.productId == item.productId || !item.productId).map(b => (
+                                                            <option key={b.id} value={b.id}>{b.batchCode}</option>
+                                                        ))}
+                                                    </select>
+                                                </td>
+                                                <td className="p-2">
+                                                    <select
+                                                        className="w-full border-2 border-gray-100 rounded-xl px-2 py-2 outline-none focus:border-blue-500 bg-white"
+                                                        value={item.locationId}
+                                                        onChange={(e) => updateItem(index, 'locationId', e.target.value)}
+                                                    >
+                                                        <option value="">Chọn Bin...</option>
+                                                        {locations.map(l => (
+                                                            <option key={l.id} value={l.id}>
+                                                                {l.binCode} [{l.containerType || 'N/A'}] (Sức chứa: {l.quantityOnHand || 0}/{l.capacity || 0})
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </td>
+                                                <td className="p-2">
+                                                    <input
+                                                        type="number"
+                                                        className="w-full border-2 border-gray-100 rounded-xl px-2 py-2 text-center outline-none focus:bg-blue-50"
+                                                        value={item.qtyExpected}
+                                                        onChange={(e) => updateItem(index, 'qtyExpected', e.target.value)}
+                                                    />
+                                                </td>
+                                                <td className="p-2">
+                                                    <input
+                                                        type="number"
+                                                        className="w-full border-2 border-gray-100 rounded-xl px-2 py-2 text-center font-bold text-blue-600 outline-none focus:bg-blue-50"
+                                                        value={item.qtyReceived}
+                                                        onChange={(e) => updateItem(index, 'qtyReceived', e.target.value)}
+                                                    />
+                                                </td>
+                                                <td className="p-2">
+                                                    <input
+                                                        type="number"
+                                                        className="w-full border-2 border-gray-100 rounded-xl px-2 py-2 text-right font-mono outline-none focus:bg-blue-50"
+                                                        value={item.price}
+                                                        onChange={(e) => updateItem(index, 'price', e.target.value)}
+                                                    />
+                                                </td>
+                                                <td className="p-2 text-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            removeLineItem(index);
+                                                        }}
+                                                        className="w-8 h-8 flex items-center justify-center rounded-full text-red-400 hover:bg-red-50 hover:text-red-600 transition-all"
+                                                    >✕</button>
+                                                </td>
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </table>
                             </div>
