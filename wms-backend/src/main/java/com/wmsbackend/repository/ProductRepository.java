@@ -15,10 +15,15 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             "p.imageUrl, p.status, p.supplierCodes, p.createdAt, " +
             "p.weight, p.length, p.width, p.height, " +
             "p.storageTemp, p.safetyStock, p.isFragile, " +
-            "COALESCE(SUM(i.quantityOnHand), 0)) " +
-            "FROM Product p LEFT JOIN Inventory i ON p.id = i.productId " +
-            "GROUP BY p.id, p.sku, p.barcode, p.name, p.baseUnit, p.categoryId, " +
-            "p.imageUrl, p.status, p.createdAt, " + // BỎ p.supplierCodes Ở DÒNG NÀY ĐỂ TRÁNH LỖI GROUP BY
-            "p.weight, p.length, p.width, p.height, p.storageTemp, p.safetyStock, p.isFragile")
+            "(SELECT COALESCE(SUM(i.quantityOnHand), 0) FROM Inventory i WHERE i.productId = p.id), " +
+            "(SELECT COALESCE(SUM(i.quantityAllocated), 0) FROM Inventory i WHERE i.productId = p.id), " +
+            "(SELECT COALESCE(SUM(i.quantityOnHand), 0) - COALESCE(SUM(i.quantityAllocated), 0) FROM Inventory i WHERE i.productId = p.id), " +
+            "(SELECT COALESCE(SUM(d.quantityReceived), 0) " +
+            "FROM InboundOrderDetail d, InboundOrder o " +
+            "WHERE d.inboundOrderId = o.id " +
+            "AND d.productId = p.id " +
+            "AND o.status IN ('DRAFT', 'ORDERED', 'IN_TRANSIT', 'RECEIVING', 'PENDING')), " +
+            "(SELECT MIN(b.expiryDate) FROM Inventory i JOIN Batch b ON i.batchId = b.id WHERE i.productId = p.id)) " +
+            "FROM Product p")
     List<ProductDTO> findAllProductsWithTotalStock();
 }

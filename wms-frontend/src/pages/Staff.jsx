@@ -7,11 +7,13 @@ import axiosClient from '../api/axiosClient';
 import addIcon    from '../components/common/icons/add.png';
 import fixIcon    from '../components/common/icons/fix.png';
 import deleteIcon from '../components/common/icons/delete.png';
+import inboundIcon from '../components/common/icons/inbound.png';
+import outboundIcon from '../components/common/icons/outbound.png';
 import excelIcon  from '../components/common/icons/excel.png';
 import excel1Icon from '../components/common/icons/excel1.png';
- 
+
 const BASE = '/api/staff';
- 
+
 const ROLE_MAP = {
     WAREHOUSE_MANAGER:  { label: 'Quản lý kho',     color: 'bg-purple-100 text-purple-700 border-purple-200' },
     WAREHOUSE_KEEPER:   { label: 'Thủ kho',          color: 'bg-blue-100 text-blue-700 border-blue-200' },
@@ -31,8 +33,9 @@ const STATUS_MAP = {
     RESIGNED:  { label: 'Đã nghỉ làm',   dot: 'bg-red-400',   color: 'text-red-500' },
 };
 const GENDER_MAP = { MALE: 'Nam', FEMALE: 'Nữ' };
-const formatDate = d => d ? new Date(d).toLocaleDateString('vi-VN') : '—';
- 
+
+const formatDate = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : '—';
+
 function RoleBadge({ role }) {
     const r = ROLE_MAP[role] || { label: role, color: 'bg-gray-100 text-gray-600 border-gray-200' };
     return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${r.color}`}>{r.label}</span>;
@@ -50,8 +53,9 @@ function StatusDot({ status }) {
         </span>
     );
 }
- 
-export default function Staff() {
+
+// ── Main component ───────────────────────────────────────────────────────────
+export default function Staff({ onCreateInbound, onCreateOutbound }) {
     const [data, setData]             = useState([]);
     const [loading, setLoading]       = useState(true);
     const [selected, setSelected]     = useState(null);
@@ -62,25 +66,28 @@ export default function Staff() {
     const [modalOpen, setModalOpen]   = useState(false);
     const [editData, setEditData]     = useState(null);
     const debounceRef = useRef(null);
- 
+
     const fetchData = async (keyword = '') => {
         setLoading(true);
         try {
             const url = keyword.trim() ? `${BASE}?keyword=${encodeURIComponent(keyword)}` : BASE;
             const res = await axiosClient.get(url);
             setData(res.data);
-        } catch { setData([]); }
-        finally  { setLoading(false); }
+        } catch { 
+            setData([]); 
+        } finally { 
+            setLoading(false); 
+        }
     };
- 
+
     useEffect(() => { fetchData(); }, []);
- 
+
     const handleSearchChange = (val) => {
         setSearch(val);
         clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => fetchData(val), 300);
     };
- 
+
     const filtered = data.filter(row => {
         if (filterStatus !== 'all' && row.workStatus !== filterStatus) return false;
         if (filterRole   !== 'all' && row.warehouseRole !== filterRole) return false;
@@ -93,36 +100,63 @@ export default function Staff() {
         }
         return true;
     });
- 
+
     const stats = {
         total:    data.length,
         onShift:  data.filter(d => d.workStatus === 'ON_SHIFT').length,
         offShift: data.filter(d => d.workStatus === 'OFF_SHIFT').length,
         resigned: data.filter(d => d.workStatus === 'RESIGNED').length,
     };
- 
+
     const handleAdd    = () => { setEditData(null); setModalOpen(true); };
+    
     const handleEdit   = () => {
         if (!selected) return alert('Vui lòng chọn một nhân viên để chỉnh sửa!');
         setEditData(selected); setModalOpen(true);
     };
+    
     const handleDelete = async () => {
         if (!selected) return alert('Vui lòng chọn một nhân viên để xóa!');
         if (!window.confirm(`Xác nhận xóa nhân viên "${selected.fullName}"?`)) return;
         try {
             await axiosClient.delete(`${BASE}/${selected.id}`);
-            setSelected(null); fetchData(search);
-        } catch { alert('Xóa thất bại!'); }
+            setSelected(null); 
+            fetchData(search);
+        } catch { 
+            alert('Xóa thất bại!'); 
+        }
     };
- 
+
+    const handleCreateInbound = () => {
+        if (!selected) return alert('Vui lòng chọn một nhân viên để lập phiếu nhập!');
+        onCreateInbound?.({
+            kind: 'inbound',
+            source: 'staff',
+            staff: selected,
+            products: []
+        });
+    };
+
+    const handleCreateOutbound = () => {
+        if (!selected) return alert('Vui lòng chọn một nhân viên để lập phiếu xuất!');
+        onCreateOutbound?.({
+            kind: 'outbound',
+            source: 'staff',
+            staff: selected,
+            products: []
+        });
+    };
+
     const toolbarActions = [
         { label: 'Thêm',       iconSrc: addIcon,    onClick: handleAdd },
         { label: 'Chỉnh sửa',  iconSrc: fixIcon,    onClick: handleEdit },
         { label: 'Xóa',        iconSrc: deleteIcon, onClick: handleDelete },
+        { label: 'Phiếu nhập', iconSrc: inboundIcon,  onClick: handleCreateInbound },
+        { label: 'Phiếu xuất', iconSrc: outboundIcon, onClick: handleCreateOutbound },
         { label: 'Nhập Excel', iconSrc: excelIcon,  onClick: () => {} },
         { label: 'Xuất Excel', iconSrc: excel1Icon, onClick: () => {} },
     ];
- 
+
     return (
         <div className="p-8 bg-gray-50 min-h-full flex flex-col">
             <h1 className="text-2xl font-bold text-gray-800 mb-6">Quản lý nhân viên</h1>
@@ -240,4 +274,3 @@ export default function Staff() {
         </div>
     );
 }
- 

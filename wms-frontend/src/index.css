@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+
+  body, #root, * {
+    user-select: none;
+  }
+
+  input, textarea, select, option, button, [contenteditable="true"] {
+    user-select: text;
+  }
+}

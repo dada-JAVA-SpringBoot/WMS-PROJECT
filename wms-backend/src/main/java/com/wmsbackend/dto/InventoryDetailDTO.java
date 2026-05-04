@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class InventoryDetailDTO {
+    private Integer locationId;
+    private Integer batchId;
     private String locCode;
     private String batchCode;
     private LocalDate expiryDate;
@@ -11,7 +13,9 @@ public class InventoryDetailDTO {
     private BigDecimal allocated;
 
     // Constructor dùng để map kết quả từ câu query SQL
-    public InventoryDetailDTO(String locCode, String batchCode, LocalDate expiryDate, BigDecimal onHand, BigDecimal allocated) {
+    public InventoryDetailDTO(Integer locationId, Integer batchId, String locCode, String batchCode, LocalDate expiryDate, BigDecimal onHand, BigDecimal allocated) {
+        this.locationId = locationId;
+        this.batchId = batchId;
         this.locCode = locCode;
         this.batchCode = batchCode;
         this.expiryDate = expiryDate;
@@ -20,6 +24,22 @@ public class InventoryDetailDTO {
     }
 
     // Getter Setter
+
+    public Integer getLocationId() {
+        return locationId;
+    }
+
+    public void setLocationId(Integer locationId) {
+        this.locationId = locationId;
+    }
+
+    public Integer getBatchId() {
+        return batchId;
+    }
+
+    public void setBatchId(Integer batchId) {
+        this.batchId = batchId;
+    }
 
     public String getLocCode() {
         return locCode;

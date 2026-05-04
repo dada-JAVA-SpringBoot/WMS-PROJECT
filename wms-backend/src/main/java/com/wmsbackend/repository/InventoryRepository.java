@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Collection;
 
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
@@ -16,7 +17,10 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     // SELECT loc.BinCode, b.BatchCode, b.ExpiryDate, i.QuantityOnHand, i.QuantityAllocated
     // FROM Inventory i JOIN Locations loc JOIN Batches b WHERE i.ProductId = ?
     Inventory findByProductIdAndLocationIdAndBatchId(Integer productId, Integer locationId, Integer batchId);
-    @Query("SELECT new com.wmsbackend.dto.InventoryDetailDTO(l.binCode, b.batchCode, b.expiryDate, i.quantityOnHand, i.quantityAllocated) " +
+
+    List<Inventory> findByLocationIdIn(Collection<Integer> locationIds);
+
+    @Query("SELECT new com.wmsbackend.dto.InventoryDetailDTO(l.id, b.id, l.binCode, b.batchCode, b.expiryDate, i.quantityOnHand, i.quantityAllocated) " +
             "FROM Inventory i " +
             "JOIN Location l ON i.locationId = l.id " +
             "JOIN Batch b ON i.batchId = b.id " +

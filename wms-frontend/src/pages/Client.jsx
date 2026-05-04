@@ -7,15 +7,16 @@ import axiosClient from '../api/axiosClient';
 import addIcon    from '../components/common/icons/add.png';
 import fixIcon    from '../components/common/icons/fix.png';
 import deleteIcon from '../components/common/icons/delete.png';
+import outboundIcon from '../components/common/icons/outbound.png';
 import excelIcon  from '../components/common/icons/excel.png';
 import excel1Icon from '../components/common/icons/excel1.png';
 
 const BASE = '/api/customers';
 
-export default function Client() {
+export default function Client({ onCreateOutbound }) {
     const [data, setData]         = useState([]);
     const [loading, setLoading]   = useState(true);
-    const [selected, setSelected] = useState(null);
+    const [selected, setSelected] = useState(null);   // row đang chọn
     const [search, setSearch]     = useState('');
     const [searchBy, setSearchBy] = useState('all');
     const [modalOpen, setModalOpen] = useState(false);
@@ -28,8 +29,11 @@ export default function Client() {
             const url = keyword.trim() ? `${BASE}?keyword=${encodeURIComponent(keyword)}` : BASE;
             const res = await axiosClient.get(url);
             setData(res.data);
-        } catch { setData([]); }
-        finally  { setLoading(false); }
+        } catch { 
+            setData([]); 
+        } finally { 
+            setLoading(false); 
+        }
     };
 
     useEffect(() => { fetchData(); }, []);
@@ -54,19 +58,35 @@ export default function Client() {
         if (!selected) return alert('Vui lòng chọn một khách hàng để chỉnh sửa!');
         setEditData(selected); setModalOpen(true);
     };
+    
     const handleDelete = async () => {
         if (!selected) return alert('Vui lòng chọn một khách hàng để xóa!');
         if (!window.confirm(`Xác nhận xóa khách hàng "${selected.name}"?`)) return;
         try {
             await axiosClient.delete(`${BASE}/${selected.id}`);
-            setSelected(null); fetchData(search);
-        } catch { alert('Xóa thất bại, vui lòng thử lại!'); }
+            setSelected(null); 
+            fetchData(search);
+        } catch { 
+            alert('Xóa thất bại, vui lòng thử lại!'); 
+        }
     };
 
+    const handleCreateOutbound = () => {
+        if (!selected) return alert('Vui lòng chọn một khách hàng để lập phiếu xuất!');
+        onCreateOutbound?.({
+            kind: 'outbound',
+            source: 'customer',
+            customer: selected,
+            products: []
+        });
+    };
+
+    // ── Toolbar actions ─────────────────────────────────────
     const toolbarActions = [
         { label: 'Thêm',       iconSrc: addIcon,    onClick: handleAdd },
         { label: 'Chỉnh sửa',  iconSrc: fixIcon,    onClick: handleEdit },
         { label: 'Xóa',        iconSrc: deleteIcon, onClick: handleDelete },
+        { label: 'Phiếu xuất', iconSrc: outboundIcon, onClick: handleCreateOutbound },
         { label: 'Nhập Excel', iconSrc: excelIcon,  onClick: () => {} },
         { label: 'Xuất Excel', iconSrc: excel1Icon, onClick: () => {} },
     ];

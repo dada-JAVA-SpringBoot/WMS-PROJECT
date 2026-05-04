@@ -55,6 +55,17 @@ function AppContent() {
     const [isInsideSystem, setIsInsideSystem] = useState(false);
     const [activeTab, setActiveTab] = useState('home');
     const [prevTab,   setPrevTab]   = useState('home');
+    const [workflow, setWorkflow] = useState(null);
+
+    const openWorkflow = (nextWorkflow) => {
+        if (!nextWorkflow?.kind) return;
+        setWorkflow(nextWorkflow);
+        setActiveTab(nextWorkflow.kind === 'inbound' ? 'inbound' : 'outbound');
+    };
+
+    const clearWorkflow = () => {
+        setWorkflow(null);
+    };
 
     // Đang khởi tạo — tránh flash màn hình
     if (loading) {
@@ -114,17 +125,50 @@ function AppContent() {
         }
 
         switch (activeTab) {
-            case 'home':           return <Home />;
-            case 'products':       return <Inventory />;
-            case 'attribute':      return <AttributesPage />;
-            case 'warehouse-area': return <WarehouseAreaPage />;
-            case 'inbound':        return <ImportReceiptsPage />;
-            case 'outbound':       return <ExportReceipts />;
-            case 'client':         return <Client />;
-            case 'supplier':       return <Supplier />;
-            case 'staff':          return <Staff />;
-            case 'account':        return <Account />;
-            case 'statistical':    return <Statistical />;
+            case 'home':
+                return <Home />;
+            case 'products':
+                return (
+                    <Inventory
+                        onCreateInbound={(workflowData) => openWorkflow(workflowData)}
+                        onCreateOutbound={(workflowData) => openWorkflow(workflowData)}
+                    />
+                );
+            case 'attribute':
+                return <AttributesPage />;
+            case 'warehouse-area':
+                return <WarehouseAreaPage />;
+            case 'inbound':
+                return (
+                    <ImportReceiptsPage
+                        workflow={workflow}
+                        clearWorkflow={clearWorkflow}
+                        openWorkflow={openWorkflow}
+                    />
+                );
+            case 'outbound':
+                return (
+                    <ExportReceipts
+                        workflow={workflow}
+                        clearWorkflow={clearWorkflow}
+                        openWorkflow={openWorkflow}
+                    />
+                );
+            case 'client':
+                return <Client onCreateOutbound={(workflowData) => openWorkflow(workflowData)} />;
+            case 'supplier':
+                return <Supplier onCreateInbound={(workflowData) => openWorkflow(workflowData)} />;
+            case 'staff':
+                return (
+                    <Staff
+                        onCreateInbound={(workflowData) => openWorkflow(workflowData)}
+                        onCreateOutbound={(workflowData) => openWorkflow(workflowData)}
+                    />
+                );
+            case 'account':
+                return <Account />;
+            case 'statistical':
+                return <Statistical />;
             case 'authority':
                 return <div className="p-8 text-2xl font-bold">Màn hình Phân quyền (Đang xây dựng...)</div>;
             default:

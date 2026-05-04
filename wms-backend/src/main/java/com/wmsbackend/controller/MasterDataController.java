@@ -51,10 +51,42 @@ public class MasterDataController {
         return batchRepo.findAll();
     }
 
+    @PostMapping("/batches")
+    public Batch createBatch(@RequestBody Batch batch) {
+        return batchRepo.save(batch);
+    }
+
     // GET locations — cần khi nhập/xuất hàng vào vị trí cụ thể
     @GetMapping("/locations")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','CHECKER')")
     public List<Location> getAllLocations() {
         return locationRepo.findAll();
+    }
+
+    @PostMapping("/locations")
+    public Location createLocation(@RequestBody Location location) {
+        return locationRepo.save(location);
+    }
+
+    @PutMapping("/locations/{id}")
+    public Location updateLocation(@PathVariable Integer id, @RequestBody Location location) {
+        Location existing = locationRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Location not found: " + id));
+
+        existing.setWarehouseId(location.getWarehouseId());
+        existing.setZone(location.getZone());
+        existing.setAisle(location.getAisle());
+        existing.setRack(location.getRack());
+        existing.setLevel(location.getLevel());
+        existing.setBinCode(location.getBinCode());
+        existing.setCapacity(location.getCapacity());
+        existing.setStorageType(location.getStorageType());
+
+        return locationRepo.save(existing);
+    }
+
+    @DeleteMapping("/locations/{id}")
+    public void deleteLocation(@PathVariable Integer id) {
+        locationRepo.deleteById(id);
     }
 }

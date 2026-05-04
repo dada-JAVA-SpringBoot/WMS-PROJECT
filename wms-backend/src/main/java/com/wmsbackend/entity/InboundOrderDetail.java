@@ -25,6 +25,15 @@ public class InboundOrderDetail {
     @Column(name = "Quantity", nullable = false)
     private BigDecimal quantityReceived;
 
+    @Column(name = "QuantityExpected")
+    private BigDecimal quantityExpected;
+
+    @Column(name = "UnitPrice")
+    private BigDecimal unitPrice;
+
+    @Column(name = "ItemCondition", length = 100)
+    private String itemCondition;
+
     // Getter Setter
 
     public Long getId() {
@@ -71,7 +80,35 @@ public class InboundOrderDetail {
         return quantityReceived;
     }
 
+    public void setQuantityReceived(BigDecimal quantityReceived) {
+        this.quantityReceived = quantityReceived;
+    }
+
     public void setQuantity(BigDecimal quantityReceived) {
         this.quantityReceived = quantityReceived;
+    }
+
+    public BigDecimal getQuantityExpected() {
+        return quantityExpected;
+    }
+
+    public void setQuantityExpected(BigDecimal quantityExpected) {
+        this.quantityExpected = quantityExpected;
+    }
+
+    public BigDecimal getUnitPrice() {
+        return unitPrice;
+    }
+
+    public void setUnitPrice(BigDecimal unitPrice) {
+        this.unitPrice = unitPrice;
+    }
+
+    public String getItemCondition() {
+        return itemCondition;
+    }
+
+    public void setItemCondition(String itemCondition) {
+        this.itemCondition = itemCondition;
     }
 }

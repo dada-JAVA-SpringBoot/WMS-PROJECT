@@ -7,12 +7,13 @@ import axiosClient from '../api/axiosClient';
 import addIcon    from '../components/common/icons/add.png';
 import fixIcon    from '../components/common/icons/fix.png';
 import deleteIcon from '../components/common/icons/delete.png';
+import inboundIcon from '../components/common/icons/inbound.png';
 import excelIcon  from '../components/common/icons/excel.png';
 import excel1Icon from '../components/common/icons/excel1.png';
 
 const BASE = '/api/suppliers';
 
-export default function Supplier() {
+export default function Supplier({ onCreateInbound }) {
     const [data, setData]         = useState([]);
     const [loading, setLoading]   = useState(true);
     const [selected, setSelected] = useState(null);
@@ -87,10 +88,21 @@ export default function Supplier() {
         }
     };
 
+    const handleCreateInbound = () => {
+        if (!selected) return alert('Vui lòng chọn một nhà cung cấp để lập phiếu nhập!');
+        onCreateInbound?.({
+            kind: 'inbound',
+            source: 'supplier',
+            supplier: selected,
+            products: []
+        });
+    };
+
     const toolbarActions = [
         { label: 'Thêm',       iconSrc: addIcon,    onClick: handleAdd },
         { label: 'Chỉnh sửa',  iconSrc: fixIcon,    onClick: handleEdit },
         { label: 'Xóa',        iconSrc: deleteIcon, onClick: handleDelete },
+        { label: 'Phiếu nhập', iconSrc: inboundIcon, onClick: handleCreateInbound },
         { label: 'Nhập Excel', iconSrc: excelIcon,  onClick: () => {} },
         { label: 'Xuất Excel', iconSrc: excel1Icon, onClick: () => {} },
     ];
