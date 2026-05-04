@@ -5,6 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7661f23e-b336-45c8-a5a3-5af4fc5b2f4a" name="Changes" comment="">
+      <!-- Files từ nhánh frontend_commercial -->
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources/data_sources_history.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/node_modules/.package-lock.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/components/common/icons/a1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/components/common/icons/a2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/components/common/icons/cup.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/components/common/icons/zalo.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/pages/LandingPage/LandingPage.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/pages/LandingPage/Sections/About.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/pages/LandingPage/Sections/Features.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/pages/LandingPage/Sections/Hero.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/pages/LandingPage/Sections/Pricing.jsx" afterDir="false" />
+      <!-- Files từ nhánh main -->
       <change afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/AuthController.java" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/dto/LoginRequest.java" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/dto/LoginResponse.java" afterDir="false" />
@@ -21,6 +34,7 @@
       <change afterPath="$PROJECT_DIR$/wms-frontend/src/pages/AccountManagement.jsx" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/wms-frontend/src/pages/LoginPage.jsx" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/wms-frontend/src/pages/UnauthorizedPage.jsx" afterDir="false" />
+      <!-- Các file bị thay đổi (Gộp từ cả 2 nhánh) -->
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/node_modules/@tailwindcss/oxide-win32-x64-msvc/tailwindcss-oxide.win32-x64-msvc.node" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
@@ -37,6 +51,7 @@
       <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/SupplierController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/SupplierController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/Staff.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/Staff.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/StaffRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/StaffRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/resources/application-local.yml.example" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/wms-database/setup.sql" beforeDir="false" afterPath="$PROJECT_DIR$/wms-database/setup.sql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wms-frontend/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/App.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Client.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Client.jsx" afterDir="false" />
@@ -66,15 +81,15 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
-  &quot;lastFilter&quot;: {
-    &quot;state&quot;: &quot;OPEN&quot;,
-    &quot;assignee&quot;: &quot;lequocdat8272&quot;
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "lequocdat8272"
   }
 }</component>
   <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/dada-JAVA-SpringBoot/WMS-PROJECT.git&quot;,
-    &quot;accountId&quot;: &quot;8bd39c0a-0524-4340-990e-74178ce93059&quot;
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/dada-JAVA-SpringBoot/WMS-PROJECT.git",
+    "accountId": "8bd39c0a-0524-4340-990e-74178ce93059"
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
@@ -82,7 +97,7 @@
   </component>
   <component name="KubernetesApiPersistence">{}</component>
   <component name="KubernetesApiProvider">{
-  &quot;isMigrated&quot;: true
+  "isMigrated": true
 }</component>
   <component name="MavenImportPreferences">
     <option name="generalSettings">
@@ -99,8 +114,8 @@
     <dismissed value="$PROJECT_DIR$/wms-frontend/package.json" />
   </component>
   <component name="ProjectColorInfo">{
-  &quot;customColor&quot;: &quot;&quot;,
-  &quot;associatedIndex&quot;: 3
+  "customColor": "",
+  "associatedIndex": 3
 }</component>
   <component name="ProjectId" id="3Cy8q7EjHXrQJyD8u988gbjSmTp" />
   <component name="ProjectViewState">
@@ -120,9 +135,10 @@
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "Spring Boot.WmsBackendApplication.executor": "Run",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
     "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "admin-permission",
+    "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
