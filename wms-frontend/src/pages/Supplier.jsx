@@ -1,42 +1,38 @@
+// ================================================================
+// 2. Supplier.jsx — thay fetch → axiosClient
+// ================================================================
 import React, { useState, useEffect, useRef } from 'react';
 import SupplierModal from '../components/modals/SupplierModal';
-import addIcon from '../components/common/icons/add.png';
-import fixIcon from '../components/common/icons/fix.png';
+import axiosClient from '../api/axiosClient';
+import addIcon    from '../components/common/icons/add.png';
+import fixIcon    from '../components/common/icons/fix.png';
 import deleteIcon from '../components/common/icons/delete.png';
-import excelIcon from '../components/common/icons/excel.png';
+import excelIcon  from '../components/common/icons/excel.png';
 import excel1Icon from '../components/common/icons/excel1.png';
 
-const API = 'http://localhost:8080/api/suppliers';
+const BASE = '/api/suppliers';
 
 export default function Supplier() {
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [data, setData]         = useState([]);
+    const [loading, setLoading]   = useState(true);
     const [selected, setSelected] = useState(null);
-    const [search, setSearch] = useState('');
+    const [search, setSearch]     = useState('');
     const [searchBy, setSearchBy] = useState('all');
     const [modalOpen, setModalOpen] = useState(false);
-    const [editData, setEditData] = useState(null);
+    const [editData, setEditData]   = useState(null);
     const debounceRef = useRef(null);
 
-    // ── 1. Fetch Dữ liệu từ SQL (thông qua Java) ──────────
+    // ── 1. Fetch Dữ liệu bằng axiosClient ──────────
     const fetchData = async (keyword = '') => {
         setLoading(true);
         try {
-            // Xây dựng URL tìm kiếm linh hoạt
-            let url = API;
-            if (keyword.trim()) {
-                url = `${API}/search?keyword=${encodeURIComponent(keyword)}&type=${searchBy}`;
-            }
-
-            const res = await fetch(url);
-            if (!res.ok) throw new Error("Không thể kết nối đến máy chủ");
-
-            const json = await res.json();
-            // Đảm bảo dữ liệu luôn là mảng để tránh lỗi .map()
-            setData(Array.isArray(json) ? json : []);
+            const url = keyword.trim() ? `${BASE}?keyword=${encodeURIComponent(keyword)}` : BASE;
+            const res = await axiosClient.get(url);
+            // Đảm bảo dữ liệu luôn là mảng
+            setData(Array.isArray(res.data) ? res.data : []);
         } catch (error) {
-            console.error("Lỗi kết nối SQL:", error);
-            setData([]); // Trả về mảng rỗng nếu lỗi
+            console.error("Lỗi kết nối API:", error);
+            setData([]); 
         } finally {
             setLoading(false);
         }
@@ -46,14 +42,24 @@ export default function Supplier() {
         fetchData();
     }, []);
 
-    // ── 2. Xử lý Tìm kiếm (Debounce để giảm tải SQL) ──────
+    // ── 2. Xử lý Tìm kiếm (Debounce để giảm tải Backend) ──────
     const handleSearchChange = (val) => {
         setSearch(val);
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
             fetchData(val);
-        }, 500); // Đợi 0.5s sau khi ngừng gõ mới gọi SQL
+        }, 500); // Đợi 0.5s sau khi ngừng gõ mới gọi API
     };
+
+    // Lọc dữ liệu ở Client theo tiêu chí (searchBy) dựa trên kết quả trả về
+    const filtered = searchBy === 'all' ? data : data.filter(row => {
+        const q = search.toLowerCase();
+        if (searchBy === 'name')    return row.name?.toLowerCase().includes(q);
+        if (searchBy === 'code')    return row.supplierCode?.toLowerCase().includes(q);
+        if (searchBy === 'phone')   return row.phone?.toLowerCase().includes(q);
+        if (searchBy === 'address') return row.address?.toLowerCase().includes(q);
+        return true;
+    });
 
     // ── 3. Thêm/Sửa/Xóa ────────────────────────────────────
     const handleAdd = () => {
@@ -62,7 +68,7 @@ export default function Supplier() {
     };
 
     const handleEdit = () => {
-        if (!selected) return alert('Vui lòng chọn một nhà cung cấp!');
+        if (!selected) return alert('Vui lòng chọn một nhà cung cấp để chỉnh sửa!');
         setEditData(selected);
         setModalOpen(true);
     };
@@ -72,16 +78,12 @@ export default function Supplier() {
         if (!window.confirm(`Xác nhận xóa nhà cung cấp "${selected.name}" khỏi hệ thống?`)) return;
 
         try {
-            const res = await fetch(`${API}/${selected.id}`, { method: 'DELETE' });
-            if (res.ok) {
-                alert("Xóa thành công!");
-                setSelected(null);
-                fetchData(search);
-            } else {
-                alert("Không thể xóa nhà cung cấp này (có thể liên quan đến dữ liệu khác)!");
-            }
-        } catch {
-            alert('Lỗi kết nối khi xóa!');
+            await axiosClient.delete(`${BASE}/${selected.id}`);
+            alert("Xóa thành công!");
+            setSelected(null); 
+            fetchData(search);
+        } catch (error) {
+            alert('Không thể xóa nhà cung cấp này (có thể liên quan đến dữ liệu khác) hoặc lỗi kết nối!');
         }
     };
 
@@ -109,7 +111,7 @@ export default function Supplier() {
                             <div className="w-12 h-12 flex items-center justify-center rounded-xl group-hover:bg-gray-100 transition duration-200">
                                 <img src={action.iconSrc} alt={action.label} className="w-9 h-9 object-contain" />
                             </div>
-                            <span className="text-[10px] font-bold text-[#00529c] uppercase tracking-tighter group-hover:text-[#1192a8] transition">
+                            <span className="text-[10px] font-bold text-[#00529c] uppercase tracking-tighter group-hover:text-[#1192a8] transition whitespace-nowrap">
                                 {action.label}
                             </span>
                         </button>
@@ -120,7 +122,7 @@ export default function Supplier() {
                     <select
                         value={searchBy}
                         onChange={e => setSearchBy(e.target.value)}
-                        className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#1192a8] bg-white text-gray-600 cursor-pointer"
+                        className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#1192a8]/20 focus:border-[#1192a8] bg-white text-gray-600 cursor-pointer"
                     >
                         <option value="all">Tất cả thông tin</option>
                         <option value="name">Tên nhà cung cấp</option>
@@ -132,14 +134,14 @@ export default function Supplier() {
                         type="text"
                         value={search}
                         onChange={e => handleSearchChange(e.target.value)}
-                        className="border border-gray-200 rounded-xl px-5 py-2.5 w-72 text-sm outline-none focus:border-[#1192a8] transition-all"
+                        className="border border-gray-200 rounded-xl px-5 py-2.5 w-72 text-sm outline-none focus:ring-2 focus:ring-[#1192a8]/20 focus:border-[#1192a8] transition-all"
                         placeholder="Tìm kiếm NCC..."
                     />
                     <button
                         onClick={() => { setSearch(''); fetchData(''); }}
-                        className="bg-[#1192a8] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-teal-700 transition-all active:scale-95"
+                        className="bg-[#1192a8] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-teal-700 hover:shadow-lg hover:shadow-teal-500/30 flex items-center gap-2 transition-all active:scale-95"
                     >
-                        ↻ Làm mới
+                        <span className="text-lg">↻</span> Làm mới
                     </button>
                 </div>
             </div>
@@ -165,28 +167,28 @@ export default function Supplier() {
                                     ĐANG KẾT NỐI VỚI SQL SERVER...
                                 </td>
                             </tr>
-                        ) : data.length === 0 ? (
+                        ) : filtered.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="px-6 py-20 text-center text-gray-400 italic">
-                                    Không tìm thấy dữ liệu nhà cung cấp nào.
+                                    Không tìm thấy dữ liệu nhà cung cấp nào phù hợp.
                                 </td>
                             </tr>
-                        ) : data.map((row, idx) => (
+                        ) : filtered.map((row, idx) => (
                             <tr
                                 key={row.id}
                                 onClick={() => setSelected(selected?.id === row.id ? null : row)}
                                 onDoubleClick={() => { setEditData(row); setModalOpen(true); }}
                                 className={`transition-all cursor-pointer group ${
-                                    selected?.id === row.id ? 'bg-cyan-50' : 'hover:bg-slate-50'
+                                    selected?.id === row.id ? 'bg-cyan-50 border-l-4 border-l-[#1192a8]' : 'hover:bg-slate-50'
                                 }`}
                             >
                                 <td className="px-6 py-4 text-center text-gray-400 font-bold">{idx + 1}</td>
                                 <td className="px-6 py-4 text-center font-mono font-bold text-gray-500 uppercase">{row.supplierCode}</td>
-                                <td className="px-6 py-4 font-bold text-gray-800">{row.name}</td>
+                                <td className="px-6 py-4 font-bold text-gray-800 group-hover:text-[#1192a8] transition-colors">{row.name}</td>
                                 <td className="px-6 py-4 text-gray-600 font-mono">{row.phone || '—'}</td>
                                 <td className="px-6 py-4 text-xs text-gray-500 italic max-w-xs truncate">{row.address || '—'}</td>
                                 <td className="px-6 py-4 text-right font-black text-[#1192a8]">
-                                    {row.totalImportQuantity?.toLocaleString() || 0}
+                                    {row.totalImportQuantity?.toLocaleString('vi-VN') || 0}
                                 </td>
                             </tr>
                         ))}
@@ -194,7 +196,8 @@ export default function Supplier() {
                     </table>
                 </div>
             </div>
-
+            
+            {/* Selected Info Footer */}
             {selected && (
                 <div className="mt-3 flex justify-between items-center px-4">
                     <p className="text-xs text-gray-400">
@@ -203,13 +206,7 @@ export default function Supplier() {
                     <span className="text-[10px] text-gray-300 italic underline">Double-click dòng để sửa nhanh</span>
                 </div>
             )}
-
-            <SupplierModal
-                isOpen={modalOpen}
-                onClose={() => setModalOpen(false)}
-                onSaved={() => fetchData(search)}
-                editData={editData}
-            />
+            <SupplierModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSaved={() => fetchData(search)} editData={editData} />
         </div>
     );
 }
