@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class InventoryDetailDTO {
+    private Integer productId;
     private Integer locationId;
     private Integer batchId;
     private String locCode;
@@ -11,8 +12,10 @@ public class InventoryDetailDTO {
     private LocalDate expiryDate;
     private BigDecimal onHand;
     private BigDecimal allocated;
+    private String productName;
+    private String productSku;
 
-    // Constructor dùng để map kết quả từ câu query SQL
+    // Constructor mặc định (cũ)
     public InventoryDetailDTO(Integer locationId, Integer batchId, String locCode, String batchCode, LocalDate expiryDate, BigDecimal onHand, BigDecimal allocated) {
         this.locationId = locationId;
         this.batchId = batchId;
@@ -23,7 +26,30 @@ public class InventoryDetailDTO {
         this.allocated = allocated;
     }
 
+    // Constructor mở rộng có đầy đủ thông tin (mới)
+    public InventoryDetailDTO(Integer productId, Integer locationId, Integer batchId, String locCode, String batchCode, 
+                             LocalDate expiryDate, BigDecimal onHand, BigDecimal allocated, 
+                             String productName, String productSku) {
+        this.productId = productId;
+        this.locationId = locationId;
+        this.batchId = batchId;
+        this.locCode = locCode;
+        this.batchCode = batchCode;
+        this.expiryDate = expiryDate;
+        this.onHand = onHand;
+        this.allocated = allocated;
+        this.productName = productName;
+        this.productSku = productSku;
+    }
+
     // Getter Setter
+    public Integer getProductId() {
+        return productId;
+    }
+
+    public void setProductId(Integer productId) {
+        this.productId = productId;
+    }
 
     public Integer getLocationId() {
         return locationId;
@@ -79,5 +105,21 @@ public class InventoryDetailDTO {
 
     public void setAllocated(BigDecimal allocated) {
         this.allocated = allocated;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public String getProductSku() {
+        return productSku;
+    }
+
+    public void setProductSku(String productSku) {
+        this.productSku = productSku;
     }
 }

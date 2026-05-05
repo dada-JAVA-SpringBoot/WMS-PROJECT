@@ -33,6 +33,12 @@ public class InventoryController {
         return inventoryRepository.findInventoryDetailsByProductId(productId);
     }
 
+    @GetMapping("/location/{locationId}")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','CHECKER')")
+    public List<InventoryDetailDTO> getInventoryByLocation(@PathVariable Integer locationId) {
+        return inventoryRepository.findInventoryDetailsByLocationId(locationId);
+    }
+
     // API di chuyển tồn kho
     @PostMapping("/transfer")
     public void transferInventory(@RequestBody InventoryTransferRequestDTO request) {

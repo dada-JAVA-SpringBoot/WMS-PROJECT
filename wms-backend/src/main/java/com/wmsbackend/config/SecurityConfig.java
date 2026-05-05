@@ -21,6 +21,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpMethod;
 
 import java.util.List;
 
@@ -39,8 +40,8 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public — chỉ cho phép login/register
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // Public — chỉ cho phép login/register/debug
+                        .requestMatchers("/api/auth/**", "/api/debug/**").permitAll()
 
                         // ── Phân quyền theo API ─────────────────────────────────────
                         // Quản lý nhân viên: chỉ ADMIN
@@ -53,11 +54,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/customers/**").hasAnyRole("ADMIN", "MANAGER")
 
                         // Sản phẩm: xem được từ STOREKEEPER trở lên, sửa/xóa cần MANAGER+
-                        .requestMatchers("GET", "/api/products/**")
+                        .requestMatchers(HttpMethod.GET, "/api/products/**")
                         .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","INBOUND_STAFF","OUTBOUND_STAFF","CHECKER")
-                        .requestMatchers("POST","/api/products/**").hasAnyRole("ADMIN","MANAGER")
-                        .requestMatchers("PUT", "/api/products/**").hasAnyRole("ADMIN","MANAGER")
-                        .requestMatchers("DELETE","/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasAnyRole("ADMIN","MANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAnyRole("ADMIN","MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
 
                         // Nhập kho: INBOUND_STAFF trở lên
                         .requestMatchers("/api/inbound/**")
@@ -99,8 +100,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService);
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import axiosClient from '../../api/axiosClient';
 import { useModalDismiss } from './useModalDismiss';
 
-const API = 'http://localhost:8080/api/suppliers';
+const API = '/api/suppliers';
+const emptyForm = { supplierCode: '', name: '', phone: '', address: '' };
 
 export default function SupplierModal({ isOpen, onClose, onSaved, editData }) {
     const isEdit = !!editData;
     useModalDismiss(isOpen, onClose);
 
-    const emptyForm = { supplierCode: '', name: '', phone: '', address: '' };
     const [form, setForm] = useState(emptyForm);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
@@ -43,18 +44,16 @@ export default function SupplierModal({ isOpen, onClose, onSaved, editData }) {
         if (Object.keys(e).length > 0) { setErrors(e); return; }
         setLoading(true);
         try {
-            const method = isEdit ? 'PUT' : 'POST';
             const url = isEdit ? `${API}/${editData.id}` : API;
-            const res = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form),
-            });
-            if (!res.ok) throw new Error('Lỗi server');
+            if (isEdit) {
+                await axiosClient.put(url, form);
+            } else {
+                await axiosClient.post(url, form);
+            }
             onSaved();
             onClose();
         } catch (err) {
-            alert('Có lỗi xảy ra: ' + err.message);
+            alert('Có lỗi xảy ra: ' + (err.response?.data?.message || err.message));
         } finally {
             setLoading(false);
         }

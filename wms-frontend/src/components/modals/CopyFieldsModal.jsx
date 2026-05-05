@@ -30,6 +30,7 @@ export default function CopyFieldsModal({
 
     useEffect(() => {
         if (isOpen) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setFields(defaultFields);
         }
     }, [isOpen, products]);

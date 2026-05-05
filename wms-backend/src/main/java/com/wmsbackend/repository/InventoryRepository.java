@@ -20,11 +20,20 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     List<Inventory> findByLocationIdIn(Collection<Integer> locationIds);
 
-    @Query("SELECT new com.wmsbackend.dto.InventoryDetailDTO(l.id, b.id, l.binCode, b.batchCode, b.expiryDate, i.quantityOnHand, i.quantityAllocated) " +
+    @Query("SELECT new com.wmsbackend.dto.InventoryDetailDTO(p.id, i.locationId, i.batchId, l.binCode, b.batchCode, b.expiryDate, i.quantityOnHand, i.quantityAllocated, p.name, p.sku) " +
             "FROM Inventory i " +
             "JOIN Location l ON i.locationId = l.id " +
             "JOIN Batch b ON i.batchId = b.id " +
+            "JOIN Product p ON i.productId = p.id " +
             "WHERE i.productId = :productId " +
             "ORDER BY b.expiryDate ASC") // Ưu tiên xếp lô cận Date lên đầu
     List<InventoryDetailDTO> findInventoryDetailsByProductId(@Param("productId") Integer productId);
+
+    @Query("SELECT new com.wmsbackend.dto.InventoryDetailDTO(p.id, i.locationId, i.batchId, l.binCode, b.batchCode, b.expiryDate, i.quantityOnHand, i.quantityAllocated, p.name, p.sku) " +
+            "FROM Inventory i " +
+            "JOIN Location l ON i.locationId = l.id " +
+            "JOIN Batch b ON i.batchId = b.id " +
+            "JOIN Product p ON i.productId = p.id " +
+            "WHERE i.locationId = :locationId")
+    List<InventoryDetailDTO> findInventoryDetailsByLocationId(@Param("locationId") Integer locationId);
 }

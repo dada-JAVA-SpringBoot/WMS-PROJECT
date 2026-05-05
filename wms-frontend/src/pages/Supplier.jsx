@@ -83,7 +83,7 @@ export default function Supplier({ onCreateInbound }) {
             alert("Xóa thành công!");
             setSelected(null); 
             fetchData(search);
-        } catch (error) {
+        } catch {
             alert('Không thể xóa nhà cung cấp này (có thể liên quan đến dữ liệu khác) hoặc lỗi kết nối!');
         }
     };

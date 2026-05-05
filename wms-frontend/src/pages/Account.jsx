@@ -14,8 +14,6 @@ const Account = () => {
     avatar: 'https://via.placeholder.com/150',
   });
 
-  const [isEditingAvatar, setIsEditingAvatar] = useState(false);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setUserInfo((prevInfo) => ({
