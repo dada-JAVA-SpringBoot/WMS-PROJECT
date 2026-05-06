@@ -1,50 +1,91 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useAuthFetch } from '../../hooks/useAuthFetch';
 import StatMetricCard from '../../components/statistical/StatMetricCard';
 import LineAreaChart from '../../components/statistical/charts/LineAreaChart';
 import PanelCard from '../../components/statistical/PanelCard';
 import StatisticsTable from '../../components/statistical/StatisticsTable';
 
-const overviewRows = [
-    { id: 1, date: '2023-05-04', capital: '24.600.000đ', revenue: '28.500.000đ', profit: '3.900.000đ' },
-    { id: 2, date: '2023-05-05', capital: '33.000.000đ', revenue: '36.890.000đ', profit: '3.890.000đ' },
-    { id: 3, date: '2023-05-06', capital: '16.000.000đ', revenue: '18.000.000đ', profit: '2.000.000đ' },
-    { id: 4, date: '2023-05-07', capital: '15.000.000đ', revenue: '17.370.000đ', profit: '2.370.000đ' },
-    { id: 5, date: '2023-05-08', capital: '32.000.000đ', revenue: '36.000.000đ', profit: '4.000.000đ' },
-    { id: 6, date: '2023-05-09', capital: '15.000.000đ', revenue: '16.000.000đ', profit: '1.000.000đ' },
-    { id: 7, date: '2023-05-10', capital: '25.000.000đ', revenue: '28.000.000đ', profit: '3.000.000đ' },
-    { id: 8, date: '2023-05-11', capital: '0đ', revenue: '0đ', profit: '0đ' },
-];
-
-const overviewColumns = [
-    { key: 'date', label: 'Ngày', minWidth: 220 },
-    { key: 'capital', label: 'Vốn', minWidth: 220 },
-    { key: 'revenue', label: 'Doanh thu', minWidth: 220 },
-    { key: 'profit', label: 'Lợi nhuận', minWidth: 220 },
-];
-
 export default function StatisticalOverview() {
+    const authFetch = useAuthFetch();
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const res = await authFetch('/api/stats/summary');
+                const json = await res.json();
+                setData(json);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+    if (loading) return <div className="p-5">Đang tải dữ liệu vận hành...</div>;
+
     return (
         <div className="space-y-5 p-5">
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
-                <StatMetricCard icon="📱" value="14" label="Sản phẩm hiện có trong kho" circleClass="bg-[#58d7a7] text-white" />
-                <StatMetricCard icon="👨‍💼" value="18" label="Khách từ trước đến nay" circleClass="bg-[#d7dbe0]" />
-                <StatMetricCard icon="👨‍🔧" value="5" label="Nhân viên đang hoạt động" circleClass="bg-[#d6ebe5]" />
+            {/* KPI Cards Row 1: Inventory Health */}
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-4">
+                <StatMetricCard 
+                    icon="📦" 
+                    value={data?.totalSkus || 0} 
+                    label="Tổng số mã hàng (SKU)" 
+                    circleClass="bg-blue-500 text-white" 
+                />
+                <StatMetricCard 
+                    icon="📊" 
+                    value={data?.totalStockQuantity?.toLocaleString() || 0} 
+                    label="Tổng sản phẩm tồn kho" 
+                    circleClass="bg-green-500 text-white" 
+                />
+                <StatMetricCard 
+                    icon="🏢" 
+                    value={`${data?.warehouseOccupancyRate?.toFixed(1) || 0}%`} 
+                    label="Tỉ lệ lấp đầy kho" 
+                    circleClass="bg-purple-500 text-white" 
+                />
+                <StatMetricCard 
+                    icon="⚠️" 
+                    value="3" 
+                    label="Mặt hàng dưới định mức" 
+                    circleClass="bg-red-500 text-white" 
+                />
+            </div>
+
+            {/* KPI Cards Row 2: Operational Flow */}
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+                <div className="grid grid-cols-2 gap-5">
+                    <StatMetricCard 
+                        icon="📥" 
+                        value={data?.pendingInbound || 0} 
+                        label="Đơn nhập chờ xử lý" 
+                        circleClass="bg-orange-400 text-white" 
+                    />
+                    <StatMetricCard 
+                        icon="📤" 
+                        value={data?.pendingOutbound || 0} 
+                        label="Đơn xuất chờ xử lý" 
+                        circleClass="bg-indigo-400 text-white" 
+                    />
+                </div>
+                <PanelCard className="flex items-center justify-center bg-white p-5 italic text-gray-500">
+                    Gợi ý: "Tỉ lệ lấp đầy kho đạt {data?.warehouseOccupancyRate?.toFixed(1)}%. Hãy xem xét tối ưu hóa vị trí sắp xếp hàng."
+                </PanelCard>
             </div>
 
             <LineAreaChart
-                title="Thống kê doanh thu 8 ngày gần nhất"
-                labels={['2023-05-04', '2023-05-05', '2023-05-06', '2023-05-07', '2023-05-08', '2023-05-09', '2023-05-10', '2023-05-11']}
+                title="Dòng chảy hàng hóa (Nhập vs Xuất) - 7 ngày qua"
+                labels={['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN']}
                 series={[
-                    { label: 'Vốn', data: [24600000, 33000000, 16000000, 15000000, 32000000, 15000000, 25000000, 0], color: '#2563eb', fill: '#93c5fd', strokeWidth: 4 },
-                    { label: 'Doanh thu', data: [28500000, 36890000, 18000000, 17370000, 36000000, 16000000, 28000000, 0], color: '#4c1d95', fill: '#a78bfa', strokeWidth: 4 },
-                    { label: 'Lợi nhuận', data: [3900000, 3890000, 2000000, 2370000, 4000000, 1000000, 3000000, 0], color: '#ea580c', strokeWidth: 3 },
+                    { label: 'Nhập kho', data: [120, 150, 80, 200, 170, 90, 40], color: '#10b981', fill: '#d1fae5', strokeWidth: 3 },
+                    { label: 'Xuất kho', data: [100, 130, 110, 180, 150, 120, 30], color: '#ef4444', fill: '#fee2e2', strokeWidth: 3 },
                 ]}
-                yTicks={5}
             />
-
-            <PanelCard>
-                <StatisticsTable columns={overviewColumns} rows={overviewRows} scrollHeight="310px" />
-            </PanelCard>
         </div>
     );
 }

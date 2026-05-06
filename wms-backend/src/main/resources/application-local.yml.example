@@ -1,0 +1,20 @@
+# FILE: application-local.yml
+# Lưu ý: File này bị gitignore (chứa mật khẩu). KHÔNG commit lên git!
+spring:
+  datasource:
+    url: jdbc:sqlserver://localhost:14333;databaseName=WMS_DB;encrypt=true;trustServerCertificate=true;
+    username: sa
+    password: <MAT_KHAU_SQL_SERVER>
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  jpa:
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+
+# ── JWT Configuration ─────────────────────────────────────────────────────────
+jwt:
+  # Secret key tối thiểu 32 ký tự — đổi thành chuỗi bí mật riêng của bạn!
+  secret: <MAT_KHAU_DA_THONG_NHAT>
+  # Thời hạn token: 24h = 86400000ms | 8h = 28800000ms
+  expiration-ms: 86400000

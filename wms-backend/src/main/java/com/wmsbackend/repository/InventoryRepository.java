@@ -20,6 +20,9 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     List<Inventory> findByLocationIdIn(Collection<Integer> locationIds);
 
+    @Query("SELECT COUNT(DISTINCT i.locationId) FROM Inventory i WHERE i.quantityOnHand > 0")
+    long countDistinctLocationId();
+
     @Query("SELECT new com.wmsbackend.dto.InventoryDetailDTO(p.id, i.locationId, i.batchId, l.binCode, b.batchCode, b.expiryDate, i.quantityOnHand, i.quantityAllocated, p.name, p.sku) " +
             "FROM Inventory i " +
             "JOIN Location l ON i.locationId = l.id " +
