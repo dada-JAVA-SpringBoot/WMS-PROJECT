@@ -40,11 +40,14 @@ public class AuthController {
     // ── ĐĂNG NHẬP ─────────────────────────────────────────────────────────
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        System.out.println("Đang đăng nhập user: " + request.getUsername());
         try {
             authManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
+            System.out.println("Xác thực thành công cho: " + request.getUsername());
         } catch (AuthenticationException e) {
+            System.out.println("Xác thực thất bại: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Tên đăng nhập hoặc mật khẩu không đúng"));
         }
