@@ -10,10 +10,13 @@ function parseToken(token) {
     try {
         const decoded = jwtDecode(token);
         // Payload từ JwtUtil.java: { sub: username, roles: [...], exp: ... }
+        const rawRoles = decoded.roles ?? [];
+        const cleanRoles = rawRoles.map(r => r.startsWith('ROLE_') ? r.replace('ROLE_', '') : r);
+        
         return {
             token,
             username:     decoded.sub,
-            roles:        decoded.roles ?? [],       // ['ADMIN'] hoặc ['INBOUND_STAFF', ...]
+            roles:        cleanRoles,       // ['ADMIN'] hoặc ['INBOUND_STAFF', ...]
             exp:          decoded.exp,
         };
     } catch {
@@ -33,11 +36,7 @@ function isTokenExpired(token) {
 }
 
 export function AuthProvider({ children }) {
-    const [user, setUser]       = useState(null);   // { token, username, roles, exp, fullName, employeeCode }
-    const [loading, setLoading] = useState(true);
-
-    // ── Khôi phục session khi reload trang ────────────────────────────────
-    useEffect(() => {
+    const [user, setUser] = useState(() => {
         const token    = localStorage.getItem('wms_token');
         const userJson = localStorage.getItem('wms_user');
 
@@ -45,17 +44,25 @@ export function AuthProvider({ children }) {
             try {
                 const stored  = JSON.parse(userJson);
                 const decoded = parseToken(token);
-                if (decoded) setUser({ ...stored, ...decoded });
+                if (decoded) return { ...stored, ...decoded };
             } catch {
                 localStorage.removeItem('wms_token');
                 localStorage.removeItem('wms_user');
             }
         } else {
-            // Token hết hạn — dọn sạch
             localStorage.removeItem('wms_token');
             localStorage.removeItem('wms_user');
         }
-        setLoading(false);
+        return null;
+    });
+
+    const [loading] = useState(false); // Đổi thành false vì đã init ở trên
+
+    // ── Đăng xuất ─────────────────────────────────────────────────────────
+    const logout = useCallback(() => {
+        localStorage.removeItem('wms_token');
+        localStorage.removeItem('wms_user');
+        setUser(null);
     }, []);
 
     // ── Lắng nghe sự kiện 401 từ axiosClient ─────────────────────────────
@@ -63,7 +70,7 @@ export function AuthProvider({ children }) {
         const handleUnauthorized = () => logout();
         window.addEventListener('wms:unauthorized', handleUnauthorized);
         return () => window.removeEventListener('wms:unauthorized', handleUnauthorized);
-    }, []);
+    }, [logout]);
 
     // ── Đăng nhập ─────────────────────────────────────────────────────────
     const login = useCallback(async (username, password) => {
@@ -86,13 +93,6 @@ export function AuthProvider({ children }) {
         localStorage.setItem('wms_user',  JSON.stringify(userObj));
         setUser(userObj);
         return userObj;
-    }, []);
-
-    // ── Đăng xuất ─────────────────────────────────────────────────────────
-    const logout = useCallback(() => {
-        localStorage.removeItem('wms_token');
-        localStorage.removeItem('wms_user');
-        setUser(null);
     }, []);
 
     // ── Kiểm tra quyền ───────────────────────────────────────────────────
@@ -121,6 +121,7 @@ export function AuthProvider({ children }) {
 }
 
 // Hook tiện dụng
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
     const ctx = useContext(AuthContext);
     if (!ctx) throw new Error('useAuth phải dùng bên trong <AuthProvider>');

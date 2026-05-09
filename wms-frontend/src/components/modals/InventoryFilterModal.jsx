@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useModalDismiss } from './useModalDismiss';
 
 const defaultDraft = {
@@ -50,7 +50,7 @@ function InventoryFilterModalContent({ value, categories, suppliers, units, onAp
                         <select
                             value={draft.categoryId}
                             onChange={(e) => update('categoryId', e.target.value)}
-                            className="min-w-[220px] flex-1 border border-gray-200 rounded-md px-3 py-2 text-sm bg-white"
+                            className="wms-select flex-1 !py-2"
                         >
                             <option value="ALL">Tất cả phân loại</option>
                             {categories.map((category) => (
@@ -65,7 +65,7 @@ function InventoryFilterModalContent({ value, categories, suppliers, units, onAp
                         <select
                             value={draft.supplierCode}
                             onChange={(e) => update('supplierCode', e.target.value)}
-                            className="min-w-[220px] flex-1 border border-gray-200 rounded-md px-3 py-2 text-sm bg-white"
+                            className="wms-select flex-1 !py-2"
                         >
                             <option value="ALL">Tất cả nhà cung cấp</option>
                             {suppliers.map((supplier) => (
@@ -80,7 +80,7 @@ function InventoryFilterModalContent({ value, categories, suppliers, units, onAp
                         <select
                             value={draft.baseUnit}
                             onChange={(e) => update('baseUnit', e.target.value)}
-                            className="min-w-[220px] flex-1 border border-gray-200 rounded-md px-3 py-2 text-sm bg-white"
+                            className="wms-select flex-1 !py-2"
                         >
                             <option value="ALL">Tất cả đơn vị tính</option>
                             {units.map((unit) => (
@@ -95,7 +95,7 @@ function InventoryFilterModalContent({ value, categories, suppliers, units, onAp
                         <select
                             value={draft.storageTemp}
                             onChange={(e) => update('storageTemp', e.target.value)}
-                            className="min-w-[220px] flex-1 border border-gray-200 rounded-md px-3 py-2 text-sm bg-white"
+                            className="wms-select flex-1 !py-2"
                         >
                             <option value="ALL">Tất cả điều kiện</option>
                             <option value="Bình thường">Bình thường</option>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axiosClient from '../../api/axiosClient';
 import SystemDialog from './SystemDialog';
 
 const emptyFormData = {
@@ -52,11 +53,11 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product = nul
         const fetchData = async () => {
             try {
                 const [resCat, resUnit] = await Promise.all([
-                    fetch("http://localhost:8080/api/categories"),
-                    fetch("http://localhost:8080/api/units")
+                    axiosClient.get("/api/categories"),
+                    axiosClient.get("/api/units")
                 ]);
-                const cats = resCat.ok ? await resCat.json() : [];
-                const uns = resUnit.ok ? await resUnit.json() : [];
+                const cats = resCat.data || [];
+                const uns = resUnit.data || [];
                 setCategories(cats);
                 setUnits(uns);
 
@@ -131,30 +132,26 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product = nul
         if (!categoryForm.categoryCode.trim() || !categoryForm.name.trim()) return showMessage("Thiếu dữ liệu", "Vui lòng nhập đầy đủ!");
         setIsCategorySubmitting(true);
         try {
-            const res = await fetch("http://localhost:8080/api/categories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(categoryForm) });
-            if (res.ok) {
-                const created = await res.json();
-                const next = await fetch("http://localhost:8080/api/categories").then(r => r.json());
-                setCategories(next);
-                setFormData(p => ({ ...p, categoryId: String(created.id) }));
-                setIsCategoryModalOpen(false);
-            } else showMessage("Lỗi", "Không thể lưu phân loại.");
-        } catch (e) { showMessage("Lỗi", "Không thể kết nối máy chủ."); } finally { setIsCategorySubmitting(false); }
+            const res = await axiosClient.post("/api/categories", categoryForm);
+            const created = res.data;
+            const nextRes = await axiosClient.get("/api/categories");
+            setCategories(nextRes.data);
+            setFormData(p => ({ ...p, categoryId: String(created.id) }));
+            setIsCategoryModalOpen(false);
+        } catch { showMessage("Lỗi", "Không thể lưu phân loại."); } finally { setIsCategorySubmitting(false); }
     };
 
     const handleCreateUnit = async () => {
         if (!unitForm.unitCode.trim() || !unitForm.name.trim()) return showMessage("Thiếu dữ liệu", "Vui lòng nhập đầy đủ!");
         setIsUnitSubmitting(true);
         try {
-            const res = await fetch("http://localhost:8080/api/units", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(unitForm) });
-            if (res.ok) {
-                const created = await res.json();
-                const next = await fetch("http://localhost:8080/api/units").then(r => r.json());
-                setUnits(next);
-                setFormData(p => ({ ...p, baseUnit: created.name }));
-                setIsUnitModalOpen(false);
-            } else showMessage("Lỗi", "Không thể lưu đơn vị.");
-        } catch (e) { showMessage("Lỗi", "Không thể kết nối máy chủ."); } finally { setIsUnitSubmitting(false); }
+            const res = await axiosClient.post("/api/units", unitForm);
+            const created = res.data;
+            const nextRes = await axiosClient.get("/api/units");
+            setUnits(nextRes.data);
+            setFormData(p => ({ ...p, baseUnit: created.name }));
+            setIsUnitModalOpen(false);
+        } catch { showMessage("Lỗi", "Không thể lưu đơn vị."); } finally { setIsUnitSubmitting(false); }
     };
 
     const addConversion = () => {
@@ -173,14 +170,15 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product = nul
         setIsSubmitting(true);
         try {
             const payload = { ...formData, categoryId: formData.categoryId ? Number(formData.categoryId) : null };
-            const res = await fetch(mode === 'edit' ? `http://localhost:8080/api/products/${product.id}` : "http://localhost:8080/api/products", {
-                method: mode === 'edit' ? "PUT" : "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-            if (res.ok) { onSuccess(); onClose(); }
-            else showMessage("Lỗi", "Không thể lưu hồ sơ sản phẩm.");
-        } catch (e) { showMessage("Lỗi", "Kết nối thất bại."); } finally { setIsSubmitting(false); }
+            const url = mode === 'edit' ? `/api/products/${product.id}` : "/api/products";
+            if (mode === 'edit') {
+                await axiosClient.put(url, payload);
+            } else {
+                await axiosClient.post(url, payload);
+            }
+            onSuccess(); 
+            onClose();
+        } catch { showMessage("Lỗi", "Không thể lưu hồ sơ sản phẩm."); } finally { setIsSubmitting(false); }
     };
 
     const cbm = ((parseFloat(formData.length || 0) * parseFloat(formData.width || 0) * parseFloat(formData.height || 0)) / 1000000).toFixed(6);
@@ -332,7 +330,7 @@ function FormSelect({ label, name, value, onChange, options, isObjectOptions = f
     return (
         <div className="flex flex-col gap-1 text-left">
             <label className="text-[11px] font-bold text-gray-500 uppercase">{label}</label>
-            <select name={name} value={value} onChange={onChange} className="border border-gray-300 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white transition-all text-gray-800">
+            <select name={name} value={value} onChange={onChange} className="wms-select w-full !py-2">
                 {options.map((opt, i) => <option key={i} value={isObjectOptions ? opt.value : opt}>{isObjectOptions ? opt.label : opt}</option>)}
             </select>
         </div>
@@ -344,10 +342,10 @@ function FormSelectWithAction({ label, name, value, onChange, options, isObjectO
         <div className="flex flex-col gap-1 text-left">
             <label className="text-[11px] font-bold text-gray-500 uppercase">{label}</label>
             <div className="flex gap-2">
-                <select name={name} value={value} onChange={onChange} className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white transition-all text-gray-800">
+                <select name={name} value={value} onChange={onChange} className="wms-select flex-1 !py-2">
                     {options.map((opt, i) => <option key={i} value={isObjectOptions ? opt.value : opt}>{isObjectOptions ? opt.label : opt}</option>)}
                 </select>
-                <button type="button" onClick={onBtnClick} className="bg-blue-50 text-blue-600 px-3 py-1 rounded font-bold hover:bg-blue-100 transition-colors">{btnLabel}</button>
+                <button type="button" onClick={onBtnClick} className="bg-blue-50 text-blue-600 px-3 py-1 rounded-xl font-bold hover:bg-blue-100 transition-colors border-2 border-transparent hover:border-blue-200">{btnLabel}</button>
             </div>
         </div>
     );

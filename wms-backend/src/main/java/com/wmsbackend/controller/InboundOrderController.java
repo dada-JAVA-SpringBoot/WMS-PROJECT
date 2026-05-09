@@ -3,6 +3,7 @@
 // ================================================================
 package com.wmsbackend.controller;
 
+import com.wmsbackend.dto.StatusUpdateRequest;
 import com.wmsbackend.entity.*;
 import com.wmsbackend.repository.*;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -198,11 +199,4 @@ class InboundRequest {
 
     public List<InboundOrderDetail> getDetails() { return details; }
     public void setDetails(List<InboundOrderDetail> details) { this.details = details; }
-}
-
-class StatusUpdateRequest {
-    private String status;
-
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
 }

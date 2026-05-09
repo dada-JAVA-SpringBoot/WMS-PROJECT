@@ -12,7 +12,7 @@ const revenueTabs = [
     { id: 'dateRange', label: 'Thống kê từ ngày đến ngày' },
 ];
 
-export default function StatisticalRevenue() {
+export default function StatisticalFinance() {
     const [activeTab, setActiveTab] = useState('year');
 
     const renderContent = () => {

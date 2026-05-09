@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Barcode from 'react-barcode';
 import { useModalDismiss } from './useModalDismiss';
 import TransferModal from './TransferModal';
+import axiosClient from '../../api/axiosClient';
 
 export default function ProductDetailModal({ product, onClose }) {
     const [inventoryDetails, setInventoryDetails] = useState([]);
@@ -26,40 +27,40 @@ export default function ProductDetailModal({ product, onClose }) {
         return map[value] || value;
     };
 
-    const fetchInventoryDetails = () => {
+    const fetchInventoryDetails = useCallback(async () => {
         if (product && product.id) {
             setIsLoadingDetails(true);
-            fetch(`http://localhost:8080/api/inventory/product/${product.id}`)
-                .then(res => {
-                    if (!res.ok) throw new Error("Lỗi Server");
-                    return res.json();
-                })
-                .then(data => setInventoryDetails(data))
-                .catch(err => {
-                    console.error("Lỗi tải chi tiết:", err);
-                    setInventoryDetails([]);
-                })
-                .finally(() => setIsLoadingDetails(false));
+            try {
+                const res = await axiosClient.get(`/api/inventory/product/${product.id}`);
+                setInventoryDetails(res.data);
+            } catch (err) {
+                console.error("Lỗi tải chi tiết:", err);
+                setInventoryDetails([]);
+            } finally {
+                setIsLoadingDetails(false);
+            }
         }
-    };
-
-    useEffect(() => {
-        fetchInventoryDetails();
     }, [product]);
 
     useEffect(() => {
-        Promise.all([
-            fetch("http://localhost:8080/api/categories").then(res => res.ok ? res.json() : []),
-            fetch("http://localhost:8080/api/units").then(res => res.ok ? res.json() : [])
-        ])
-            .then(([categoryData, unitData]) => {
-                setCategories(categoryData);
-                setUnits(unitData);
-            })
-            .catch(() => {
+        fetchInventoryDetails();
+    }, [fetchInventoryDetails]);
+
+    useEffect(() => {
+        const loadCategoriesAndUnits = async () => {
+            try {
+                const [catRes, unitRes] = await Promise.all([
+                    axiosClient.get("/api/categories"),
+                    axiosClient.get("/api/units")
+                ]);
+                setCategories(catRes.data);
+                setUnits(unitRes.data);
+            } catch {
                 setCategories([]);
                 setUnits([]);
-            });
+            }
+        };
+        loadCategoriesAndUnits();
     }, []);
 
     if (!product) return null;

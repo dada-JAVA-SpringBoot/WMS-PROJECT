@@ -1,14 +1,13 @@
 // ===== src/pages/AccountManagement.jsx =====
 // Trang ADMIN quản lý tài khoản — đổi mật khẩu, gán role, bật/tắt tài khoản
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useAuthFetch } from '../hooks/useAuthFetch';
+import axiosClient from '../api/axiosClient';
 
 const ROLES = ['ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','CHECKER'];
 
 export default function AccountManagement() {
     const { user } = useAuth();
-    const authFetch = useAuthFetch();
 
     const [staff, setStaff]       = useState([]);
     const [loading, setLoading]   = useState(true);
@@ -16,37 +15,40 @@ export default function AccountManagement() {
     const [newPass, setNewPass]   = useState('');
     const [saving, setSaving]     = useState(false);
 
-    const fetchStaff = async () => {
+    const fetchStaff = useCallback(async () => {
         setLoading(true);
         try {
-            const res  = await authFetch('http://localhost:8080/api/staff');
-            const data = await res.json();
-            setStaff(data);
+            const res  = await axiosClient.get('/api/staff');
+            setStaff(res.data);
+        } catch (e) {
+            console.error("Lỗi tải danh sách nhân viên:", e);
         } finally { setLoading(false); }
-    };
+    }, []);
 
-    useEffect(() => { fetchStaff(); }, []);
+    useEffect(() => { fetchStaff(); }, [fetchStaff]);
 
     const resetPassword = async (staffId) => {
         if (!newPass) return alert('Nhập mật khẩu mới!');
         if (!window.confirm('Xác nhận đặt lại mật khẩu?')) return;
         setSaving(true);
         try {
-            await authFetch(`http://localhost:8080/api/staff/${staffId}/reset-password`, {
-                method: 'POST',
-                body: JSON.stringify({ newPassword: newPass }),
-            });
+            await axiosClient.post(`/api/staff/${staffId}/reset-password`, { newPassword: newPass });
             setNewPass(''); alert('Đặt lại mật khẩu thành công!');
-        } catch (e) { alert(e.message); }
-        finally { setSaving(false); }
+        } catch (e) {
+            const msg = e.response?.data?.message || e.message || 'Lỗi hệ thống';
+            alert(msg);
+        } finally { setSaving(false); }
     };
 
     const toggleEnabled = async (staffId, currentEnabled) => {
         if (!window.confirm(`${currentEnabled ? 'Vô hiệu hóa' : 'Kích hoạt'} tài khoản này?`)) return;
         try {
-            await authFetch(`http://localhost:8080/api/staff/${staffId}/toggle-enabled`, { method: 'POST' });
+            await axiosClient.post(`/api/staff/${staffId}/toggle-enabled`);
             fetchStaff();
-        } catch (e) { alert(e.message); }
+        } catch (e) {
+            const msg = e.response?.data?.message || e.message || 'Lỗi hệ thống';
+            alert(msg);
+        }
     };
 
     return (

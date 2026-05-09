@@ -25,6 +25,9 @@ public class OutboundOrderDetail {
     @Column(name = "Quantity", nullable = false)
     private BigDecimal quantity;
 
+    @Column(name = "UnitPrice")
+    private BigDecimal unitPrice;
+
     // Getter Setter
 
     public Long getId() {
@@ -73,5 +76,13 @@ public class OutboundOrderDetail {
 
     public void setQuantity(BigDecimal quantity) {
         this.quantity = quantity;
+    }
+
+    public BigDecimal getUnitPrice() {
+        return unitPrice;
+    }
+
+    public void setUnitPrice(BigDecimal unitPrice) {
+        this.unitPrice = unitPrice;
     }
 }

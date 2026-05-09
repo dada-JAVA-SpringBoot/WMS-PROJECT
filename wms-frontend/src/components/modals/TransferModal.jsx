@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axiosClient from '../../api/axiosClient';
 import SystemDialog from './SystemDialog';
 
 export default function TransferModal({ isOpen, onClose, product, stockLine, onSuccess }) {
@@ -33,8 +34,8 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
             const fetchData = async () => {
                 try {
                     // 1. Tải danh sách quy đổi đơn vị
-                    const resConv = await fetch(`http://localhost:8080/api/products/${product.id}/conversions`);
-                    const convData = await resConv.json();
+                    const resConv = await axiosClient.get(`/api/products/${product.id}/conversions`);
+                    const convData = resConv.data;
                     
                     const baseUnitObj = { unitName: product.baseUnit, conversionFactor: 1, isBase: true };
                     const allUnits = [baseUnitObj, ...convData];
@@ -42,12 +43,12 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
                     setSelectedUnit(baseUnitObj);
 
                     // 2. Lấy toàn bộ vị trí kho
-                    const resAll = await fetch("http://localhost:8080/api/location-overview");
-                    const allLocs = await resAll.json();
+                    const resAll = await axiosClient.get("/api/location-overview");
+                    const allLocs = resAll.data;
 
                     // 3. Lấy danh sách vị trí sản phẩm này đang hiện diện
-                    const resInv = await fetch(`http://localhost:8080/api/inventory/product/${product.id}`);
-                    const invDetails = await resInv.json();
+                    const resInv = await axiosClient.get(`/api/inventory/product/${product.id}`);
+                    const invDetails = resInv.data;
 
                     // 4. Chuẩn hóa các đơn vị khả dụng của sản phẩm
                     const productUnitsNormalized = allUnits.map(u => normalizeUnit(u.unitName));
@@ -192,34 +193,21 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
 
         setIsSubmitting(true);
         try {
-            const response = await fetch("http://localhost:8080/api/inventory/transfer", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    productId: product.id,
-                    batchId: stockLine.batchId,
-                    fromLocationId: stockLine.locationId,
-                    toLocationId: Number(toLocationId),
-                    quantity: totalBaseQty,
-                    userId: 1
-                })
+            await axiosClient.post("/api/inventory/transfer", {
+                productId: product.id,
+                batchId: stockLine.batchId,
+                fromLocationId: stockLine.locationId,
+                toLocationId: Number(toLocationId),
+                quantity: totalBaseQty,
+                userId: 1
             });
 
-            if (response.ok) {
-                onSuccess();
-                showDialog("Thành công", "Di chuyển lô hàng thành công!", "success");
-            } else {
-                try {
-                    const errorData = await response.json();
-                    showDialog("Lỗi hệ thống", errorData.message || "Đã xảy ra lỗi không xác định.", "info");
-                } catch (e) {
-                    const errorText = await response.text();
-                    showDialog("Lỗi hệ thống", errorText || "Không thể kết nối đến máy chủ.", "info");
-                }
-            }
+            onSuccess();
+            showDialog("Thành công", "Di chuyển lô hàng thành công!", "success");
         } catch (error) {
             console.error("Lỗi kết nối:", error);
-            showDialog("Lỗi kết nối", "Không thể kết nối đến máy chủ.", "info");
+            const errorMsg = error.response?.data?.message || "Không thể kết nối đến máy chủ.";
+            showDialog("Lỗi hệ thống", errorMsg, "info");
         } finally {
             setIsSubmitting(false);
         }
@@ -231,85 +219,93 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[100] p-4">
-            <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden">
-                <div className="bg-[#1192a8] text-white px-6 py-4 flex justify-between items-center">
-                    <h2 className="text-lg font-bold uppercase">Di chuyển lô hàng</h2>
-                    <button onClick={onClose} className="text-2xl hover:text-red-200">&times;</button>
+            <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="bg-[#1192a8] text-white px-6 py-4 flex justify-between items-center shrink-0">
+                    <h2 className="text-lg font-bold uppercase tracking-widest">Di chuyển lô hàng nội bộ</h2>
+                    <button onClick={onClose} className="text-3xl hover:text-red-200 leading-none">&times;</button>
                 </div>
                 
-                <div className="p-6 space-y-4">
-                    <div className="bg-gray-50 p-3 rounded border text-sm space-y-1 shadow-sm">
-                        <div className="flex justify-between border-b pb-1 mb-1">
-                            <span className="text-gray-500">Mặt hàng:</span>
-                            <span className="font-bold text-blue-700">{product.sku} - {product.name}</span>
+                <div className="p-6 space-y-6">
+                    {/* Thông tin nguồn - Rộng hơn */}
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-sm grid grid-cols-2 gap-x-8 gap-y-2 shadow-sm">
+                        <div className="flex justify-between border-b border-gray-100 pb-1">
+                            <span className="text-gray-400 font-bold uppercase text-[10px]">Mặt hàng:</span>
+                            <span className="font-bold text-blue-700 truncate ml-2">{product.sku} - {product.name}</span>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-500">Số lô:</span>
-                            <span className="font-mono bg-white px-1 border rounded text-[11px]">{stockLine.batchCode}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-500">Vị trí hiện tại:</span>
-                            <span className="font-bold text-orange-600">{stockLine.locCode}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-500">Tồn khả dụng:</span>
-                            <span className="font-black text-green-600">
+                        <div className="flex justify-between border-b border-gray-100 pb-1">
+                            <span className="text-gray-400 font-bold uppercase text-[10px]">Tồn khả dụng:</span>
+                            <span className="font-black text-green-600 ml-2">
                                 {(Number(stockLine.onHand || 0) - Number(stockLine.allocated || 0)).toLocaleString()} {product.baseUnit}
                             </span>
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-3">
-                        <div className="col-span-2">
-                            <label className="block text-[11px] font-black text-gray-500 uppercase mb-1">Số lượng chuyển:</label>
-                            <input 
-                                type="number" 
-                                className="w-full border-2 border-gray-100 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none font-bold"
-                                value={quantity}
-                                onChange={(e) => setQuantity(e.target.value)}
-                                min="1"
-                            />
+                        <div className="flex justify-between">
+                            <span className="text-gray-400 font-bold uppercase text-[10px]">Số lô:</span>
+                            <span className="font-mono bg-white px-1.5 border rounded text-[11px] font-bold">{stockLine.batchCode}</span>
                         </div>
-                        <div>
-                            <label className="block text-[11px] font-black text-gray-500 uppercase mb-1">Đơn vị:</label>
-                                <select 
-                                    className="w-full border-2 border-gray-100 rounded-lg px-2 py-2 text-sm focus:border-blue-500 outline-none bg-gray-50 font-bold"
-                                    value={selectedUnit ? selectedUnit.unitName : ''}
-                                    onChange={(e) => handleUnitChange(e.target.value)}
-                                >
-                                    {conversions.map(u => (
-                                        <option key={u.unitName} value={u.unitName}>{u.unitName}</option>
-                                    ))}
-                                </select>
+                        <div className="flex justify-between">
+                            <span className="text-gray-400 font-bold uppercase text-[10px]">Vị trí hiện tại:</span>
+                            <span className="font-bold text-orange-600 uppercase">{stockLine.locCode}</span>
                         </div>
                     </div>
 
-                    {selectedUnit && !selectedUnit.isBase && (
-                        <div className="flex justify-between items-center px-1">
-                            <span className="text-[10px] text-gray-400 font-medium italic">
-                                * Tỷ lệ: 1 {selectedUnit.unitName} = {selectedUnit.conversionFactor} {product.baseUnit}
-                            </span>
-                            <div className="text-[11px] text-blue-600 font-bold italic">
-                                = {previewBaseQty} {product.baseUnit} thực tế
-                            </div>
-                        </div>
-                    )}
+                    {/* Thao tác chuyển - Grid 2 cột */}
+                    <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="col-span-2">
+                                    <label className="block text-[11px] font-black text-gray-500 uppercase mb-1">Số lượng chuyển:</label>
+                                    <input 
+                                        type="number" 
+                                        className="w-full border-2 border-gray-100 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none font-bold"
+                                        value={quantity}
+                                        onChange={(e) => setQuantity(e.target.value)}
+                                        min="1"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-black text-gray-500 uppercase mb-1">Đơn vị:</label>
+                                        <select 
+                                            className="wms-select w-full !py-2 !px-3"
+                                            value={selectedUnit ? selectedUnit.unitName : ''}
+                                            onChange={(e) => handleUnitChange(e.target.value)}
+                                        >
+                                            {conversions.map(u => (
+                                                <option key={u.unitName} value={u.unitName}>{u.unitName}</option>
+                                            ))}
+                                        </select>
+                                        </div>
+                                        </div>
 
-                    <div>
-                        <label className="block text-[11px] font-black text-gray-500 uppercase mb-1">Vị trí đích (Sắp xếp theo gợi ý):</label>
-                        <select 
-                            className="w-full border-2 border-gray-100 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none bg-white font-medium"
-                            value={toLocationId}
-                            onChange={(e) => handleLocationChange(e.target.value)}
-                        >
-                            <option value="">-- Chọn vị trí tốt nhất --</option>
-                            {locations.map(loc => (
-                                <option key={loc.id} value={loc.id}>
-                                    {loc.suggestionLabel} {loc.binCode} [{loc.containerType || 'N/A'}] (Tồn: {loc.quantityOnHand || 0}/{loc.capacity || 0})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                                        {selectedUnit && !selectedUnit.isBase && (
+                                        <div className="bg-blue-50 p-2 rounded-lg border border-blue-100 flex justify-between items-center">
+                                        <span className="text-[10px] text-blue-400 font-bold italic">
+                                        1 {selectedUnit.unitName} = {selectedUnit.conversionFactor} {product.baseUnit}
+                                        </span>
+                                        <div className="text-[12px] text-blue-700 font-black italic">
+                                        = {previewBaseQty} {product.baseUnit}
+                                        </div>
+                                        </div>
+                                        )}
+                                        </div>
+
+                                        <div className="space-y-4">
+                                        <div>
+                                        <label className="block text-[11px] font-black text-gray-500 uppercase mb-1">Vị trí đích (Đề xuất tốt nhất):</label>
+                                        <select 
+                                        className="wms-select w-full !py-2 !px-3"
+                                        value={toLocationId}
+                                        onChange={(e) => handleLocationChange(e.target.value)}
+                                        >
+                                        <option value="">-- Chọn vị trí --</option>
+                                        {locations.map(loc => (
+                                        <option key={loc.id} value={loc.id}>
+                                            [{loc.containerType || 'N/A'}] | {loc.suggestionLabel.split(':')[0].replace('(', '').replace(')', '')} | {loc.binCode} ({loc.quantityOnHand}/{loc.capacity})
+                                        </option>
+                                        ))}
+                                        </select>
+                                        <p className="text-[9px] text-gray-400 mt-1.5 italic font-medium">* Hệ thống ưu tiên vị trí cùng lô hàng hoặc vị trí trống khớp đơn vị.</p>
+                                        </div>
+                                        </div>                    </div>
                 </div>
 
                 <div className="bg-gray-100 p-4 border-t flex justify-end gap-3">

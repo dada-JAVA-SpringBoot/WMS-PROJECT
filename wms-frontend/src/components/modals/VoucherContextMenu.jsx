@@ -11,30 +11,49 @@ export default function VoucherContextMenu({
 }) {
     if (!isOpen || !actions.length) return null;
 
+    // Tính toán để menu không bị tràn khỏi màn hình
+    const menuWidth = 240;
+    const menuHeight = 60 + actions.length * 44; // Ước tính chiều cao
+    
+    let adjustedX = x;
+    let adjustedY = y;
+
+    if (x + menuWidth > window.innerWidth) adjustedX = x - menuWidth;
+    if (y + menuHeight > window.innerHeight) adjustedY = y - menuHeight;
+
     return (
         <div
-            className="fixed inset-0 z-[85]"
-            onContextMenu={(e) => e.preventDefault()}
+            className="fixed inset-0 z-[85] cursor-default"
+            onContextMenu={(e) => { e.preventDefault(); onClose(); }}
             onClick={onClose}
         >
             <div
-                className="absolute w-64 rounded-lg border border-gray-200 bg-white shadow-2xl overflow-hidden"
-                style={{ left: x, top: y }}
+                className="absolute w-60 rounded-2xl border border-gray-100 bg-white/95 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden animate-in fade-in zoom-in-95 duration-100 ease-out"
+                style={{ left: adjustedX, top: adjustedY }}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="px-4 py-3 border-b bg-gray-50">
-                    <p className="text-xs uppercase text-gray-500 font-bold">{title}</p>
-                    {subtitle ? <p className="text-sm font-semibold text-gray-900 truncate">{subtitle}</p> : null}
+                {/* Header hiện đại */}
+                <div className="px-5 py-3.5 bg-gray-50/50 border-b border-gray-100">
+                    <p className="text-[10px] uppercase text-gray-400 font-black tracking-[0.1em] mb-0.5">{title}</p>
+                    {subtitle && (
+                        <p className="text-xs font-bold text-[#1192a8] truncate drop-shadow-sm">{subtitle}</p>
+                    )}
                 </div>
 
-                {actions.map((action) => (
-                    <MenuItem
-                        key={action.label}
-                        label={action.label}
-                        onClick={action.onClick}
-                        danger={action.danger}
-                    />
-                ))}
+                {/* Danh sách action */}
+                <div className="p-1.5">
+                    {actions.map((action, idx) => (
+                        <MenuItem
+                            key={action.label || idx}
+                            label={action.label}
+                            onClick={() => {
+                                action.onClick();
+                                onClose();
+                            }}
+                            danger={action.danger}
+                        />
+                    ))}
+                </div>
             </div>
         </div>
     );
@@ -45,11 +64,18 @@ function MenuItem({ label, onClick, danger = false }) {
         <button
             type="button"
             onClick={onClick}
-            className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-50 transition ${
-                danger ? 'text-red-600' : 'text-gray-700'
-            }`}
+            className={`
+                w-full text-left px-4 py-2.5 text-[13px] font-semibold rounded-xl transition-all duration-200
+                flex items-center justify-between group
+                ${danger 
+                    ? 'text-red-500 hover:bg-red-50 active:bg-red-100' 
+                    : 'text-gray-600 hover:bg-[#1192a8]/10 hover:text-[#1192a8] active:bg-[#1192a8]/20'}
+            `}
         >
-            {label}
+            <span>{label}</span>
+            <span className={`opacity-0 group-hover:opacity-100 transition-opacity text-[10px] ${danger ? 'text-red-300' : 'text-[#1192a8]/40'}`}>
+                {danger ? '●' : '→'}
+            </span>
         </button>
     );
 }

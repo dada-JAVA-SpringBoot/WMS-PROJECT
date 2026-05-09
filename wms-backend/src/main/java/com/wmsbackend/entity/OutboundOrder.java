@@ -28,8 +28,25 @@ public class OutboundOrder {
     @Column(name = "CreatedAt", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "TotalAmount")
+    private java.math.BigDecimal totalAmount;
+
+    @Column(name = "Note", length = 500)
+    private String note;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "OutboundOrderId")
+    private java.util.List<OutboundOrderDetail> items = new java.util.ArrayList<>();
 
     // Getter Setter
+
+    public java.util.List<OutboundOrderDetail> getItems() {
+        return items;
+    }
+
+    public void setItems(java.util.List<OutboundOrderDetail> items) {
+        this.items = items;
+    }
 
     public Long getId() {
         return id;
@@ -85,5 +102,21 @@ public class OutboundOrder {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public java.math.BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(java.math.BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
     }
 }

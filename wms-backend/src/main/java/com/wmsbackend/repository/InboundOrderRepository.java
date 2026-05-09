@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface InboundOrderRepository extends JpaRepository<InboundOrder, Long> {
     List<InboundOrder> findByStatusIn(List<String> statuses);
+    long countByStatus(String status);
 }

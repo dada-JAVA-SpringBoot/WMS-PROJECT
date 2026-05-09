@@ -198,7 +198,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                     }
                     case 'Theo NCC':
                         return item.supplierCodes?.toLowerCase().includes(keyword);
-                    default:
+                    default: {
                         const category = categoryMap.get(String(item.categoryId));
                         return (
                             item.name?.toLowerCase().includes(keyword) ||
@@ -210,6 +210,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                             category?.name?.toLowerCase().includes(keyword) ||
                             category?.categoryCode?.toLowerCase().includes(keyword)
                         );
+                    }
                 }
             })();
 
@@ -422,8 +423,6 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         );
     };
 
-    const activeProduct = selectedProducts[0] || null;
-
     const showMessage = (title, message) => {
         setSystemDialog({
             variant: 'info',
@@ -471,7 +470,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         setSelectionAnchorIndex(index);
     };
 
-    const getContextTargetProducts = (product) => {
+    /* const getContextTargetProducts = (product) => {
         if (selectedProductIds.includes(product.id) && selectedProducts.length > 0) {
             return selectedProducts;
         }
@@ -479,7 +478,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
             return selectedProducts;
         }
         return [product];
-    };
+    }; */
 
     const handleRowClick = (product, index, event) => {
         const isToggle = event.ctrlKey || event.metaKey;
@@ -607,6 +606,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
 
     const normalizeExportFileName = (value) => {
         const trimmed = (value || '').trim();
+        // eslint-disable-next-line no-control-regex
         const safeName = trimmed.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_');
         const baseName = safeName || `inventory_${new Date().toISOString().slice(0, 10)}.xlsx`;
         return baseName.endsWith('.xlsx') ? baseName : `${baseName}.xlsx`;

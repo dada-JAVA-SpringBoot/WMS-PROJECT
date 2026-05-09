@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import StatisticalOverview from './Statistical/StatisticalOverview';
 import StatisticalInventory from './Statistical/StatisticalInventory';
-import StatisticalRevenue from './Statistical/StatisticalRevenue';
-import StatisticalSuppliers from './Statistical/StatisticalSuppliers';
-import StatisticalCustomers from './Statistical/StatisticalCustomers';
+import StatisticalOrders from './Statistical/StatisticalOrders';
+import StatisticalFinance from './Statistical/StatisticalFinance';
+import StatisticalPartners from './Statistical/StatisticalPartners';
 import TopTabNav from '../components/statistical/TopTabNav';
 
 const topTabs = [
-    { id: 'overview', label: 'Tổng quan' },
-    { id: 'inventory', label: 'Tồn kho' },
-    { id: 'revenue', label: 'Doanh thu' },
-    { id: 'suppliers', label: 'Nhà cung cấp' },
-    { id: 'customers', label: 'Khách hàng' },
+    { id: 'overview', label: 'Dashboard' },
+    { id: 'inventory', label: 'Tồn kho & ABC' },
+    { id: 'orders', label: 'Nhập - Xuất' },
+    { id: 'finance', label: 'Tài chính' },
+    { id: 'partners', label: 'Đối tác' },
 ];
 
 export default function Statistical() {
@@ -23,12 +23,12 @@ export default function Statistical() {
                 return <StatisticalOverview />;
             case 'inventory':
                 return <StatisticalInventory />;
-            case 'revenue':
-                return <StatisticalRevenue />;
-            case 'suppliers':
-                return <StatisticalSuppliers />;
-            case 'customers':
-                return <StatisticalCustomers />;
+            case 'orders':
+                return <StatisticalOrders />;
+            case 'finance':
+                return <StatisticalFinance />;
+            case 'partners':
+                return <StatisticalPartners />;
             default:
                 return <StatisticalOverview />;
         }
