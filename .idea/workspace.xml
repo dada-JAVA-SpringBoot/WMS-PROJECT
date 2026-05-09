@@ -5,15 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7661f23e-b336-45c8-a5a3-5af4fc5b2f4a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/wms-backend/src/main/resources/application-local.yml.example" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/dto/FinancialDetailDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/dto/FinancialSummaryDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/service/FinancialService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/wms-frontend/src/components/statistical/FinancialCards.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/StatisticalController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/StatisticalController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/InboundOrderRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/InboundOrderRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/InventoryRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/InventoryRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/OutboundOrderRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/OutboundOrderRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Statistical.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Statistical.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Statistical/StatisticalCustomers.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Statistical/StatisticalCustomers.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Statistical/StatisticalOverview.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Statistical/StatisticalOverview.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Statistical/StatisticalRevenue.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Statistical/Revenue/RevenueByDateRange.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Statistical/Revenue/RevenueByDateRange.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Statistical/Revenue/RevenueByDayInMonth.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Statistical/Revenue/RevenueByDayInMonth.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Statistical/Revenue/RevenueByMonth.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Statistical/Revenue/RevenueByMonth.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Statistical/Revenue/RevenueByYear.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Statistical/Revenue/RevenueByYear.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,8 +32,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Class" />
         <option value="Interface" />
+        <option value="Class" />
       </list>
     </option>
   </component>
@@ -44,7 +49,7 @@
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/dada-JAVA-SpringBoot/WMS-PROJECT.git&quot;,
-    &quot;accountId&quot;: &quot;b7c106cb-2ea8-4378-9559-716a1cdfabe7&quot;
+    &quot;accountId&quot;: &quot;8bd39c0a-0524-4340-990e-74178ce93059&quot;
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
@@ -96,11 +101,11 @@
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
     "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "fix__conflict",
+    "git-widget-placeholder": "Financial__Statistics",
     "ignore.virus.scanning.warn.message": "true",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/Rei Kokutatsu/IdeaProjects/WMS-PROJECT/wms-backend/src/main/resources",
+    "last_opened_file_path": "C:/Users/Admin/Documents/nam2ky2/JAVA/WMS-PROJECT",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -141,8 +146,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.32098.37" />
-        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-IU-253.32098.37" />
+        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.31033.145" />
       </set>
     </attachedChunks>
   </component>
