@@ -1,7 +1,5 @@
-// ================================================================
-// 3. Staff.jsx — thay fetch → axiosClient
-// ================================================================
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
 import StaffModal from '../components/modals/StaffModal';
 import axiosClient from '../api/axiosClient';
 import addIcon    from '../components/common/icons/add.png';
@@ -44,18 +42,32 @@ function ContractBadge({ type }) {
     const c = CONTRACT_MAP[type] || { label: type, color: 'bg-gray-100 text-gray-600' };
     return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${c.color}`}>{c.label}</span>;
 }
-function StatusDot({ status }) {
+
+function StatusDot({ status, lastActiveAt }) {
     const s = STATUS_MAP[status] || STATUS_MAP.OFF_SHIFT;
+    const isOnline = lastActiveAt && (new Date() - new Date(lastActiveAt)) < 5 * 60 * 1000;
+
     return (
-        <span className={`flex items-center gap-1.5 text-xs font-semibold ${s.color}`}>
-            <span className={`w-2 h-2 rounded-full ${s.dot} ${status === 'ON_SHIFT' ? 'animate-pulse' : ''}`} />
-            {s.label}
-        </span>
+        <div className="flex flex-col gap-1">
+            <span className={`flex items-center gap-1.5 text-xs font-semibold ${s.color}`}>
+                <span className={`w-2 h-2 rounded-full ${s.dot} ${status === 'ON_SHIFT' ? 'animate-pulse' : ''}`} />
+                {s.label}
+            </span>
+            {isOnline ? (
+                <span className="text-[10px] text-green-500 font-bold ml-3.5 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping" /> ONLINE
+                </span>
+            ) : (
+                <span className="text-[10px] text-gray-400 ml-3.5 italic">
+                    {lastActiveAt ? `Hoạt động ${new Date(lastActiveAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : 'OFFLINE'}
+                </span>
+            )}
+        </div>
     );
 }
 
-// ── Main component ───────────────────────────────────────────────────────────
 export default function Staff({ onCreateInbound, onCreateOutbound }) {
+    const { user } = useAuth();
     const [data, setData]             = useState([]);
     const [loading, setLoading]       = useState(true);
     const [selected, setSelected]     = useState(null);
@@ -97,6 +109,7 @@ export default function Staff({ onCreateInbound, onCreateOutbound }) {
             if (searchBy === 'code')  return row.employeeCode?.toLowerCase().includes(q);
             if (searchBy === 'phone') return row.phone?.toLowerCase().includes(q);
             if (searchBy === 'email') return row.email?.toLowerCase().includes(q);
+            if (searchBy === 'username') return row.username?.toLowerCase().includes(q);
         }
         return true;
     });
@@ -109,12 +122,10 @@ export default function Staff({ onCreateInbound, onCreateOutbound }) {
     };
 
     const handleAdd    = () => { setEditData(null); setModalOpen(true); };
-    
     const handleEdit   = () => {
         if (!selected) return alert('Vui lòng chọn một nhân viên để chỉnh sửa!');
         setEditData(selected); setModalOpen(true);
     };
-    
     const handleDelete = async () => {
         if (!selected) return alert('Vui lòng chọn một nhân viên để xóa!');
         if (!window.confirm(`Xác nhận xóa nhân viên "${selected.fullName}"?`)) return;
@@ -129,22 +140,12 @@ export default function Staff({ onCreateInbound, onCreateOutbound }) {
 
     const handleCreateInbound = () => {
         if (!selected) return alert('Vui lòng chọn một nhân viên để lập phiếu nhập!');
-        onCreateInbound?.({
-            kind: 'inbound',
-            source: 'staff',
-            staff: selected,
-            products: []
-        });
+        onCreateInbound?.({ kind: 'inbound', source: 'staff', staff: selected, products: [] });
     };
 
     const handleCreateOutbound = () => {
         if (!selected) return alert('Vui lòng chọn một nhân viên để lập phiếu xuất!');
-        onCreateOutbound?.({
-            kind: 'outbound',
-            source: 'staff',
-            staff: selected,
-            products: []
-        });
+        onCreateOutbound?.({ kind: 'outbound', source: 'staff', staff: selected, products: [] });
     };
 
     const toolbarActions = [
@@ -159,10 +160,11 @@ export default function Staff({ onCreateInbound, onCreateOutbound }) {
 
     return (
         <div className="p-8 bg-gray-50 min-h-full flex flex-col">
-            <h1 className="text-2xl font-bold text-gray-800 mb-6">Quản lý nhân viên</h1>
+            <h1 className="text-2xl font-bold text-gray-800 mb-6">Quản lý nhân sự & Hệ thống</h1>
+            
             <div className="grid grid-cols-4 gap-4 mb-6">
                 {[
-                    { label: 'Tổng nhân viên', value: stats.total,    color: 'border-l-[#1192a8]', text: 'text-[#1192a8]' },
+                    { label: 'Tổng nhân sự', value: stats.total,    color: 'border-l-[#1192a8]', text: 'text-[#1192a8]' },
                     { label: 'Đang trong ca',  value: stats.onShift,  color: 'border-l-green-500', text: 'text-green-600' },
                     { label: 'Không trong ca', value: stats.offShift, color: 'border-l-gray-400',  text: 'text-gray-500' },
                     { label: 'Đã nghỉ làm',   value: stats.resigned, color: 'border-l-red-400',   text: 'text-red-500'  },
@@ -173,99 +175,105 @@ export default function Staff({ onCreateInbound, onCreateOutbound }) {
                     </div>
                 ))}
             </div>
-            <div className="flex items-center justify-between bg-white p-5 rounded-3xl shadow-sm border border-gray-100 mb-6">
-                <div className="flex gap-8">
-                    {toolbarActions.map((action, i) => (
-                        <button key={i} onClick={action.onClick}
-                            className="flex flex-col items-center gap-1 group bg-transparent border-none cursor-pointer transition-transform active:scale-90">
-                            <div className="w-12 h-12 flex items-center justify-center rounded-xl group-hover:bg-gray-100 transition duration-200">
-                                <img src={action.iconSrc} alt={action.label} className="w-9 h-9 object-contain" />
-                            </div>
-                            <span className="text-[10px] font-bold text-[#00529c] uppercase tracking-tighter group-hover:text-[#1192a8] transition text-center whitespace-nowrap">{action.label}</span>
+
+            {user?.roles?.includes('ADMIN') && (
+                <div className="flex items-center justify-between bg-white p-5 rounded-3xl shadow-sm border border-gray-100 mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="flex gap-8">
+                        {toolbarActions.map((action, i) => (
+                            <button key={i} onClick={action.onClick}
+                                className="flex flex-col items-center gap-1 group bg-transparent border-none cursor-pointer transition-transform active:scale-90">
+                                <div className="w-12 h-12 flex items-center justify-center rounded-xl group-hover:bg-gray-100 transition duration-200">
+                                    <img src={action.iconSrc} alt={action.label} className="w-9 h-9 object-contain" />
+                                </div>
+                                <span className="text-[10px] font-bold text-[#00529c] uppercase tracking-tighter group-hover:text-[#1192a8] transition text-center whitespace-nowrap">{action.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap justify-end">
+                        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+                            className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none bg-white text-gray-600 cursor-pointer">
+                            <option value="all">Tất cả trạng thái</option>
+                            <option value="ON_SHIFT">Đang trong ca</option>
+                            <option value="OFF_SHIFT">Không trong ca</option>
+                            <option value="RESIGNED">Đã nghỉ làm</option>
+                        </select>
+                        <select value={filterRole} onChange={e => setFilterRole(e.target.value)}
+                            className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none bg-white text-gray-600 cursor-pointer">
+                            <option value="all">Tất cả vai trò</option>
+                            <option value="WAREHOUSE_MANAGER">Quản lý kho</option>
+                            <option value="WAREHOUSE_KEEPER">Thủ kho</option>
+                            <option value="INBOUND_STAFF">Nhập kho</option>
+                            <option value="OUTBOUND_STAFF">Xuất kho</option>
+                            <option value="INVENTORY_CHECKER">Kiểm kê</option>
+                        </select>
+                        <select value={searchBy} onChange={e => setSearchBy(e.target.value)}
+                            className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none bg-white text-gray-600 cursor-pointer">
+                            <option value="all">Tất cả</option>
+                            <option value="name">Theo tên</option>
+                            <option value="code">Theo mã</option>
+                            <option value="username">Username</option>
+                            <option value="phone">SĐT</option>
+                        </select>
+                        <input type="text" value={search} onChange={e => handleSearchChange(e.target.value)}
+                            placeholder="Tìm kiếm..."
+                            className="border border-gray-200 rounded-xl px-5 py-2.5 w-44 text-sm focus:outline-none focus:ring-2 focus:ring-[#1192a8]/20 focus:border-[#1192a8] transition-all" />
+                        <button onClick={() => { setSearch(''); setFilterStatus('all'); setFilterRole('all'); fetchData(''); }}
+                            className="bg-[#1192a8] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-teal-700 flex items-center gap-2 transition-all active:scale-95">
+                            Làm mới
                         </button>
-                    ))}
+                    </div>
                 </div>
-                <div className="flex items-center gap-3 flex-wrap justify-end">
-                    <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-                        className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none bg-white text-gray-600 cursor-pointer">
-                        <option value="all">Tất cả trạng thái</option>
-                        <option value="ON_SHIFT">Đang trong ca</option>
-                        <option value="OFF_SHIFT">Không trong ca</option>
-                        <option value="RESIGNED">Đã nghỉ làm</option>
-                    </select>
-                    <select value={filterRole} onChange={e => setFilterRole(e.target.value)}
-                        className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none bg-white text-gray-600 cursor-pointer">
-                        <option value="all">Tất cả vai trò</option>
-                        <option value="WAREHOUSE_MANAGER">Quản lý kho</option>
-                        <option value="WAREHOUSE_KEEPER">Thủ kho</option>
-                        <option value="INBOUND_STAFF">Nhập kho</option>
-                        <option value="OUTBOUND_STAFF">Xuất kho</option>
-                        <option value="INVENTORY_CHECKER">Kiểm kê</option>
-                    </select>
-                    <select value={searchBy} onChange={e => setSearchBy(e.target.value)}
-                        className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none bg-white text-gray-600 cursor-pointer">
-                        <option value="all">Tất cả</option>
-                        <option value="name">Theo tên</option>
-                        <option value="code">Theo mã</option>
-                        <option value="phone">Theo SĐT</option>
-                        <option value="email">Theo email</option>
-                    </select>
-                    <input type="text" value={search} onChange={e => handleSearchChange(e.target.value)}
-                        placeholder="Nhập nội dung tìm kiếm..."
-                        className="border border-gray-200 rounded-xl px-5 py-2.5 w-56 text-sm focus:outline-none focus:ring-2 focus:ring-[#1192a8]/20 focus:border-[#1192a8] transition-all" />
-                    <button onClick={() => { setSearch(''); setFilterStatus('all'); setFilterRole('all'); fetchData(''); }}
-                        className="bg-[#1192a8] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-teal-700 flex items-center gap-2 transition-all active:scale-95">
-                        <span className="text-lg">↻</span> Làm mới
-                    </button>
-                </div>
-            </div>
+            )}
+
             <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex-1">
                 {loading ? (
-                    <div className="flex items-center justify-center h-48 text-gray-400 text-sm">Đang tải dữ liệu...</div>
+                    <div className="flex items-center justify-center h-48 text-gray-400 text-sm italic">Đang tải dữ liệu...</div>
                 ) : (
                     <table className="w-full text-left border-collapse">
                         <thead className="bg-gray-50 border-b">
                             <tr className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
                                 <th className="px-5 py-4 text-center w-12">STT</th>
                                 <th className="px-5 py-4 w-28">Mã NV</th>
-                                <th className="px-5 py-4">Họ và tên</th>
+                                <th className="px-5 py-4">Họ và tên / Username</th>
                                 <th className="px-5 py-4 text-center w-16">GT</th>
                                 <th className="px-5 py-4">SĐT</th>
                                 <th className="px-5 py-4">Vai trò</th>
                                 <th className="px-5 py-4">Hợp đồng</th>
                                 <th className="px-5 py-4">Trạng thái</th>
-                                <th className="px-5 py-4">Ngày vào làm</th>
-                                <th className="px-5 py-4">Ghi chú</th>
+                                <th className="px-5 py-4">Tài khoản</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {filtered.length === 0 ? (
-                                <tr><td colSpan={10} className="px-6 py-12 text-center text-gray-400 text-sm">Không tìm thấy dữ liệu phù hợp</td></tr>
+                                <tr><td colSpan={9} className="px-6 py-12 text-center text-gray-400 text-sm italic">Không tìm thấy dữ liệu phù hợp</td></tr>
                             ) : filtered.map((row, idx) => (
                                 <tr key={row.id}
                                     onClick={() => setSelected(selected?.id === row.id ? null : row)}
-                                    onDoubleClick={() => { setEditData(row); setModalOpen(true); }}
+                                    onDoubleClick={() => { if(user?.roles?.includes('ADMIN')) { setEditData(row); setModalOpen(true); } }}
                                     className={`transition-colors cursor-pointer group ${row.workStatus === 'RESIGNED' ? 'opacity-50' : ''} ${selected?.id === row.id ? 'bg-teal-50 border-l-4 border-l-[#1192a8]' : 'hover:bg-blue-50/50'}`}>
                                     <td className="px-5 py-3.5 text-sm text-center text-gray-400">{idx + 1}</td>
                                     <td className="px-5 py-3.5 text-sm font-mono text-gray-500">{row.employeeCode}</td>
                                     <td className="px-5 py-3.5">
                                         <p className="text-sm font-bold text-[#1192a8] group-hover:text-teal-600">{row.fullName}</p>
-                                        <p className="text-[11px] text-gray-400">{row.email || '—'}</p>
+                                        <p className="text-[11px] text-gray-400 font-mono italic">@{row.username || 'chưa_tạo'}</p>
                                     </td>
                                     <td className="px-5 py-3.5 text-xs text-center text-gray-500">{GENDER_MAP[row.gender] || '—'}</td>
                                     <td className="px-5 py-3.5 text-sm font-mono text-gray-600">{row.phone || '—'}</td>
                                     <td className="px-5 py-3.5"><RoleBadge role={row.warehouseRole} /></td>
                                     <td className="px-5 py-3.5"><ContractBadge type={row.contractType} /></td>
-                                    <td className="px-5 py-3.5"><StatusDot status={row.workStatus} /></td>
-                                    <td className="px-5 py-3.5 text-xs text-gray-500">{formatDate(row.hireDate)}</td>
-                                    <td className="px-5 py-3.5 text-xs text-gray-400 italic max-w-[160px] truncate">{row.notes || '—'}</td>
+                                    <td className="px-5 py-3.5"><StatusDot status={row.workStatus} lastActiveAt={row.lastActiveAt} /></td>
+                                    <td className="px-5 py-3.5">
+                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${row.enabled ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                            {row.enabled ? 'ACTIVE' : 'DISABLED'}
+                                        </span>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 )}
             </div>
-            {selected && (
+            {selected && user?.roles?.includes('ADMIN') && (
                 <p className="mt-2 text-xs text-gray-400 text-right">
                     Đã chọn: <span className="text-[#1192a8] font-semibold">{selected.fullName}</span> — Double-click để sửa nhanh
                 </p>

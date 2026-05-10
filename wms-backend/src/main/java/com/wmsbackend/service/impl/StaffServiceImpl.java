@@ -1,19 +1,26 @@
 package com.wmsbackend.service.impl;
 
 import com.wmsbackend.dto.StaffDTO;
+import com.wmsbackend.entity.Role;
 import com.wmsbackend.entity.Staff;
+import com.wmsbackend.repository.RoleRepository;
 import com.wmsbackend.repository.StaffRepository;
 import com.wmsbackend.service.StaffService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class StaffServiceImpl implements StaffService {
 
-    @Autowired
-    private StaffRepository staffRepository;
+    @Autowired private StaffRepository staffRepository;
+    @Autowired private RoleRepository roleRepository;
+    @Autowired private PasswordEncoder passwordEncoder;
 
     @Override
     public List<StaffDTO> getAllStaff() {
@@ -27,14 +34,36 @@ public class StaffServiceImpl implements StaffService {
     }
 
     @Override
+    @Transactional
     public Staff createStaff(Staff staff) {
+        if (staffRepository.existsByUsername(staff.getUsername())) {
+            throw new RuntimeException("Tên đăng nhập đã tồn tại");
+        }
+        if (staffRepository.existsByEmployeeCode(staff.getEmployeeCode())) {
+            throw new RuntimeException("Mã nhân viên đã tồn tại");
+        }
+
+        // Mã hóa mật khẩu nếu có
+        if (staff.getPassword() != null && !staff.getPassword().isEmpty()) {
+            staff.setPassword(passwordEncoder.encode(staff.getPassword()));
+        } else {
+            // Mật khẩu mặc định nếu không nhập
+            staff.setPassword(passwordEncoder.encode("Staff@123"));
+        }
+
+        // Tự động gán Role dựa trên warehouseRole
+        assignRolesBasedOnWarehouseRole(staff);
+
+        staff.setEnabled(true);
         return staffRepository.save(staff);
     }
 
     @Override
+    @Transactional
     public Staff updateStaff(Integer id, Staff updated) {
         Staff existing = staffRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên với id: " + id));
+        
         existing.setEmployeeCode(updated.getEmployeeCode());
         existing.setFullName(updated.getFullName());
         existing.setGender(updated.getGender());
@@ -43,10 +72,52 @@ public class StaffServiceImpl implements StaffService {
         existing.setEmail(updated.getEmail());
         existing.setHireDate(updated.getHireDate());
         existing.setContractType(updated.getContractType());
-        existing.setWarehouseRole(updated.getWarehouseRole());
+        
+        // Nếu thay đổi warehouseRole, cập nhật lại Roles thực tế
+        if (!existing.getWarehouseRole().equals(updated.getWarehouseRole())) {
+            existing.setWarehouseRole(updated.getWarehouseRole());
+            assignRolesBasedOnWarehouseRole(existing);
+        }
+        
         existing.setWorkStatus(updated.getWorkStatus());
         existing.setNotes(updated.getNotes());
+        
+        // Không cho phép đổi username qua đây để tránh lỗi logic
+        // Nếu muốn đổi username nên có method riêng hoặc kiểm tra kỹ
+        
+        if (updated.getEnabled() != null) {
+            existing.setEnabled(updated.getEnabled());
+        }
+
         return staffRepository.save(existing);
+    }
+
+    private void assignRolesBasedOnWarehouseRole(Staff staff) {
+        Set<Role> roles = new HashSet<>();
+        String wRole = staff.getWarehouseRole();
+        
+        // Mapping từ warehouseRole sang RoleName trong DB
+        // warehouseRole có các giá trị: WAREHOUSE_MANAGER, WAREHOUSE_KEEPER, INBOUND_STAFF, OUTBOUND_STAFF, INVENTORY_CHECKER
+        
+        if ("WAREHOUSE_MANAGER".equals(wRole)) {
+            roleRepository.findByRoleName("ADMIN").ifPresent(roles::add);
+            roleRepository.findByRoleName("MANAGER").ifPresent(roles::add);
+        } else if ("WAREHOUSE_KEEPER".equals(wRole)) {
+            roleRepository.findByRoleName("STOREKEEPER").ifPresent(roles::add);
+        } else if ("INBOUND_STAFF".equals(wRole)) {
+            roleRepository.findByRoleName("INBOUND_STAFF").ifPresent(roles::add);
+        } else if ("OUTBOUND_STAFF".equals(wRole)) {
+            roleRepository.findByRoleName("OUTBOUND_STAFF").ifPresent(roles::add);
+        } else if ("INVENTORY_CHECKER".equals(wRole)) {
+            roleRepository.findByRoleName("CHECKER").ifPresent(roles::add);
+        }
+        
+        // Mặc định ít nhất có 1 quyền
+        if (roles.isEmpty()) {
+            roleRepository.findByRoleName("INBOUND_STAFF").ifPresent(roles::add);
+        }
+        
+        staff.setRoles(roles);
     }
 
     @Override

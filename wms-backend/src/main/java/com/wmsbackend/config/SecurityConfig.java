@@ -47,11 +47,11 @@ public class SecurityConfig {
                         // Quản lý nhân viên: chỉ ADMIN
                         .requestMatchers("/api/staff/**").hasRole("ADMIN")
 
-                        // Quản lý nhà cung cấp: ADMIN, MANAGER
-                        .requestMatchers("/api/suppliers/**").hasAnyRole("ADMIN", "MANAGER")
+                        // Quản lý nhà cung cấp: ADMIN, MANAGER, STOREKEEPER, INBOUND_STAFF
+                        .requestMatchers("/api/suppliers/**").hasAnyRole("ADMIN", "MANAGER", "STOREKEEPER", "INBOUND_STAFF")
 
-                        // Quản lý khách hàng: ADMIN, MANAGER
-                        .requestMatchers("/api/customers/**").hasAnyRole("ADMIN", "MANAGER")
+                        // Quản lý khách hàng: ADMIN, MANAGER, OUTBOUND_STAFF
+                        .requestMatchers("/api/customers/**").hasAnyRole("ADMIN", "MANAGER", "OUTBOUND_STAFF")
 
                         // Sản phẩm: xem được từ STOREKEEPER trở lên, sửa/xóa cần MANAGER+
                         .requestMatchers(HttpMethod.GET, "/api/products/**")
@@ -71,6 +71,9 @@ public class SecurityConfig {
                         // Tồn kho & kiểm kê: mọi role đều xem được
                         .requestMatchers("/api/inventory/**")
                         .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","INBOUND_STAFF","OUTBOUND_STAFF","CHECKER")
+
+                        // Thống kê: ADMIN, MANAGER
+                        .requestMatchers("/api/stats/**").hasAnyRole("ADMIN", "MANAGER")
 
                         // Tất cả request còn lại cần đăng nhập
                         .anyRequest().authenticated()

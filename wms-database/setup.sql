@@ -1,355 +1,533 @@
 -- ==============================================================================
--- DATABASE WMS - BẢN CHUẨN HÓA KIẾN TRÚC VÀ LOGIC (RESTORED MODE)
+-- DATABASE WMS - BẢN CHUẨN HÓA KIẾN TRÚC VÀ LOGIC (FULL SAMPLE DATA & CORRECT PASSWORDS)
 -- ==============================================================================
-CREATE DATABASE WMS_DB;
+IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'WMS_DB')
+BEGIN
+    CREATE DATABASE WMS_DB;
+END
 GO
 USE WMS_DB;
 GO
 
 -- 1. BẢNG DANH MỤC ĐỐI TÁC
-CREATE TABLE Suppliers (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    SupplierCode VARCHAR(50) UNIQUE NOT NULL,
-    Name NVARCHAR(255) NOT NULL,
-    Phone VARCHAR(20),
-    Address NVARCHAR(500),
-    TotalImportQuantity INT DEFAULT 0
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Suppliers')
+BEGIN
+    CREATE TABLE Suppliers (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        SupplierCode VARCHAR(50) UNIQUE NOT NULL,
+        Name NVARCHAR(255) NOT NULL,
+        Phone VARCHAR(20),
+        Address NVARCHAR(500),
+        TotalImportQuantity INT DEFAULT 0
+    );
+END
 
-CREATE TABLE Customers (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    CustomerCode VARCHAR(50) UNIQUE NOT NULL,
-    Name NVARCHAR(255) NOT NULL,
-    Phone VARCHAR(20),
-    Address NVARCHAR(500)
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Customers')
+BEGIN
+    CREATE TABLE Customers (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        CustomerCode VARCHAR(50) UNIQUE NOT NULL,
+        Name NVARCHAR(255) NOT NULL,
+        Phone VARCHAR(20),
+        Address NVARCHAR(500)
+    );
+END
 
 -- 2. BẢNG DANH MỤC MASTER CHO SẢN PHẨM
-CREATE TABLE ProductCategories (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    CategoryCode VARCHAR(50) UNIQUE NOT NULL,
-    Name NVARCHAR(255) NOT NULL,
-    Description NVARCHAR(500),
-    IsActive BIT DEFAULT 1
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ProductCategories')
+BEGIN
+    CREATE TABLE ProductCategories (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        CategoryCode VARCHAR(50) UNIQUE NOT NULL,
+        Name NVARCHAR(255) NOT NULL,
+        Description NVARCHAR(500),
+        IsActive BIT DEFAULT 1
+    );
+END
 
-CREATE TABLE ProductUnits (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    UnitCode VARCHAR(50) UNIQUE NOT NULL,
-    Name NVARCHAR(255) NOT NULL,
-    Description NVARCHAR(500),
-    IsActive BIT DEFAULT 1
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ProductUnits')
+BEGIN
+    CREATE TABLE ProductUnits (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        UnitCode VARCHAR(50) UNIQUE NOT NULL,
+        Name NVARCHAR(255) NOT NULL,
+        Description NVARCHAR(500),
+        IsActive BIT DEFAULT 1
+    );
+END
 
 -- 3. BẢNG SẢN PHẨM
-CREATE TABLE Products (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    Sku VARCHAR(50) UNIQUE NOT NULL,
-    Barcode VARCHAR(100),
-    Name NVARCHAR(255) NOT NULL,
-    BaseUnit NVARCHAR(50) NOT NULL,
-    CategoryId INT FOREIGN KEY REFERENCES ProductCategories(Id),
-    CreatedAt DATETIME2 DEFAULT GETDATE(),
-    Weight DECIMAL(10,2) NULL,
-    Length DECIMAL(10,2) NULL,
-    Width DECIMAL(10,2) NULL,
-    Height DECIMAL(10,2) NULL,
-    StorageTemp NVARCHAR(50) DEFAULT N'Bình thường',
-    SafetyStock INT DEFAULT 0,
-    IsFragile BIT DEFAULT 0,
-    ImageUrl NVARCHAR(MAX) NULL,
-    Status VARCHAR(20) DEFAULT 'ACTIVE'
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Products')
+BEGIN
+    CREATE TABLE Products (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        Sku VARCHAR(50) UNIQUE NOT NULL,
+        Barcode VARCHAR(100),
+        Name NVARCHAR(255) NOT NULL,
+        BaseUnit NVARCHAR(50) NOT NULL,
+        CategoryId INT FOREIGN KEY REFERENCES ProductCategories(Id),
+        CreatedAt DATETIME2 DEFAULT GETDATE(),
+        Weight DECIMAL(10,2) NULL,
+        Length DECIMAL(10,2) NULL,
+        Width DECIMAL(10,2) NULL,
+        Height DECIMAL(10,2) NULL,
+        StorageTemp NVARCHAR(50) DEFAULT N'Bình thường',
+        SafetyStock INT DEFAULT 0,
+        IsFragile BIT DEFAULT 0,
+        ImageUrl NVARCHAR(MAX) NULL,
+        Status VARCHAR(20) DEFAULT 'ACTIVE'
+    );
+END
 
 -- 3.1 BẢNG QUY ĐỔI ĐƠN VỊ SẢN PHẨM
-CREATE TABLE ProductUnitConversions (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
-    UnitName NVARCHAR(50) NOT NULL,
-    ConversionFactor DECIMAL(18,4) NOT NULL,
-    IsDefault BIT DEFAULT 0,
-    CreatedAt DATETIME2 DEFAULT GETDATE(),
-    CONSTRAINT UQ_Product_Unit UNIQUE (ProductId, UnitName)
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ProductUnitConversions')
+BEGIN
+    CREATE TABLE ProductUnitConversions (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
+        UnitName NVARCHAR(50) NOT NULL,
+        ConversionFactor DECIMAL(18,4) NOT NULL,
+        IsDefault BIT DEFAULT 0,
+        CreatedAt DATETIME2 DEFAULT GETDATE(),
+        CONSTRAINT UQ_Product_Unit UNIQUE (ProductId, UnitName)
+    );
+END
 
 -- 4. BẢNG TRUNG GIAN SẢN PHẨM & NHÀ CUNG CẤP (N-N)
-CREATE TABLE ProductSuppliers (
-    ProductId INT FOREIGN KEY REFERENCES Products(Id),
-    SupplierId INT FOREIGN KEY REFERENCES Suppliers(Id),
-    IsDefault BIT DEFAULT 0,
-    PRIMARY KEY (ProductId, SupplierId)
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ProductSuppliers')
+BEGIN
+    CREATE TABLE ProductSuppliers (
+        ProductId INT FOREIGN KEY REFERENCES Products(Id),
+        SupplierId INT FOREIGN KEY REFERENCES Suppliers(Id),
+        IsDefault BIT DEFAULT 0,
+        PRIMARY KEY (ProductId, SupplierId)
+    );
+END
 
 -- 5. BẢNG QUẢN LÝ LÔ HÀNG
-CREATE TABLE Batches (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
-    BatchCode VARCHAR(100) NOT NULL,
-    ManufactureDate DATE,
-    ExpiryDate DATE NOT NULL,
-    CreatedAt DATETIME2 DEFAULT GETDATE(),
-    CONSTRAINT UQ_Product_Batch UNIQUE (ProductId, BatchCode)
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Batches')
+BEGIN
+    CREATE TABLE Batches (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
+        BatchCode VARCHAR(100) NOT NULL,
+        ManufactureDate DATE,
+        ExpiryDate DATE NOT NULL,
+        CreatedAt DATETIME2 DEFAULT GETDATE(),
+        CONSTRAINT UQ_Product_Batch UNIQUE (ProductId, BatchCode)
+    );
+END
 
 -- 6. BẢNG KHO VÀ VỊ TRÍ
-CREATE TABLE Warehouses (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    WarehouseCode VARCHAR(50) UNIQUE NOT NULL,
-    Name NVARCHAR(255) NOT NULL,
-    Address NVARCHAR(500)
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Warehouses')
+BEGIN
+    CREATE TABLE Warehouses (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        WarehouseCode VARCHAR(50) UNIQUE NOT NULL,
+        Name NVARCHAR(255) NOT NULL,
+        Address NVARCHAR(500)
+    );
+END
 
-CREATE TABLE Locations (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    WarehouseId INT NOT NULL FOREIGN KEY REFERENCES Warehouses(Id),
-    Zone NVARCHAR(50), Aisle NVARCHAR(50), Rack NVARCHAR(50), Level NVARCHAR(50),
-    BinCode VARCHAR(50) UNIQUE NOT NULL,
-    Capacity DECIMAL(18,2) DEFAULT 100,
-    StorageType NVARCHAR(20) DEFAULT N'NORMAL',
-    ContainerType NVARCHAR(20) DEFAULT N'THUNG'
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Locations')
+BEGIN
+    CREATE TABLE Locations (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        WarehouseId INT NOT NULL FOREIGN KEY REFERENCES Warehouses(Id),
+        Zone NVARCHAR(50), Aisle NVARCHAR(50), Rack NVARCHAR(50), Level NVARCHAR(50),
+        BinCode VARCHAR(50) UNIQUE NOT NULL,
+        Capacity DECIMAL(18,2) DEFAULT 100,
+        StorageType NVARCHAR(20) DEFAULT N'NORMAL',
+        ContainerType NVARCHAR(20) DEFAULT N'THUNG'
+    );
+END
 
 -- 7. BẢNG TỒN KHO THỰC TẾ
-CREATE TABLE Inventory (
-    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
-    LocationId INT NOT NULL FOREIGN KEY REFERENCES Locations(Id),
-    BatchId INT NOT NULL FOREIGN KEY REFERENCES Batches(Id),
-    QuantityOnHand DECIMAL(18,2) DEFAULT 0,
-    QuantityAllocated DECIMAL(18,2) DEFAULT 0,
-    LastUpdated DATETIME2 DEFAULT GETDATE(),
-    CONSTRAINT UQ_Inventory_Stock UNIQUE (ProductId, LocationId, BatchId)
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Inventory')
+BEGIN
+    CREATE TABLE Inventory (
+        Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
+        LocationId INT NOT NULL FOREIGN KEY REFERENCES Locations(Id),
+        BatchId INT NOT NULL FOREIGN KEY REFERENCES Batches(Id),
+        QuantityOnHand DECIMAL(18,2) DEFAULT 0,
+        QuantityAllocated DECIMAL(18,2) DEFAULT 0,
+        LastUpdated DATETIME2 DEFAULT GETDATE(),
+        CONSTRAINT UQ_Inventory_Stock UNIQUE (ProductId, LocationId, BatchId)
+    );
+END
 
 -- 8. BẢNG SỔ KHO LỊCH SỬ (AUDIT)
-CREATE TABLE InventoryTransactions (
-    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
-    LocationId INT NOT NULL FOREIGN KEY REFERENCES Locations(Id),
-    BatchId INT NOT NULL FOREIGN KEY REFERENCES Batches(Id),
-    TransactionType VARCHAR(20) NOT NULL,
-    QuantityChange DECIMAL(18,2) NOT NULL,
-    ReferenceId BIGINT,
-    CreatedBy INT,
-    CreatedAt DATETIME2 DEFAULT GETDATE()
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'InventoryTransactions')
+BEGIN
+    CREATE TABLE InventoryTransactions (
+        Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
+        LocationId INT NOT NULL FOREIGN KEY REFERENCES Locations(Id),
+        BatchId INT NOT NULL FOREIGN KEY REFERENCES Batches(Id),
+        TransactionType VARCHAR(20) NOT NULL,
+        QuantityChange DECIMAL(18,2) NOT NULL,
+        ReferenceId BIGINT,
+        CreatedBy INT,
+        CreatedAt DATETIME2 DEFAULT GETDATE()
+    );
+END
 
 -- 9. BẢNG GIAO DỊCH NHẬP KHO
-CREATE TABLE InboundOrders (
-    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    ReceiptCode VARCHAR(50) UNIQUE NOT NULL,
-    SupplierId INT FOREIGN KEY REFERENCES Suppliers(Id),
-    ReferenceNumber VARCHAR(100),
-    Status VARCHAR(20) DEFAULT 'DRAFT',
-    ReceiptDate DATETIME2,
-    TotalAmount DECIMAL(18, 2) DEFAULT 0,
-    CreatedBy INT,
-    CreatedAt DATETIME2 DEFAULT GETDATE()
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'InboundOrders')
+BEGIN
+    CREATE TABLE InboundOrders (
+        Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        ReceiptCode VARCHAR(50) UNIQUE NOT NULL,
+        SupplierId INT FOREIGN KEY REFERENCES Suppliers(Id),
+        ReferenceNumber VARCHAR(100),
+        Status VARCHAR(20) DEFAULT 'DRAFT',
+        ReceiptDate DATETIME2,
+        TotalAmount DECIMAL(18, 2) DEFAULT 0,
+        CreatedBy INT,
+        CreatedAt DATETIME2 DEFAULT GETDATE()
+    );
+END
 
-CREATE TABLE InboundOrderDetails (
-    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    InboundOrderId BIGINT NOT NULL FOREIGN KEY REFERENCES InboundOrders(Id),
-    ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
-    BatchId INT NOT NULL FOREIGN KEY REFERENCES Batches(Id),
-    LocationId INT NOT NULL FOREIGN KEY REFERENCES Locations(Id),
-    Quantity DECIMAL(18,2) NOT NULL,
-    QuantityExpected DECIMAL(18,2) DEFAULT 0,
-    UnitPrice DECIMAL(18, 2) DEFAULT 0,
-    ItemCondition NVARCHAR(100) DEFAULT N'Bình thường',
-    TotalPrice AS (Quantity * UnitPrice)
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'InboundOrderDetails')
+BEGIN
+    CREATE TABLE InboundOrderDetails (
+        Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        InboundOrderId BIGINT NOT NULL FOREIGN KEY REFERENCES InboundOrders(Id),
+        ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
+        BatchId INT NOT NULL FOREIGN KEY REFERENCES Batches(Id),
+        LocationId INT NOT NULL FOREIGN KEY REFERENCES Locations(Id),
+        Quantity DECIMAL(18,2) NOT NULL,
+        QuantityExpected DECIMAL(18,2) DEFAULT 0,
+        UnitPrice DECIMAL(18, 2) DEFAULT 0,
+        ItemCondition NVARCHAR(100) DEFAULT N'Bình thường',
+        TotalPrice AS (Quantity * UnitPrice)
+    );
+END
 
 -- 10. BẢNG PHIẾU XUẤT KHO
-CREATE TABLE OutboundOrders (
-    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    IssueCode VARCHAR(50) UNIQUE NOT NULL,
-    CustomerId INT FOREIGN KEY REFERENCES Customers(Id),
-    Status VARCHAR(20) DEFAULT 'DRAFT',
-    IssueDate DATETIME2,
-    TotalAmount DECIMAL(18, 2) DEFAULT 0,
-    Note NVARCHAR(500),
-    CreatedBy INT,
-    CreatedAt DATETIME2 DEFAULT GETDATE()
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'OutboundOrders')
+BEGIN
+    CREATE TABLE OutboundOrders (
+        Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        IssueCode VARCHAR(50) UNIQUE NOT NULL,
+        CustomerId INT FOREIGN KEY REFERENCES Customers(Id),
+        Status VARCHAR(20) DEFAULT 'DRAFT',
+        IssueDate DATETIME2,
+        TotalAmount DECIMAL(18, 2) DEFAULT 0,
+        Note NVARCHAR(500),
+        CreatedBy INT,
+        CreatedAt DATETIME2 DEFAULT GETDATE()
+    );
+END
 
 -- 11. CHI TIẾT PHIẾU XUẤT KHO
-CREATE TABLE OutboundOrderDetails (
-    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    OutboundOrderId BIGINT NOT NULL FOREIGN KEY REFERENCES OutboundOrders(Id),
-    ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
-    BatchId INT NOT NULL FOREIGN KEY REFERENCES Batches(Id),
-    LocationId INT NOT NULL FOREIGN KEY REFERENCES Locations(Id),
-    Quantity DECIMAL(18,2) NOT NULL,
-    UnitPrice DECIMAL(18, 2) DEFAULT 0
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'OutboundOrderDetails')
+BEGIN
+    CREATE TABLE OutboundOrderDetails (
+        Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        OutboundOrderId BIGINT NOT NULL FOREIGN KEY REFERENCES OutboundOrders(Id),
+        ProductId INT NOT NULL FOREIGN KEY REFERENCES Products(Id),
+        BatchId INT NOT NULL FOREIGN KEY REFERENCES Batches(Id),
+        LocationId INT NOT NULL FOREIGN KEY REFERENCES Locations(Id),
+        Quantity DECIMAL(18,2) NOT NULL,
+        UnitPrice DECIMAL(18, 2) DEFAULT 0
+    );
+END
 
 -- 12. BẢNG NHÂN SỰ
-CREATE TABLE Staff (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    EmployeeCode VARCHAR(50) UNIQUE NOT NULL,
-    FullName NVARCHAR(255) NOT NULL,
-    Gender VARCHAR(10) NOT NULL DEFAULT 'MALE',
-    DateOfBirth DATE NULL,
-    Phone VARCHAR(20) NULL,
-    Email VARCHAR(255) NULL,
-    HireDate DATE NOT NULL DEFAULT CAST(GETDATE() AS DATE),
-    ContractType VARCHAR(20) NOT NULL DEFAULT 'FULL_TIME',
-    WarehouseRole VARCHAR(30) NOT NULL DEFAULT 'INBOUND_STAFF',
-    WorkStatus VARCHAR(20) NOT NULL DEFAULT 'OFF_SHIFT',
-    Notes NVARCHAR(500) NULL,
-    Username VARCHAR(100) UNIQUE NOT NULL,
-    Password VARCHAR(255) NOT NULL,
-    Enabled BIT NOT NULL DEFAULT 1,
-    CreatedAt DATETIME2 DEFAULT GETDATE()
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Staff')
+BEGIN
+    CREATE TABLE Staff (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        EmployeeCode VARCHAR(50) UNIQUE NOT NULL,
+        FullName NVARCHAR(255) NOT NULL,
+        Gender VARCHAR(10) NOT NULL DEFAULT 'MALE',
+        DateOfBirth DATE NULL,
+        Phone VARCHAR(20) NULL,
+        Email VARCHAR(255) NULL,
+        HireDate DATE NOT NULL DEFAULT CAST(GETDATE() AS DATE),
+        ContractType VARCHAR(20) NOT NULL DEFAULT 'FULL_TIME',
+        WarehouseRole VARCHAR(30) NOT NULL DEFAULT 'INBOUND_STAFF',
+        WorkStatus VARCHAR(20) NOT NULL DEFAULT 'OFF_SHIFT',
+        Notes NVARCHAR(500) NULL,
+        Username VARCHAR(100) UNIQUE NOT NULL,
+        Password VARCHAR(255) NOT NULL,
+        Enabled BIT NOT NULL DEFAULT 1,
+        LastActiveAt DATETIME2 NULL,
+        CreatedAt DATETIME2 DEFAULT GETDATE()
+    );
+END
+ELSE
+BEGIN
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Staff') AND name = 'LastActiveAt')
+    BEGIN
+        ALTER TABLE Staff ADD LastActiveAt DATETIME2 NULL;
+    END
+END
 
 -- 13. BẢNG PHÂN QUYỀN
-CREATE TABLE Roles (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    RoleName VARCHAR(50) UNIQUE NOT NULL,
-    Description NVARCHAR(255) NULL
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Roles')
+BEGIN
+    CREATE TABLE Roles (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        RoleName VARCHAR(50) UNIQUE NOT NULL,
+        Description NVARCHAR(255) NULL
+    );
+END
 
-CREATE TABLE Staff_Roles (
-    StaffId INT NOT NULL FOREIGN KEY REFERENCES Staff(Id),
-    RoleId  INT NOT NULL FOREIGN KEY REFERENCES Roles(Id),
-    PRIMARY KEY (StaffId, RoleId)
-);
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Staff_Roles')
+BEGIN
+    CREATE TABLE Staff_Roles (
+        StaffId INT NOT NULL FOREIGN KEY REFERENCES Staff(Id),
+        RoleId  INT NOT NULL FOREIGN KEY REFERENCES Roles(Id),
+        PRIMARY KEY (StaffId, RoleId)
+    );
+END
+
+-- 14. BẢNG CA LÀM VIỆC
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'WorkShifts')
+BEGIN
+    CREATE TABLE WorkShifts (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        ShiftName NVARCHAR(100) NOT NULL,
+        StartTime TIME NOT NULL,
+        EndTime TIME NOT NULL,
+        GracePeriodMinutes INT DEFAULT 15
+    );
+END
+
+-- 15. BẢNG CHẤM CÔNG
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Attendance')
+BEGIN
+    CREATE TABLE Attendance (
+        Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        StaffId INT NOT NULL FOREIGN KEY REFERENCES Staff(Id),
+        WorkDate DATE NOT NULL,
+        CheckInTime DATETIME2,
+        CheckOutTime DATETIME2,
+        LateMinutes INT DEFAULT 0,
+        OvertimeMinutes INT DEFAULT 0,
+        Status VARCHAR(20), -- PRESENT, LATE, ABSENT, ON_LEAVE
+        LateReason NVARCHAR(MAX),
+        ApprovalStatus VARCHAR(20), -- PENDING, APPROVED, REJECTED
+        Note NVARCHAR(500)
+    );
+END
 GO
 
 -- CHỈ MỤC
-CREATE NONCLUSTERED INDEX IX_Batches_ExpiryDate ON Batches(ExpiryDate ASC);
-CREATE NONCLUSTERED INDEX IX_Inventory_Lookup ON Inventory(ProductId, LocationId, BatchId);
-CREATE NONCLUSTERED INDEX IX_Staff_WorkStatus ON Staff(WorkStatus);
-CREATE NONCLUSTERED INDEX IX_Staff_Role ON Staff(WarehouseRole);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Batches_ExpiryDate')
+    CREATE NONCLUSTERED INDEX IX_Batches_ExpiryDate ON Batches(ExpiryDate ASC);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Inventory_Lookup')
+    CREATE NONCLUSTERED INDEX IX_Inventory_Lookup ON Inventory(ProductId, LocationId, BatchId);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Staff_WorkStatus')
+    CREATE NONCLUSTERED INDEX IX_Staff_WorkStatus ON Staff(WorkStatus);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Attendance_Date')
+    CREATE NONCLUSTERED INDEX IX_Attendance_Date ON Attendance(WorkDate);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Attendance_Staff')
+    CREATE NONCLUSTERED INDEX IX_Attendance_Staff ON Attendance(StaffId);
 GO
 
 -- ==============================================================================
--- INSERT DỮ LIỆU MẪU
+-- INSERT DỮ LIỆU MẪU (FULL DATA - DOCKER SAFE)
 -- ==============================================================================
 
 -- 1. Suppliers
-INSERT INTO Suppliers (SupplierCode, Name, Phone, Address) VALUES
-('SUP-VNM', N'Công ty CP Sữa Việt Nam (Vinamilk)', '0281234567', N'Quận 7, TP.HCM'),
-('SUP-MSN', N'Tập đoàn Masan', '0287654321', N'Quận 1, TP.HCM'),
-('SUP-SS', N'Samsung Electronics VN', '0909123456', N'KCNC Quận 9, TP.HCM'),
-('SUP-CP', N'Công ty CP Chăn Nuôi C.P', '0988777666', N'Biên Hòa, Đồng Nai');
+IF NOT EXISTS (SELECT 1 FROM Suppliers)
+BEGIN
+    INSERT INTO Suppliers (SupplierCode, Name, Phone, Address) VALUES
+    ('SUP-VNM', N'Công ty CP Sữa Việt Nam (Vinamilk)', '0281234567', N'Quận 7, TP.HCM'),
+    ('SUP-MSN', N'Tập đoàn Masan', '0287654321', N'Quận 1, TP.HCM'),
+    ('SUP-SS', N'Samsung Electronics VN', '0909123456', N'KCNC Quận 9, TP.HCM'),
+    ('SUP-CP', N'Công ty CP Chăn Nuôi C.P', '0988777666', N'Biên Hòa, Đồng Nai');
+END
 
 -- 2. Customers
-INSERT INTO Customers (CustomerCode, Name, Phone, Address) VALUES
-('CUS-WIN', N'Chuỗi siêu thị WinMart', '19008888', N'Hai Bà Trưng, Hà Nội'),
-('CUS-COOP', N'Siêu thị Co.opmart', '19005555', N'Quận 1, TP.HCM');
+IF NOT EXISTS (SELECT 1 FROM Customers)
+BEGIN
+    INSERT INTO Customers (CustomerCode, Name, Phone, Address) VALUES
+    ('CUS-WIN', N'Chuỗi siêu thị WinMart', '19008888', N'Hai Bà Trưng, Hà Nội'),
+    ('CUS-COOP', N'Siêu thị Co.opmart', '19005555', N'Quận 1, TP.HCM');
+END
 
 -- 3. ProductCategories
-INSERT INTO ProductCategories (CategoryCode, Name, Description) VALUES
-('CAT-SUA', N'Sữa & đồ uống dinh dưỡng', N'Sữa tươi, sữa hộp, đồ uống dinh dưỡng'),
-('CAT-GIAVI', N'Gia vị & thực phẩm chế biến', N'Nước mắm, gia vị, đồ ăn chế biến'),
-('CAT-DT', N'Điện tử', N'Smartphone, TV, thiết bị điện tử'),
-('CAT-TUOI', N'Thịt, trứng & hàng tươi', N'Hàng tươi, thịt, trứng, thực phẩm lạnh'),
-('CAT-KHO', N'Mì & đồ khô', N'Mì gói, thực phẩm khô, nguyên liệu đóng gói'),
-('CAT-DH', N'Đồ hộp & hải sản', N'Đồ hộp, cá ngừ, thực phẩm đóng hộp');
+IF NOT EXISTS (SELECT 1 FROM ProductCategories)
+BEGIN
+    INSERT INTO ProductCategories (CategoryCode, Name, Description) VALUES
+    ('CAT-SUA', N'Sữa & đồ uống dinh dưỡng', N'Sữa tươi, sữa hộp, đồ uống dinh dưỡng'),
+    ('CAT-GIAVI', N'Gia vị & thực phẩm chế biến', N'Nước mắm, gia vị, đồ ăn chế biến'),
+    ('CAT-DT', N'Điện tử', N'Smartphone, TV, thiết bị điện tử'),
+    ('CAT-TUOI', N'Thịt, trứng & hàng tươi', N'Hàng tươi, thịt, trứng, thực phẩm lạnh'),
+    ('CAT-KHO', N'Mì & đồ khô', N'Mì gói, thực phẩm khô, nguyên liệu đóng gói'),
+    ('CAT-DH', N'Đồ hộp & hải sản', N'Đồ hộp, cá ngừ, thực phẩm đóng hộp');
+END
 
 -- 4. ProductUnits
-INSERT INTO ProductUnits (UnitCode, Name, Description) VALUES
-('UNIT-HOP', N'Hộp', N'Đơn vị đóng gói cơ bản'),
-('UNIT-CHAI', N'Chai', N'Đơn vị cho hàng dạng lỏng'),
-('UNIT-CAI', N'Cái', N'Đơn vị đếm theo chiếc'),
-('UNIT-KHAY', N'Khay', N'Đơn vị cho khay/hộp khay'),
-('UNIT-LOC', N'Lốc', N'Đơn vị pack nhỏ'),
-('UNIT-THUNG', N'Thùng', N'Đơn vị kiện lớn'),
-('UNIT-VI', N'Vỉ', N'Đơn vị dạng vỉ'),
-('UNIT-GOI', N'Gói', N'Đơn vị bao gói'),
-('UNIT-KG', N'Kg', N'Đơn vị khối lượng'),
-('UNIT-PALLET', N'Pallet', N'Đơn vị kiện pallet');
+IF NOT EXISTS (SELECT 1 FROM ProductUnits)
+BEGIN
+    INSERT INTO ProductUnits (UnitCode, Name, Description) VALUES
+    ('UNIT-HOP', N'Hộp', N'Đơn vị đóng gói cơ bản'),
+    ('UNIT-CHAI', N'Chai', N'Đơn vị cho hàng dạng lỏng'),
+    ('UNIT-CAI', N'Cái', N'Đơn vị đếm theo chiếc'),
+    ('UNIT-KHAY', N'Khay', N'Đơn vị cho khay/hộp khay'),
+    ('UNIT-LOC', N'Lốc', N'Đơn vị pack nhỏ'),
+    ('UNIT-THUNG', N'Thùng', N'Đơn vị kiện lớn'),
+    ('UNIT-VI', N'Vỉ', N'Đơn vị dạng vỉ'),
+    ('UNIT-GOI', N'Gói', N'Đơn vị bao gói'),
+    ('UNIT-KG', N'Kg', N'Đơn vị khối lượng'),
+    ('UNIT-PALLET', N'Pallet', N'Đơn vị kiện pallet');
+END
 
 -- 5. Warehouses & Locations
-INSERT INTO Warehouses (WarehouseCode, Name, Address) VALUES ('WH-MAIN', N'Kho Tổng Trung Tâm', N'KCN Tân Bình, TP.HCM');
-INSERT INTO Locations (WarehouseId, Zone, Aisle, Rack, Level, BinCode, Capacity, StorageType, ContainerType) VALUES
-(1, 'A', '01', '01', '1', 'WH1-A-01-01-1', 1000, N'NORMAL', N'PALLET'),
-(1, 'A', '01', '01', '2', 'WH1-A-01-01-2', 1000, N'NORMAL', N'THUNG'),
-(1, 'A', '01', '02', '1', 'WH1-A-01-02-1', 1000, N'NORMAL', N'THUNG'),
-(1, 'A', '01', '02', '2', 'WH1-A-01-02-2', 1000, N'NORMAL', N'THUNG'),
-(1, 'B', '01', '01', '1', 'WH1-B-01-01-1', 500, N'NORMAL', N'LOC'),
-(1, 'B', '01', '01', '2', 'WH1-B-01-01-2', 500, N'NORMAL', N'LOC'),
-(1, 'B', '01', '02', '1', 'WH1-B-01-02-1', 500, N'NORMAL', N'GOI'),
-(1, 'B', '02', '01', '1', 'WH1-B-02-01-1', 500, N'NORMAL', N'KG'),
-(1, 'C', '01', '01', '1', 'WH1-COLD-01-01-1', 300, N'COLD', N'KHAY'),
-(1, 'C', '01', '01', '2', 'WH1-COLD-01-01-2', 300, N'COLD', N'KHAY'),
-(1, 'D', '01', '01', '1', 'WH1-CHILL-01-01-1', 300, N'CHILLED', N'KHAY'),
-(1, 'E', '01', '01', '1', 'WH1-FROZEN-01-01-1', 200, N'FROZEN', N'KHAY'),
-(1, 'F', '01', '01', '1', 'WH1-QUAR-01-01-1', 200, N'QUARANTINE', N'KHAY');
+IF NOT EXISTS (SELECT 1 FROM Warehouses)
+BEGIN
+    INSERT INTO Warehouses (WarehouseCode, Name, Address) VALUES ('WH-MAIN', N'Kho Tổng Trung Tâm', N'KCN Tân Bình, TP.HCM');
+END
+
+IF NOT EXISTS (SELECT 1 FROM Locations)
+BEGIN
+    INSERT INTO Locations (WarehouseId, Zone, Aisle, Rack, Level, BinCode, Capacity, StorageType, ContainerType) VALUES
+    (1, 'A', '01', '01', '1', 'WH1-A-01-01-1', 1000, N'NORMAL', N'PALLET'),
+    (1, 'A', '01', '01', '2', 'WH1-A-01-01-2', 1000, N'NORMAL', N'THUNG'),
+    (1, 'A', '01', '02', '1', 'WH1-A-01-02-1', 1000, N'NORMAL', N'THUNG'),
+    (1, 'A', '01', '02', '2', 'WH1-A-01-02-2', 1000, N'NORMAL', N'THUNG'),
+    (1, 'B', '01', '01', '1', 'WH1-B-01-01-1', 500, N'NORMAL', N'LOC'),
+    (1, 'B', '01', '01', '2', 'WH1-B-01-01-2', 500, N'NORMAL', N'LOC'),
+    (1, 'B', '01', '02', '1', 'WH1-B-01-02-1', 500, N'NORMAL', N'GOI'),
+    (1, 'B', '02', '01', '1', 'WH1-B-02-01-1', 500, N'NORMAL', N'KG'),
+    (1, 'C', '01', '01', '1', 'WH1-COLD-01-01-1', 300, N'COLD', N'KHAY'),
+    (1, 'C', '01', '01', '2', 'WH1-COLD-01-01-2', 300, N'COLD', N'KHAY'),
+    (1, 'D', '01', '01', '1', 'WH1-CHILL-01-01-1', 300, N'CHILLED', N'KHAY'),
+    (1, 'E', '01', '01', '1', 'WH1-FROZEN-01-01-1', 200, N'FROZEN', N'KHAY'),
+    (1, 'F', '01', '01', '1', 'WH1-QUAR-01-01-1', 200, N'QUARANTINE', N'KHAY');
+END
 
 -- 6. Products
-INSERT INTO Products (Sku, Barcode, Name, BaseUnit, CategoryId, Weight, Length, Width, Height, StorageTemp, SafetyStock, IsFragile, ImageUrl, Status) VALUES
-('MILK-1L', '89301', N'Sữa tươi Vinamilk 1L', N'Hộp', 1, 1.05, 10, 7, 20, N'Bình thường', 500, 0, 'https://cdn.tgdd.vn/Products/Images/2386/79312/bhx/sua-tuoi-tiet-trung-co-duong-vinamilk-100-sua-tuoi-hop-1-lit-202403281405409207.jpg', 'ACTIVE'),
-('CHINSU-1', '89302', N'Nước mắm Chinsu 500ml', N'Chai', 2, 0.6, 6, 6, 25, N'Bình thường', 300, 1, 'https://cdn.tgdd.vn/Products/Images/2289/209456/bhx/nuoc-mam-huong-ca-hoi-hao-hang-chinsu-12-do-dam-chai-500ml-202309211050423407.jpg', 'ACTIVE'),
-('TV-65', '89303', N'Smart TV Samsung 65"', N'Cái', 3, 25.0, 145, 15, 85, N'Bình thường', 10, 1, 'https://cdn2.cellphones.com.vn/insecure/rs:fill:358:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/s/m/smart-tivi-samsung-qled-65q6fa-4k-65-inch.png', 'ACTIVE'),
-('PORK-CP', '89304', N'Thịt heo CP (Khay 500g)', N'Khay', 4, 0.5, 20, 15, 3, N'Kho Lạnh', 100, 0, 'https://cdnv2.tgdd.vn/bhx-static/bhx/production/2026/1/image/production/2026/1/image/Products/8781/344531/suon-non-heo-cp-300g_202601300958028317.jpg', 'ACTIVE'),
-('MILK-180', '89305', N'Sữa tươi Vinamilk 180ml', N'Lốc', 1, 0.8, 15, 10, 12, N'Bình thường', 200, 0, 'https://cdnv2.tgdd.vn/bhx-static/bhx/production/2025/12/image/Products/Images/2386/85844/bhx/thung-48-hop-sua-tuoi-tiet-trung-vinamilk-100-sua-tuoi-co-duong-180ml_202512221131120525.jpg', 'ACTIVE'),
-('NOODLE-O', '89306', N'Mì Omachi (Thùng 30 gói)', N'Thùng', 5, 2.5, 40, 30, 20, N'Bình thường', 400, 0, 'https://cdn.tgdd.vn/Products/Images/2565/175895/bhx/thung-30-goi-mi-khoai-tay-omachi-xot-bo-ham-80g-202303141450332772.jpg', 'ACTIVE'),
-('EGG-CP', '89307', N'Trứng gà CP (Vỉ 10)', N'Vỉ', 4, 0.6, 25, 10, 7, N'Bình thường', 100, 1, 'https://cdn.tgdd.vn/Products/Images/8783/228775/bhx/hop-10-trung-ga-tuoi-qlegg-202011040900362921.jpg', 'ACTIVE'),
-('PHONE-SS', '89308', N'Samsung Galaxy S24', N'Cái', 3, 0.2, 15, 7, 1, N'Bình thường', 50, 1, 'https://cdn2.cellphones.com.vn/insecure/rs:fill:358:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/s/2/s24-thumb.png', 'ACTIVE'),
-('SAUSAGE', '89309', N'Xúc xích CP tiệt trùng', N'Gói', 4, 0.2, 10, 5, 2, N'Kho Mát', 150, 0, 'https://cdn.tgdd.vn/Products/Images/3507/89851/bhx/xuc-xich-heo-tiet-trung-cp-goi-200g-202208220808364009.jpg', 'ACTIVE'),
-('TUNA-01', '89310', N'Cá ngừ đóng hộp', N'Hộp', 6, 0.2, 8, 8, 4, N'Bình thường', 300, 0, 'https://product.hstatic.net/1000282430/product/century-tuna-with-vegetable-oil-184g-_b3b36dcdab9c4690af88963d93d9f3cd_grande.jpg', 'INACTIVE');
+IF NOT EXISTS (SELECT 1 FROM Products)
+BEGIN
+    INSERT INTO Products (Sku, Barcode, Name, BaseUnit, CategoryId, Weight, Length, Width, Height, StorageTemp, SafetyStock, IsFragile, ImageUrl, Status) VALUES
+    ('MILK-1L', '89301', N'Sữa tươi Vinamilk 1L', N'Hộp', 1, 1.05, 10, 7, 20, N'Bình thường', 500, 0, 'https://cdn.tgdd.vn/Products/Images/2386/79312/bhx/sua-tuoi-tiet-trung-co-duong-vinamilk-100-sua-tuoi-hop-1-lit-202403281405409207.jpg', 'ACTIVE'),
+    ('CHINSU-1', '89302', N'Nước mắm Chinsu 500ml', N'Chai', 2, 0.6, 6, 6, 25, N'Bình thường', 300, 1, 'https://cdn.tgdd.vn/Products/Images/2289/209456/bhx/nuoc-mam-huong-ca-hoi-hao-hang-chinsu-12-do-dam-chai-500ml-202309211050423407.jpg', 'ACTIVE'),
+    ('TV-65', '89303', N'Smart TV Samsung 65"', N'Cái', 3, 25.0, 145, 15, 85, N'Bình thường', 10, 1, 'https://cdn2.cellphones.com.vn/insecure/rs:fill:358:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/s/m/smart-tivi-samsung-qled-65q6fa-4k-65-inch.png', 'ACTIVE'),
+    ('PORK-CP', '89304', N'Thịt heo CP (Khay 500g)', N'Khay', 4, 0.5, 20, 15, 3, N'Kho Lạnh', 100, 0, 'https://cdnv2.tgdd.vn/bhx-static/bhx/production/2026/1/image/production/2026/1/image/Products/8781/344531/suon-non-heo-cp-300g_202601300958028317.jpg', 'ACTIVE'),
+    ('MILK-180', '89305', N'Sữa tươi Vinamilk 180ml', N'Lốc', 1, 0.8, 15, 10, 12, N'Bình thường', 200, 0, 'https://cdnv2.tgdd.vn/bhx-static/bhx/production/2025/12/image/Products/Images/2386/85844/bhx/thung-48-hop-sua-tuoi-tiet-trung-vinamilk-100-sua-tuoi-co-duong-180ml_202512221131120525.jpg', 'ACTIVE'),
+    ('NOODLE-O', '89306', N'Mì Omachi (Thùng 30 gói)', N'Thùng', 5, 2.5, 40, 30, 20, N'Bình thường', 400, 0, 'https://cdn.tgdd.vn/Products/Images/2565/175895/bhx/thung-30-goi-mi-khoai-tay-omachi-xot-bo-ham-80g-202303141450332772.jpg', 'ACTIVE'),
+    ('EGG-CP', '89307', N'Trứng gà CP (Vỉ 10)', N'Vỉ', 4, 0.6, 25, 10, 7, N'Bình thường', 100, 1, 'https://cdn.tgdd.vn/Products/Images/8783/228775/bhx/hop-10-trung-ga-tuoi-qlegg-202011040900362921.jpg', 'ACTIVE'),
+    ('PHONE-SS', '89308', N'Samsung Galaxy S24', N'Cái', 3, 0.2, 15, 7, 1, N'Bình thường', 50, 1, 'https://cdn2.cellphones.com.vn/insecure/rs:fill:358:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/s/2/s24-thumb.png', 'ACTIVE'),
+    ('SAUSAGE', '89309', N'Xúc xích CP tiệt trùng', N'Gói', 4, 0.2, 10, 5, 2, N'Kho Mát', 150, 0, 'https://cdn.tgdd.vn/Products/Images/3507/89851/bhx/xuc-xich-heo-tiet-trung-cp-goi-200g-202208220808364009.jpg', 'ACTIVE'),
+    ('TUNA-01', '89310', N'Cá ngừ đóng hộp', N'Hộp', 6, 0.2, 8, 8, 4, N'Bình thường', 300, 0, 'https://product.hstatic.net/1000282430/product/century-tuna-with-vegetable-oil-184g-_b3b36dcdab9c4690af88963d93d9f3cd_grande.jpg', 'INACTIVE');
 
-INSERT INTO ProductSuppliers (ProductId, SupplierId) VALUES (1, 1), (5, 1), (2, 2), (6, 2), (3, 3), (8, 3), (4, 4), (7, 4), (9, 4), (10, 2);
+    INSERT INTO ProductSuppliers (ProductId, SupplierId) VALUES (1, 1), (5, 1), (2, 2), (6, 2), (3, 3), (8, 3), (4, 4), (7, 4), (9, 4), (10, 2);
 
-INSERT INTO ProductUnitConversions (ProductId, UnitName, ConversionFactor) VALUES
-(1, N'Lốc', 4), (1, N'Thùng', 12), (2, N'Thùng', 24), (3, N'Thùng', 1), (3, N'Pallet', 10), (4, N'Thùng', 20), (5, N'Thùng', 48), (6, N'Gói', 0.0333), (7, N'Thùng', 30), (8, N'Thùng', 10), (8, N'Pallet', 100), (9, N'Thùng', 50);
+    INSERT INTO ProductUnitConversions (ProductId, UnitName, ConversionFactor) VALUES
+    (1, N'Lốc', 4), (1, N'Thùng', 12), (2, N'Thùng', 24), (3, N'Thùng', 1), (3, N'Pallet', 10), (4, N'Thùng', 20), (5, N'Thùng', 48), (6, N'Gói', 0.0333), (7, N'Thùng', 30), (8, N'Thùng', 10), (8, N'Pallet', 100), (9, N'Thùng', 50);
+END
 
 -- 7. Batches & Inventory
-INSERT INTO Batches (ProductId, BatchCode, ManufactureDate, ExpiryDate) VALUES
-(1, 'LOT-M1-OLD', '2023-01-01', '2023-07-01'), (1, 'LOT-M1-NEW', '2024-01-01', '2024-07-01'), (2, 'LOT-C1-001', '2023-12-01', '2024-12-01'), (3, 'LOT-TV-001', '2024-01-10', '2034-01-10'), (4, 'LOT-P-001', '2024-03-01', '2024-03-15'), (5, 'LOT-M180-A', '2024-02-01', '2024-08-01'), (5, 'LOT-M180-B', '2024-03-01', '2024-09-01'), (6, 'LOT-OMC-1', '2024-01-01', '2024-10-01'), (7, 'LOT-EGG-1', '2024-04-01', '2024-04-20'), (8, 'LOT-S24-1', '2024-02-15', '2034-02-15'), (9, 'LOT-XX-1', '2024-01-20', '2024-06-20'), (10,'LOT-TUN-1','2023-10-01', '2026-10-01');
+IF NOT EXISTS (SELECT 1 FROM Batches)
+BEGIN
+    INSERT INTO Batches (ProductId, BatchCode, ManufactureDate, ExpiryDate) VALUES
+    (1, 'LOT-M1-OLD', '2023-01-01', '2023-07-01'), (1, 'LOT-M1-NEW', '2024-01-01', '2024-07-01'), (2, 'LOT-C1-001', '2023-12-01', '2024-12-01'), (3, 'LOT-TV-001', '2024-01-10', '2034-01-10'), (4, 'LOT-P-001', '2024-03-01', '2024-03-15'), (5, 'LOT-M180-A', '2024-02-01', '2024-08-01'), (5, 'LOT-M180-B', '2024-03-01', '2024-09-01'), (6, 'LOT-OMC-1', '2024-01-01', '2024-10-01'), (7, 'LOT-EGG-1', '2024-04-01', '2024-04-20'), (8, 'LOT-S24-1', '2024-02-15', '2034-02-15'), (9, 'LOT-XX-1', '2024-01-20', '2024-06-20'), (10,'LOT-TUN-1','2023-10-01', '2026-10-01');
 
-INSERT INTO Inventory (ProductId, LocationId, BatchId, QuantityOnHand, QuantityAllocated) VALUES
-(1, 1, 1, 100, 0), (1, 2, 2, 400, 50), (2, 3, 3, 300, 100), (3, 4, 4, 20, 2), (4, 9, 5, 50, 0), (4, 10, 5, 40, 5), (5, 5, 6, 200, 0), (5, 6, 7, 300, 20), (6, 2, 8, 400, 0), (7, 3, 9, 80, 15), (7, 11, 9, 60, 10), (8, 4, 10, 45, 5), (9, 5, 11, 150, 0), (9, 11, 11, 100, 0), (10, 6, 12, 200, 0);
+    INSERT INTO Inventory (ProductId, LocationId, BatchId, QuantityOnHand, QuantityAllocated) VALUES
+    (1, 1, 1, 100, 0), (1, 2, 2, 400, 50), (2, 3, 3, 300, 100), (3, 4, 4, 20, 2), (4, 9, 5, 50, 0), (4, 10, 5, 40, 5), (5, 5, 6, 200, 0), (5, 6, 7, 300, 20), (6, 2, 8, 400, 0), (7, 3, 9, 80, 15), (7, 11, 9, 60, 10), (8, 4, 10, 45, 5), (9, 5, 11, 150, 0), (9, 11, 11, 100, 0), (10, 6, 12, 200, 0);
 
-INSERT INTO InventoryTransactions (ProductId, LocationId, BatchId, TransactionType, QuantityChange)
-SELECT ProductId, LocationId, BatchId, 'INBOUND', QuantityOnHand FROM Inventory;
+    INSERT INTO InventoryTransactions (ProductId, LocationId, BatchId, TransactionType, QuantityChange)
+    SELECT ProductId, LocationId, BatchId, 'INBOUND', QuantityOnHand FROM Inventory;
+END
 
 -- 8. Orders
-INSERT INTO InboundOrders (ReceiptCode, SupplierId, ReferenceNumber, Status, ReceiptDate, TotalAmount, CreatedBy) VALUES
-('PN-2401-001', 1, 'PO-2401-001', 'COMPLETED', '2024-01-05', 6245000, 1), ('PN-2402-002', 2, 'PO-2402-002', 'COMPLETED', '2024-02-10', 14800000, 2), ('PN-2404-001', 1, 'PO-2404-001', 'IN_TRANSIT', DATEADD(day, 5, GETDATE()), 6245000, 1), ('PN-2404-002', 4, 'PO-2404-002', 'ORDERED', DATEADD(day, 9, GETDATE()), 14800000, 2), ('PN-2405-001', 2, 'PO-2405-001', 'DRAFT', GETDATE(), 250000, 2), ('PN-2405-002', 3, 'PO-2405-002', 'ORDERED', DATEADD(day, 7, GETDATE()), 1800000, 3), ('PN-2406-001', 4, 'PO-2406-001', 'IN_TRANSIT', DATEADD(day, 3, GETDATE()), 2340000, 3);
+IF NOT EXISTS (SELECT 1 FROM InboundOrders)
+BEGIN
+    INSERT INTO InboundOrders (ReceiptCode, SupplierId, ReferenceNumber, Status, ReceiptDate, TotalAmount, CreatedBy) VALUES
+    ('PN-2401-001', 1, 'PO-2401-001', 'COMPLETED', '2024-01-05', 6245000, 1), ('PN-2402-002', 2, 'PO-2402-002', 'COMPLETED', '2024-02-10', 14800000, 2), ('PN-2404-001', 1, 'PO-2404-001', 'IN_TRANSIT', DATEADD(day, 5, GETDATE()), 6245000, 1), ('PN-2404-002', 4, 'PO-2404-002', 'ORDERED', DATEADD(day, 9, GETDATE()), 14800000, 2), ('PN-2405-001', 2, 'PO-2405-001', 'DRAFT', GETDATE(), 250000, 2), ('PN-2405-002', 3, 'PO-2405-002', 'ORDERED', DATEADD(day, 7, GETDATE()), 1800000, 3), ('PN-2406-001', 4, 'PO-2406-001', 'IN_TRANSIT', DATEADD(day, 3, GETDATE()), 2340000, 3);
 
-INSERT INTO InboundOrderDetails (InboundOrderId, ProductId, BatchId, LocationId, Quantity, QuantityExpected, UnitPrice, ItemCondition) VALUES
-(3, 1, 2, 2, 250, 250, 12500, N'Bình thường'), (3, 5, 7, 2, 600, 600, 5200, N'Bình thường'), (4, 4, 5, 1, 120, 120, 78000, N'Bình thường'), (4, 7, 9, 1, 160, 160, 34000, N'Bình thường'), (5, 6, 8, 1, 50, 50, 5000, N'Bình thường'), (6, 2, 3, 5, 100, 100, 18000, N'Bình thường'), (7, 4, 5, 9, 30, 30, 78000, N'Bình thường');
+    INSERT INTO InboundOrderDetails (InboundOrderId, ProductId, BatchId, LocationId, Quantity, QuantityExpected, UnitPrice, ItemCondition) VALUES
+    (3, 1, 2, 2, 250, 250, 12500, N'Bình thường'), (3, 5, 7, 2, 600, 600, 5200, N'Bình thường'), (4, 4, 5, 1, 120, 120, 78000, N'Bình thường'), (4, 7, 9, 1, 160, 160, 34000, N'Bình thường'), (5, 6, 8, 1, 50, 50, 5000, N'Bình thường'), (6, 2, 3, 5, 100, 100, 18000, N'Bình thường'), (7, 4, 5, 9, 30, 30, 78000, N'Bình thường');
+END
 
-INSERT INTO OutboundOrders (IssueCode, CustomerId, Status, IssueDate, TotalAmount, Note) VALUES ('OUT-2404-W01', 1, 'ALLOCATED', GETDATE(), 500000, N'Đơn hàng mẫu');
-INSERT INTO OutboundOrderDetails (OutboundOrderId, ProductId, BatchId, LocationId, Quantity, UnitPrice) VALUES
-(1, 1, 2, 2, 50, 10000), (1, 2, 3, 1, 100, 5000), (1, 3, 4, 3, 2, 200000), (1, 5, 7, 2, 20, 5000), (1, 7, 9, 2, 15, 3000), (1, 8, 10, 3, 5, 150000);
+IF NOT EXISTS (SELECT 1 FROM OutboundOrders)
+BEGIN
+    INSERT INTO OutboundOrders (IssueCode, CustomerId, Status, IssueDate, TotalAmount, Note) VALUES ('OUT-2404-W01', 1, 'ALLOCATED', GETDATE(), 500000, N'Đơn hàng mẫu');
+    INSERT INTO OutboundOrderDetails (OutboundOrderId, ProductId, BatchId, LocationId, Quantity, UnitPrice) VALUES
+    (1, 1, 2, 2, 50, 10000), (1, 2, 3, 1, 100, 5000), (1, 3, 4, 3, 2, 200000), (1, 5, 7, 2, 20, 5000), (1, 7, 9, 2, 15, 3000), (1, 8, 10, 3, 5, 150000);
+END
 
 -- 9. Roles
-INSERT INTO Roles (RoleName, Description) VALUES
-('ADMIN',           N'Quản trị hệ thống toàn quyền'),
-('MANAGER',         N'Quản lý kho — xem báo cáo, duyệt phiếu'),
-('STOREKEEPER',     N'Thủ kho — quản lý tồn kho, vị trí'),
-('INBOUND_STAFF',   N'Nhân viên nhập kho — tạo và xử lý phiếu nhập'),
-('OUTBOUND_STAFF',  N'Nhân viên xuất kho — tạo và xử lý phiếu xuất'),
-('CHECKER',         N'Kiểm kê viên — kiểm tra và đối soát tồn kho');
+IF NOT EXISTS (SELECT 1 FROM Roles)
+BEGIN
+    INSERT INTO Roles (RoleName, Description) VALUES
+    ('ADMIN',           N'Quản trị hệ thống toàn quyền'),
+    ('MANAGER',         N'Quản lý kho — xem báo cáo, duyệt phiếu'),
+    ('STOREKEEPER',     N'Thủ kho — quản lý tồn kho, vị trí'),
+    ('INBOUND_STAFF',   N'Nhân viên nhập kho — tạo và xử lý phiếu nhập'),
+    ('OUTBOUND_STAFF',  N'Nhân viên xuất kho — tạo và xử lý phiếu xuất'),
+    ('CHECKER',         N'Kiểm kê viên — kiểm tra và đối soát tồn kho');
+END
 
--- 10. Staff (Password hash for 'Admin@123' and 'Staff@123' - Verified)
--- Hash 'Admin@123': $2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2
--- Hash 'Staff@123': $2a$10$8K1p/a0dR1xqM8K5Jt8K8O.bZvZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5.
+-- 10. WorkShifts
+IF NOT EXISTS (SELECT 1 FROM WorkShifts)
+BEGIN
+    INSERT INTO WorkShifts (ShiftName, StartTime, EndTime, GracePeriodMinutes) VALUES
+    (N'Ca hành chính', '08:00:00', '17:30:00', 15),
+    (N'Ca sáng', '06:00:00', '14:00:00', 10),
+    (N'Ca chiều', '14:00:00', '22:00:00', 10);
+END
 
-INSERT INTO Staff (EmployeeCode, FullName, Gender, DateOfBirth, Phone, Email, HireDate, ContractType, WarehouseRole, WorkStatus, Notes, Username, Password, Enabled) VALUES
-('EMP-001', N'Nguyễn Minh Tuấn', 'MALE',   '1990-05-15', '0901234561', 'tuan.nm@wms.vn',  '2021-03-01', 'FULL_TIME',  'WAREHOUSE_MANAGER', 'ON_SHIFT',  N'Quản lý ca sáng', 'emp_001', '$2a$10$8K1p/a0dR1xqM8K5Jt8K8O.bZvZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5.', 1),
-('EMP-002', N'Trần Thị Lan',     'FEMALE', '1995-08-22', '0901234562', 'lan.tt@wms.vn',   '2022-01-10', 'FULL_TIME',  'WAREHOUSE_KEEPER',  'ON_SHIFT',  N'Phụ trách khu A', 'emp_002', '$2a$10$8K1p/a0dR1xqM8K5Jt8K8O.bZvZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5.', 1),
-('EMP-003', N'Lê Văn Hùng',      'MALE',   '1993-11-30', '0901234563', 'hung.lv@wms.vn',  '2022-06-15', 'FULL_TIME',  'INBOUND_STAFF',     'ON_SHIFT',  N'Ca sáng thứ 2-6', 'emp_003', '$2a$10$8K1p/a0dR1xqM8K5Jt8K8O.bZvZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5.', 1),
-('EMP-004', N'Phạm Thị Hoa',     'FEMALE', '1998-03-10', '0901234564', 'hoa.pt@wms.vn',   '2023-02-20', 'PART_TIME',  'OUTBOUND_STAFF',    'OFF_SHIFT', N'Làm ca chiều T3,T5,T7', 'emp_004', '$2a$10$8K1p/a0dR1xqM8K5Jt8K8O.bZvZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5.', 1),
-('EMP-005', N'Hoàng Đức Mạnh',   'MALE',   '1991-07-18', '0901234565', 'manh.hd@wms.vn',  '2020-11-01', 'FULL_TIME',  'INVENTORY_CHECKER', 'OFF_SHIFT', N'Kiểm kê định kỳ cuối tháng', 'emp_005', '$2a$10$8K1p/a0dR1xqM8K5Jt8K8O.bZvZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5.', 1),
-('EMP-006', N'Nguyễn Thị Thu',   'FEMALE', '2000-12-05', '0901234566', 'thu.nt@wms.vn',   '2024-01-08', 'INTERN',     'INBOUND_STAFF',     'ON_SHIFT',  N'Thực tập sinh khóa 2024', 'emp_006', '$2a$10$8K1p/a0dR1xqM8K5Jt8K8O.bZvZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5.', 1),
-('EMP-007', N'Võ Văn Tài',       'MALE',   '1988-04-25', '0901234567', 'tai.vv@wms.vn',   '2019-05-15', 'FULL_TIME',  'WAREHOUSE_KEEPER',  'RESIGNED',  N'Kết thúc hợp đồng 31/12/2023', 'emp_007', '$2a$10$8K1p/a0dR1xqM8K5Jt8K8O.bZvZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5.', 0),
-('EMP-008', N'Đặng Thị Mỹ Linh', 'FEMALE', '1997-09-14', '0901234568', 'linh.dtm@wms.vn', '2023-07-01', 'PROBATION',  'OUTBOUND_STAFF',    'ON_SHIFT',  N'Đang trong thời gian thử việc', 'emp_008', '$2a$10$8K1p/a0dR1xqM8K5Jt8K8O.bZvZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5.', 1),
-('EMP-009', N'Bùi Quang Vinh',   'MALE',   '1994-01-20', '0901234569', 'vinh.bq@wms.vn',  '2021-09-10', 'FULL_TIME',  'INVENTORY_CHECKER', 'OFF_SHIFT', N'Phụ trách khu B và C', 'emp_009', '$2a$10$8K1p/a0dR1xqM8K5Jt8K8O.bZvZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5.', 1),
-('EMP-010', N'Trương Thị Ngọc',  'FEMALE', '2001-06-03', '0901234570', 'ngoc.tt@wms.vn',  '2024-03-01', 'INTERN',     'OUTBOUND_STAFF',    'OFF_SHIFT', N'Thực tập sinh khóa Spring 2024', 'emp_010', '$2a$10$8K1p/a0dR1xqM8K5Jt8K8O.bZvZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5vZ5.', 1),
-('EMP-ADMIN', N'Quản trị viên',  'MALE',   NULL,         NULL,         NULL,              '2020-01-01', 'FULL_TIME',  'WAREHOUSE_MANAGER', 'ON_SHIFT',  N'Admin hệ thống', 'admin', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1);
+-- 11. Staff (Tất cả dùng mật khẩu chuẩn Admin@123)
+-- Verified Hash: $2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2
 
--- 11. Gán Roles
-INSERT INTO Staff_Roles (StaffId, RoleId) SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.Username = 'admin' AND r.RoleName = 'ADMIN';
-INSERT INTO Staff_Roles (StaffId, RoleId) SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.EmployeeCode = 'EMP-001' AND r.RoleName = 'MANAGER';
-INSERT INTO Staff_Roles (StaffId, RoleId) SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.EmployeeCode = 'EMP-002' AND r.RoleName = 'STOREKEEPER';
-INSERT INTO Staff_Roles (StaffId, RoleId) SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.EmployeeCode IN ('EMP-003','EMP-006') AND r.RoleName = 'INBOUND_STAFF';
-INSERT INTO Staff_Roles (StaffId, RoleId) SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.EmployeeCode IN ('EMP-004','EMP-008','EMP-010') AND r.RoleName = 'OUTBOUND_STAFF';
-INSERT INTO Staff_Roles (StaffId, RoleId) SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.EmployeeCode IN ('EMP-005','EMP-009') AND r.RoleName = 'CHECKER';
+IF NOT EXISTS (SELECT 1 FROM Staff WHERE Username = 'admin')
+    INSERT INTO Staff (EmployeeCode, FullName, Username, Password, Enabled, WarehouseRole, WorkStatus)
+    VALUES ('EMP-ADMIN', N'Quản trị viên', 'admin', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'WAREHOUSE_MANAGER', 'ON_SHIFT');
+
+IF NOT EXISTS (SELECT 1 FROM Staff WHERE Username = 'emp_001')
+    INSERT INTO Staff (EmployeeCode, FullName, Phone, Username, Password, Enabled, WarehouseRole, WorkStatus)
+    VALUES ('EMP-001', N'Nguyễn Minh Tuấn', '0901234561', 'emp_001', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'WAREHOUSE_MANAGER', 'ON_SHIFT');
+
+IF NOT EXISTS (SELECT 1 FROM Staff WHERE Username = 'emp_002')
+    INSERT INTO Staff (EmployeeCode, FullName, Phone, Username, Password, Enabled, WarehouseRole, WorkStatus)
+    VALUES ('EMP-002', N'Trần Thị Lan', '0901234562', 'emp_002', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'WAREHOUSE_KEEPER', 'ON_SHIFT');
+
+IF NOT EXISTS (SELECT 1 FROM Staff WHERE Username = 'emp_003')
+    INSERT INTO Staff (EmployeeCode, FullName, Phone, Username, Password, Enabled, WarehouseRole, WorkStatus)
+    VALUES ('EMP-003', N'Lê Văn Hùng', '0901234563', 'emp_003', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'INBOUND_STAFF', 'OFF_SHIFT');
+
+IF NOT EXISTS (SELECT 1 FROM Staff WHERE Username = 'emp_004')
+    INSERT INTO Staff (EmployeeCode, FullName, Phone, Username, Password, Enabled, WarehouseRole, WorkStatus)
+    VALUES ('EMP-004', N'Phạm Thị Hoa', '0901234564', 'emp_004', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'OUTBOUND_STAFF', 'OFF_SHIFT');
+
+IF NOT EXISTS (SELECT 1 FROM Staff WHERE Username = 'emp_005')
+    INSERT INTO Staff (EmployeeCode, FullName, Phone, Username, Password, Enabled, WarehouseRole, WorkStatus)
+    VALUES ('EMP-005', N'Hoàng Đức Mạnh', '0901234565', 'emp_005', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'INVENTORY_CHECKER', 'OFF_SHIFT');
+
+-- LUÔN ĐẢM BẢO MẬT KHẨU CHUẨN KỂ CẢ KHI VOLUME CŨ ĐANG CHẠY
+UPDATE Staff SET Password = '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2'
+WHERE Username IN ('admin', 'emp_001', 'emp_002', 'emp_003', 'emp_004', 'emp_005');
+
+-- Gán Roles mẫu
+INSERT INTO Staff_Roles (StaffId, RoleId)
+SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.Username = 'admin' AND r.RoleName = 'ADMIN'
+AND NOT EXISTS (SELECT 1 FROM Staff_Roles sr WHERE sr.StaffId = s.Id AND sr.RoleId = r.Id);
+
+INSERT INTO Staff_Roles (StaffId, RoleId)
+SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.EmployeeCode = 'EMP-001' AND r.RoleName = 'MANAGER'
+AND NOT EXISTS (SELECT 1 FROM Staff_Roles sr WHERE sr.StaffId = s.Id AND sr.RoleId = r.Id);
+
+INSERT INTO Staff_Roles (StaffId, RoleId)
+SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.EmployeeCode = 'EMP-002' AND r.RoleName = 'STOREKEEPER'
+AND NOT EXISTS (SELECT 1 FROM Staff_Roles sr WHERE sr.StaffId = s.Id AND sr.RoleId = r.Id);
+
+INSERT INTO Staff_Roles (StaffId, RoleId)
+SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.EmployeeCode = 'EMP-003' AND r.RoleName = 'INBOUND_STAFF'
+AND NOT EXISTS (SELECT 1 FROM Staff_Roles sr WHERE sr.StaffId = s.Id AND sr.RoleId = r.Id);
+
+INSERT INTO Staff_Roles (StaffId, RoleId)
+SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.EmployeeCode = 'EMP-004' AND r.RoleName = 'OUTBOUND_STAFF'
+AND NOT EXISTS (SELECT 1 FROM Staff_Roles sr WHERE sr.StaffId = s.Id AND sr.RoleId = r.Id);
+
+INSERT INTO Staff_Roles (StaffId, RoleId)
+SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.EmployeeCode = 'EMP-005' AND r.RoleName = 'CHECKER'
+AND NOT EXISTS (SELECT 1 FROM Staff_Roles sr WHERE sr.StaffId = s.Id AND sr.RoleId = r.Id);
 GO

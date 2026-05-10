@@ -1,4 +1,4 @@
-// ===== StaffRepository.java (cập nhật — thêm các method cần cho auth) =====
+// ===== StaffRepository.java =====
 package com.wmsbackend.repository;
 
 import com.wmsbackend.dto.StaffDTO;
@@ -19,14 +19,14 @@ public interface StaffRepository extends JpaRepository<Staff, Integer> {
     boolean existsByUsername(String username);
     boolean existsByEmployeeCode(String employeeCode);
 
-    // ── Queries hiện tại (giữ nguyên) ─────────────────────
+    // ── Queries cập nhật ──────────────────────────────────
     @Query("SELECT new com.wmsbackend.dto.StaffDTO(s.id, s.employeeCode, s.fullName, s.gender, " +
-            "s.dateOfBirth, s.phone, s.email, s.hireDate, s.contractType, s.warehouseRole, s.workStatus, s.notes) " +
+            "s.dateOfBirth, s.phone, s.email, s.hireDate, s.contractType, s.warehouseRole, s.workStatus, s.notes, s.username, s.enabled, s.lastActiveAt) " +
             "FROM Staff s ORDER BY s.id DESC")
     List<StaffDTO> findAllStaff();
 
     @Query("SELECT new com.wmsbackend.dto.StaffDTO(s.id, s.employeeCode, s.fullName, s.gender, " +
-            "s.dateOfBirth, s.phone, s.email, s.hireDate, s.contractType, s.warehouseRole, s.workStatus, s.notes) " +
+            "s.dateOfBirth, s.phone, s.email, s.hireDate, s.contractType, s.warehouseRole, s.workStatus, s.notes, s.username, s.enabled, s.lastActiveAt) " +
             "FROM Staff s WHERE " +
             "LOWER(s.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(s.employeeCode) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +

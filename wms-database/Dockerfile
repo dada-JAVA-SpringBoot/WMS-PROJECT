@@ -12,4 +12,4 @@ COPY entrypoint.sh entrypoint.sh
 RUN chmod +x entrypoint.sh
 
 # Khi bật container, chạy file entrypoint này đầu tiên
-CMD /bin/bash ./entrypoint.sh
+CMD ["/bin/bash", "./entrypoint.sh"]
