@@ -9,6 +9,8 @@ import Home               from './pages/Home.jsx';
 import Staff              from './pages/Staff.jsx';
 import Statistical        from './pages/Statistical.jsx';
 import Account            from './pages/Account.jsx';
+import AttendanceHistory  from './pages/AttendanceHistory.jsx';
+import AttendanceManagement from './pages/AttendanceManagement.jsx';
 import AttributesPage     from './pages/AttributesPage.jsx';
 import ImportReceiptsPage from './pages/ImportReceipts.jsx';
 import WarehouseAreaPage  from './pages/WarehouseArea.jsx';
@@ -18,12 +20,14 @@ import ExportReceipts     from './pages/OutboundOrder.jsx';
 import LandingPage        from './pages/LandingPage/LandingPage.jsx';
 import PrivateRoute       from './components/PrivateRoute';
 import UnauthorizedPage   from './pages/UnauthorizedPage.jsx';
+import AttendanceModal    from './components/modals/AttendanceModal';
 
 // ── Layout chính cho khu vực quản trị ──────────────────────────────────────
 function AdminLayout() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [workflow, setWorkflow] = useState(null);
+    const [showAttendance, setShowAttendance] = useState(true);
 
     const openWorkflow = (nextWorkflow) => {
         if (!nextWorkflow?.kind) return;
@@ -37,14 +41,11 @@ function AdminLayout() {
         <div className="flex h-screen bg-gray-50 overflow-hidden">
             <Sidebar user={user} onLogout={logout} />
             <main className="flex-1 flex flex-col overflow-hidden">
-                <div className="flex-1 overflow-auto">
+                <div className="flex-1 overflow-auto bg-gray-50">
                     <Routes>
                         <Route path="home" element={<Home />} />
                         <Route path="products" element={
-                            <Inventory 
-                                onCreateInbound={openWorkflow} 
-                                onCreateOutbound={openWorkflow} 
-                            />
+                            <Inventory onCreateInbound={openWorkflow} onCreateOutbound={openWorkflow} />
                         } />
                         <Route path="attribute" element={
                             <PrivateRoute roles={['ADMIN']}>
@@ -58,20 +59,18 @@ function AdminLayout() {
                         } />
                         <Route path="inbound" element={
                             <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF']}>
-                                <ImportReceiptsPage 
-                                    workflow={workflow} 
-                                    clearWorkflow={clearWorkflow} 
-                                    openWorkflow={openWorkflow} 
-                                />
+                                <ImportReceiptsPage workflow={workflow} clearWorkflow={clearWorkflow} openWorkflow={openWorkflow} />
                             </PrivateRoute>
                         } />
                         <Route path="outbound" element={
                             <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','OUTBOUND_STAFF']}>
-                                <ExportReceipts 
-                                    workflow={workflow} 
-                                    clearWorkflow={clearWorkflow} 
-                                    openWorkflow={openWorkflow} 
-                                />
+                                <ExportReceipts workflow={workflow} clearWorkflow={clearWorkflow} openWorkflow={openWorkflow} />
+                            </PrivateRoute>
+                        } />
+                        <Route path="attendance" element={<AttendanceHistory />} />
+                        <Route path="attendance-manage" element={
+                            <PrivateRoute roles={['ADMIN','MANAGER']}>
+                                <AttendanceManagement />
                             </PrivateRoute>
                         } />
                         <Route path="client" element={
@@ -104,11 +103,14 @@ function AdminLayout() {
                                 <div className="p-8 text-2xl font-bold">Màn hình Phân quyền (Đang xây dựng...)</div>
                             </PrivateRoute>
                         } />
-                        {/* Fallback cho admin */}
                         <Route path="*" element={<Navigate to="home" replace />} />
                     </Routes>
                 </div>
             </main>
+            {/* Modal chấm công tự động cho nhân viên */}
+            {showAttendance && user && !user.roles.includes('ADMIN') && (
+                <AttendanceModal user={user} onClose={() => setShowAttendance(false)} />
+            )}
         </div>
     );
 }
@@ -121,7 +123,10 @@ function AppContent() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-400 text-sm">
-                Đang khởi tạo...
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-[#1192a8] border-t-transparent rounded-full animate-spin"></div>
+                    <p className="font-bold tracking-widest text-[#1192a8] animate-pulse">WMS SYSTEM LOADING...</p>
+                </div>
             </div>
         );
     }
@@ -133,18 +138,12 @@ function AppContent() {
 
             {/* 2. Login Page */}
             <Route path="/login" element={<Login onLoginSuccess={() => navigate('/admin/home')} />} />
-
-            {/* 3. Unauthorized Page */}
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
-
-            {/* 4. Admin Area (Protected) */}
             <Route path="/admin/*" element={
                 <PrivateRoute>
                     <AdminLayout />
                 </PrivateRoute>
             } />
-
-            {/* 5. Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     );

@@ -34,7 +34,18 @@ public class InboundOrderDetail {
     @Column(name = "ItemCondition", length = 100)
     private String itemCondition;
 
+    @Transient
+    private String batchCode;
+
     // Getter Setter
+
+    public String getBatchCode() {
+        return batchCode;
+    }
+
+    public void setBatchCode(String batchCode) {
+        this.batchCode = batchCode;
+    }
 
     public Long getId() {
         return id;

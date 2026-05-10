@@ -46,6 +46,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                             userDetails, null, userDetails.getAuthorities());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                    // Cập nhật LastActiveAt cho Staff (Real-time tracking)
+                    try {
+                        com.wmsbackend.repository.StaffRepository repo = com.wmsbackend.config.ApplicationContextHolder.getContext().getBean(com.wmsbackend.repository.StaffRepository.class);
+                        repo.findByUsername(username).ifPresent(staff -> {
+                            staff.setLastActiveAt(java.time.LocalDateTime.now());
+                            repo.save(staff);
+                        });
+                    } catch (Exception e) {
+                        // Bỏ qua lỗi cập nhật activity để không chặn request chính
+                    }
                 }
             }
         } catch (Exception e) {

@@ -66,35 +66,77 @@ public class StatisticalController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public StatisticalSummaryDTO getSummary() {
         StatisticalSummaryDTO dto = new StatisticalSummaryDTO();
-
-        // 1. Basic Counts
         dto.setTotalSkus(productRepository.count());
 
         // 2. Total Stock Quantity
         Double totalQty = inventoryRepository.findAll().stream()
-                .mapToDouble(i -> i.getQuantityOnHand().doubleValue())
-                .sum();
+                .mapToDouble(i -> i.getQuantityOnHand().doubleValue()).sum();
         dto.setTotalStockQuantity(totalQty != null ? totalQty : 0.0);
 
-        // 3. Pending Orders
-        dto.setPendingInbound(inboundOrderRepository.countByStatus("PENDING")); // Giả sử status PENDING
+        dto.setPendingInbound(inboundOrderRepository.countByStatus("PENDING"));
         dto.setPendingOutbound(outboundOrderRepository.countByStatus("PENDING"));
 
-        // 4. Warehouse Occupancy
-        long totalLocations = locationRepository.count();
-        long occupiedLocations = inventoryRepository.countDistinctLocationId(); // Cần thêm method này
-        dto.setWarehouseOccupancyRate(totalLocations > 0 ? (double) occupiedLocations / totalLocations * 100 : 0);
+        long total    = locationRepository.count();
+        long occupied = inventoryRepository.countDistinctLocationId();
+        dto.setWarehouseOccupancyRate(total > 0 ? (double) occupied / total * 100 : 0);
 
-        // 5. Mock Top Stores (Ví dụ đơn giản, sau này có thể dùng JPQL)
         List<Map<String, Object>> stores = new ArrayList<>();
         customerRepository.findAll().stream().limit(5).forEach(c -> {
             Map<String, Object> map = new HashMap<>();
             map.put("name", c.getName());
-            map.put("value", 1000000); // Dummy value
+            map.put("value", 1000000);
             stores.add(map);
         });
         dto.setTopStores(stores);
-
         return dto;
+    }
+
+    // ── /finance  — summary cards (giữ nguyên) ───────────────────────────
+    @GetMapping("/finance")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public ResponseEntity<?> getFinancialSummary(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+
+        if (from.isAfter(to))
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Ngày bắt đầu không được lớn hơn ngày kết thúc"));
+
+        return ResponseEntity.ok(financialService.getSummary(from, to));
+    }
+
+    // ── /finance/by-day  — chart theo ngày ───────────────────────────────
+    @GetMapping("/finance/by-day")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public ResponseEntity<?> getFinanceByDay(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+
+        if (from.isAfter(to))
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Ngày bắt đầu không được lớn hơn ngày kết thúc"));
+
+        return ResponseEntity.ok(financialService.getByDay(from, to));
+    }
+
+    // ── /finance/by-month — chart theo tháng ─────────────────────────────
+    @GetMapping("/finance/by-month")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public ResponseEntity<?> getFinanceByMonth(@RequestParam int year) {
+        return ResponseEntity.ok(financialService.getByMonth(year));
+    }
+
+    // ── /finance/by-year  — chart theo năm ───────────────────────────────
+    @GetMapping("/finance/by-year")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public ResponseEntity<?> getFinanceByYear(
+            @RequestParam int fromYear,
+            @RequestParam int toYear) {
+
+        if (fromYear > toYear)
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Năm bắt đầu không được lớn hơn năm kết thúc"));
+
+        return ResponseEntity.ok(financialService.getByYear(fromYear, toYear));
     }
 }

@@ -19,7 +19,7 @@ export default function ExportExcelModal({
         : 'Trình duyệt này không hỗ trợ mở hộp lưu/chọn thư mục trực tiếp. Lý do là API lưu file bị giới hạn theo từng trình duyệt và quyền truy cập hệ thống.';
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-[90] p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-[90] p-4">
             <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl flex flex-col overflow-hidden">
                 <div className="bg-[#1192a8] text-white px-6 py-4 flex justify-between items-center">
                     <div>

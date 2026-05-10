@@ -14,4 +14,4 @@ RUN sed -i -e 's/\r$//' entrypoint.sh && \
     chmod +x entrypoint.sh
 
 # Khi bật container, chạy file entrypoint này đầu tiên
-CMD /bin/bash ./entrypoint.sh
+CMD ["/bin/bash", "./entrypoint.sh"]

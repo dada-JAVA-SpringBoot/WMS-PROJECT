@@ -7,7 +7,7 @@ export default function BulkEditModal({ isOpen, products = [], onClose, onEditOn
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-50 p-4">
             <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
                 <div className="bg-[#1192a8] text-white px-6 py-4 flex justify-between items-center">
                     <div>

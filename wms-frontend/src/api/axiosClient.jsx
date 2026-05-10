@@ -2,9 +2,9 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-    baseURL: 'http://localhost:8080',
+    baseURL: '/api',
     headers: { 'Content-Type': 'application/json' },
-    timeout: 10000,
+    timeout: 30000, // Tăng timeout cho VPS
 });
 
 // ── Request interceptor: tự động gắn JWT vào mọi request ──────────────────

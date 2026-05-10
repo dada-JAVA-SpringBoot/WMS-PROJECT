@@ -1,4 +1,3 @@
-// ===== StaffController.java (cập nhật — thêm endpoint reset-password + toggle-enabled) =====
 package com.wmsbackend.controller;
 
 import com.wmsbackend.dto.StaffDTO;
@@ -11,8 +10,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/staff")
@@ -23,11 +24,25 @@ public class StaffController {
     @Autowired private StaffRepository staffRepository;
     @Autowired private PasswordEncoder passwordEncoder;
 
+    // GET đầy đủ thông tin — CHỈ ADMIN
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public List<StaffDTO> getStaff(@RequestParam(required = false) String keyword) {
         if (keyword != null && !keyword.isBlank()) return staffService.searchStaff(keyword);
         return staffService.getAllStaff();
+    }
+
+    // GET danh sách tên thu gọn — TẤT CẢ NHÂN VIÊN ĐỀU XEM ĐƯỢC
+    // Sử dụng HashMap thủ công để tránh lỗi tương thích phiên bản Java hoặc lỗi inference
+    @GetMapping("/names")
+    @PreAuthorize("isAuthenticated()")
+    public List<Map<String, Object>> getStaffNames() {
+        return staffService.getAllStaff().stream().map(s -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", s.getId());
+            map.put("fullName", s.getFullName());
+            return map;
+        }).collect(Collectors.toList());
     }
 
     @PostMapping
@@ -48,27 +63,21 @@ public class StaffController {
         staffService.deleteStaff(id);
     }
 
-    // ── Đặt lại mật khẩu (ADMIN) ──────────────────────────
     @PostMapping("/{id}/reset-password")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> resetPassword(@PathVariable Integer id,
-                                           @RequestBody Map<String, String> body) {
-        Staff staff = staffRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên"));
+    public ResponseEntity<?> resetPassword(@PathVariable Integer id, @RequestBody Map<String, String> body) {
+        Staff staff = staffRepository.findById(id).orElseThrow();
         staff.setPassword(passwordEncoder.encode(body.get("newPassword")));
         staffRepository.save(staff);
         return ResponseEntity.ok(Map.of("message", "Đặt lại mật khẩu thành công"));
     }
 
-    // ── Bật/Tắt tài khoản (ADMIN) ─────────────────────────
     @PostMapping("/{id}/toggle-enabled")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> toggleEnabled(@PathVariable Integer id) {
-        Staff staff = staffRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên"));
+        Staff staff = staffRepository.findById(id).orElseThrow();
         staff.setEnabled(!Boolean.TRUE.equals(staff.getEnabled()));
         staffRepository.save(staff);
-        String status = staff.getEnabled() ? "Đã kích hoạt" : "Đã vô hiệu hóa";
-        return ResponseEntity.ok(Map.of("message", status));
+        return ResponseEntity.ok(Map.of("message", staff.getEnabled() ? "Đã kích hoạt" : "Đã vô hiệu hóa"));
     }
 }
