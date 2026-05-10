@@ -62,6 +62,40 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
+    // Tự động mở modal và điền dữ liệu từ workflow
+    useEffect(() => {
+        if (workflow && workflow.kind === 'outbound') {
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            
+            setFormData({
+                voucherCode: `XK${dateStr.replace(/-/g, '')}${now.getSeconds()}`,
+                voucherDate: dateStr, 
+                customerId: workflow.customerId || '', 
+                staffId: '', 
+                note: ''
+            });
+
+            if (workflow.products && workflow.products.length > 0) {
+                const seed = workflow.products.map(p => ({
+                    id: Math.random(),
+                    productId: p.id,
+                    productName: p.name,
+                    unit: p.baseUnit || '-',
+                    quantity: 1,
+                    price: p.price || 0,
+                    total: p.price || 0
+                }));
+                setDetails(seed);
+            } else {
+                setDetails([createEmptyDetail()]);
+            }
+
+            setIsCreateOpen(true);
+            clearWorkflow();
+        }
+    }, [workflow, clearWorkflow, products]); // products dependency to ensure names are matched if needed
+
     const getCustName = (id) => customers.find(c => c.id === id)?.name || `Đối tác #${id}`;
     const getStfName = (id) => staffs.find(s => s.id === id)?.fullName || `NV #${id}`;
 
@@ -205,7 +239,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
             <VoucherContextMenu isOpen={!!contextMenu} x={contextMenu?.x || 0} y={contextMenu?.y || 0} title="Tác vụ nhanh" actions={[{ label: 'Xem chi tiết', onClick: () => { setViewingVoucher(contextMenu.item); setIsViewDetailOpen(true); } }, { label: 'Làm mới', onClick: fetchData }]} onClose={() => setContextMenu(null)} />
 
             {isViewDetailOpen && viewingVoucher && (
-                <div className="fixed inset-0 bg-black/60 z-[110] flex justify-center items-center backdrop-blur-sm p-4 text-left shadow-2xl animate-in fade-in duration-200">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[110] flex justify-center items-center p-4 text-left shadow-2xl animate-in fade-in duration-200">
                     <div className="bg-white rounded-3xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[90vh]">
                         <div className="bg-[#1192a8] p-5 text-white flex justify-between items-center shrink-0">
                             <div><h2 className="font-bold uppercase tracking-widest text-sm">Phiêu xuất: {viewingVoucher.issueCode}</h2><p className="text-[10px] font-bold opacity-80 uppercase italic">Người lập: {getStfName(viewingVoucher.createdBy)}</p></div>
@@ -232,7 +266,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
             )}
             
             {isCreateOpen && (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex justify-center items-center backdrop-blur-sm p-4 animate-in slide-in-from-bottom-4 duration-300">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[100] flex justify-center items-center p-4 animate-in slide-in-from-bottom-4 duration-300">
                     <div className="bg-white rounded-3xl w-full max-w-6xl overflow-hidden flex flex-col max-h-[95vh]">
                         <div className="bg-[#1192a8] p-5 text-white flex justify-between items-center shrink-0"><h2 className="font-bold uppercase tracking-widest text-sm text-left">Lập phiếu xuất mới</h2><button onClick={() => setIsCreateOpen(false)} className="text-3xl">&times;</button></div>
                         <div className="p-8 overflow-y-auto flex-1 space-y-8 bg-gray-50/50">

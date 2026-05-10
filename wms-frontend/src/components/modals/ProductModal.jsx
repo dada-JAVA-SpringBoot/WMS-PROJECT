@@ -184,8 +184,8 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product = nul
     const cbm = ((parseFloat(formData.length || 0) * parseFloat(formData.width || 0) * parseFloat(formData.height || 0)) / 1000000).toFixed(6);
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-[70] p-4">
-            <div className="bg-white w-full max-w-5xl rounded-xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-[70] p-4">
+            <div className="bg-white w-full max-w-6xl rounded-xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden">
                 <div className="bg-[#1192a8] text-white px-6 py-4 flex justify-between items-center shrink-0">
                     <h2 className="text-xl font-bold uppercase tracking-wide">
                         {mode === 'edit' ? 'Cập Nhật Hồ Sơ Mặt Hàng' : 'Tạo Mới Hồ Sơ Mặt Hàng'}
@@ -353,7 +353,7 @@ function FormSelectWithAction({ label, name, value, onChange, options, isObjectO
 
 function QuickAddModal({ title, fields, form, onChange, onCancel, onSave, loading }) {
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-[80] p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-[80] p-4 animate-in fade-in duration-200">
             <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden">
                 <div className="bg-[#1192a8] text-white px-5 py-3 flex justify-between items-center">
                     <h3 className="text-base font-bold uppercase">{title}</h3>

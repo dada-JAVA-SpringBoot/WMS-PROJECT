@@ -218,7 +218,7 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
     const previewBaseQty = (Number(quantity) * factor).toLocaleString();
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[100] p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-[100] p-4">
             <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 <div className="bg-[#1192a8] text-white px-6 py-4 flex justify-between items-center shrink-0">
                     <h2 className="text-lg font-bold uppercase tracking-widest">Di chuyển lô hàng nội bộ</h2>

@@ -16,12 +16,16 @@ public class StaffDTO {
     private String warehouseRole;
     private String workStatus;
     private String notes;
+    private String username;
+    private Boolean enabled;
+    private java.time.LocalDateTime lastActiveAt;
 
     public StaffDTO() {}
 
     public StaffDTO(Integer id, String employeeCode, String fullName, String gender,
                     LocalDate dateOfBirth, String phone, String email, LocalDate hireDate,
-                    String contractType, String warehouseRole, String workStatus, String notes) {
+                    String contractType, String warehouseRole, String workStatus, String notes,
+                    String username, Boolean enabled, java.time.LocalDateTime lastActiveAt) {
         this.id = id;
         this.employeeCode = employeeCode;
         this.fullName = fullName;
@@ -34,6 +38,9 @@ public class StaffDTO {
         this.warehouseRole = warehouseRole;
         this.workStatus = workStatus;
         this.notes = notes;
+        this.username = username;
+        this.enabled = enabled;
+        this.lastActiveAt = lastActiveAt;
     }
 
     public Integer getId() { return id; }
@@ -71,4 +78,13 @@ public class StaffDTO {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
+    public Boolean getEnabled() { return enabled; }
+    public void setEnabled(Boolean enabled) { this.enabled = enabled; }
+
+    public java.time.LocalDateTime getLastActiveAt() { return lastActiveAt; }
+    public void setLastActiveAt(java.time.LocalDateTime lastActiveAt) { this.lastActiveAt = lastActiveAt; }
 }

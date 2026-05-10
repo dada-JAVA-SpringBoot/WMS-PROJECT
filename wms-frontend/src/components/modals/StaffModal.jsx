@@ -12,11 +12,11 @@ const CONTRACT_TYPES = [
 ];
 
 const WAREHOUSE_ROLES = [
-    { value: 'WAREHOUSE_MANAGER',  label: 'Quản lý kho' },
-    { value: 'WAREHOUSE_KEEPER',   label: 'Thủ kho' },
+    { value: 'WAREHOUSE_MANAGER',  label: 'Quản lý kho (Admin)' },
+    { value: 'WAREHOUSE_KEEPER',   label: 'Thủ kho (Storekeeper)' },
     { value: 'INBOUND_STAFF',      label: 'Nhân viên nhập kho' },
     { value: 'OUTBOUND_STAFF',     label: 'Nhân viên xuất kho' },
-    { value: 'INVENTORY_CHECKER',  label: 'Kiểm kê viên' },
+    { value: 'INVENTORY_CHECKER',  label: 'Kiểm kê viên (Checker)' },
 ];
 
 const WORK_STATUSES = [
@@ -29,6 +29,7 @@ const emptyForm = {
     employeeCode: '', fullName: '', gender: 'MALE', dateOfBirth: '',
     phone: '', email: '', hireDate: '', contractType: 'FULL_TIME',
     warehouseRole: 'INBOUND_STAFF', workStatus: 'OFF_SHIFT', notes: '',
+    username: '', password: '',
 };
 
 export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
@@ -52,6 +53,8 @@ export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
                 warehouseRole: editData.warehouseRole || 'INBOUND_STAFF',
                 workStatus:    editData.workStatus    || 'OFF_SHIFT',
                 notes:         editData.notes         || '',
+                username:      editData.username      || '',
+                password:      '', // Không load password cũ
             } : emptyForm);
             setErrors({});
         }
@@ -63,6 +66,12 @@ export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
         const e = {};
         if (!form.employeeCode.trim()) e.employeeCode = 'Vui lòng nhập mã nhân viên';
         if (!form.fullName.trim())     e.fullName     = 'Vui lòng nhập họ tên';
+        
+        if (!isEdit) {
+            if (!form.username.trim()) e.username = 'Vui lòng nhập tên đăng nhập';
+            if (!form.password.trim()) e.password = 'Vui lòng nhập mật khẩu';
+        }
+
         if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
             e.email = 'Email không đúng định dạng';
         return e;
@@ -101,17 +110,40 @@ export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
                 <div className="bg-gradient-to-r from-[#00529c] to-[#1192a8] px-8 py-5 flex items-center justify-between">
                     <div>
                         <h2 className="text-white font-bold text-lg">
-                            {isEdit ? 'Chỉnh sửa nhân viên' : 'Thêm nhân viên mới'}
+                            {isEdit ? 'Chỉnh sửa nhân sự' : 'Thêm nhân sự & Tài khoản'}
                         </h2>
                         <p className="text-white/70 text-xs mt-0.5">
-                            {isEdit ? `Đang sửa: ${editData.fullName}` : 'Điền thông tin để tạo hồ sơ nhân viên'}
+                            {isEdit ? `Đang sửa: ${editData.fullName}` : 'Tạo hồ sơ nhân viên kèm tài khoản đăng nhập'}
                         </p>
                     </div>
                     <button onClick={onClose} className="text-white/70 hover:text-white text-2xl leading-none transition-colors">×</button>
                 </div>
 
                 {/* Body */}
-                <div className="px-8 py-6 space-y-5 max-h-[65vh] overflow-y-auto">
+                <div className="px-8 py-6 space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
+
+                    {/* Section: Tài khoản đăng nhập */}
+                    {!isEdit && (
+                        <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                            <h3 className="text-[#00529c] font-bold text-sm mb-3 flex items-center gap-2">
+                                <span className="w-5 h-5 bg-[#00529c] text-white rounded-full flex items-center justify-center text-[10px]">1</span>
+                                THÔNG TIN ĐĂNG NHẬP
+                            </h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <Field label="Tên đăng nhập" required value={form.username}
+                                    onChange={v => handleChange('username', v)}
+                                    placeholder="VD: nguyenvan_a" error={errors.username} />
+                                <Field label="Mật khẩu" required type="password" value={form.password}
+                                    onChange={v => handleChange('password', v)}
+                                    placeholder="********" error={errors.password} />
+                            </div>
+                        </div>
+                    )}
+
+                    <h3 className="text-gray-800 font-bold text-sm mb-1 flex items-center gap-2">
+                        <span className="w-5 h-5 bg-gray-800 text-white rounded-full flex items-center justify-center text-[10px]">{isEdit ? '1' : '2'}</span>
+                        HỒ SƠ CÁ NHÂN
+                    </h3>
 
                     {/* Hàng 1: Mã NV + Họ tên */}
                     <div className="grid grid-cols-2 gap-4">
@@ -141,6 +173,11 @@ export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
                             placeholder="VD: nhanvien@wms.vn" error={errors.email} />
                     </div>
 
+                    <h3 className="text-gray-800 font-bold text-sm mb-1 flex items-center gap-2">
+                        <span className="w-5 h-5 bg-gray-800 text-white rounded-full flex items-center justify-center text-[10px]">{isEdit ? '2' : '3'}</span>
+                        CÔNG VIỆC & PHÂN QUYỀN
+                    </h3>
+
                     {/* Hàng 4: Ngày vào làm + Hợp đồng */}
                     <div className="grid grid-cols-2 gap-4">
                         <Field label="Ngày vào làm" type="date" value={form.hireDate}
@@ -151,7 +188,7 @@ export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
 
                     {/* Hàng 5: Vai trò + Trạng thái */}
                     <div className="grid grid-cols-2 gap-4">
-                        <SelectField label="Vai trò trong kho" value={form.warehouseRole}
+                        <SelectField label="Vai trò (Sẽ được gán Role tương ứng)" value={form.warehouseRole}
                             onChange={v => handleChange('warehouseRole', v)} options={WAREHOUSE_ROLES} />
                         <SelectField label="Trạng thái làm việc" value={form.workStatus}
                             onChange={v => handleChange('workStatus', v)} options={WORK_STATUSES} />
@@ -177,7 +214,7 @@ export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
                     <button onClick={handleSubmit} disabled={loading}
                         className="px-7 py-2.5 rounded-xl text-sm font-bold text-white bg-[#1192a8] hover:bg-teal-700 hover:shadow-lg hover:shadow-teal-500/30 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
                         {loading && <span className="animate-spin text-base">↻</span>}
-                        {isEdit ? 'Lưu thay đổi' : 'Thêm mới'}
+                        {isEdit ? 'Lưu thay đổi' : 'Tạo nhân viên'}
                     </button>
                 </div>
             </div>
@@ -188,7 +225,7 @@ export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
 function Field({ label, value, onChange, placeholder, error, required, type = 'text', disabled = false }) {
     return (
         <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-tight mb-1">
                 {label} {required && <span className="text-red-500">*</span>}
             </label>
             <input type={type} value={value} onChange={e => onChange(e.target.value)}
@@ -197,7 +234,7 @@ function Field({ label, value, onChange, placeholder, error, required, type = 't
                     ${disabled ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : 'bg-white'}
                     ${error ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:ring-[#1192a8]/25 focus:border-[#1192a8]'}`}
             />
-            {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+            {error && <p className="text-[10px] text-red-500 mt-1 font-medium">{error}</p>}
         </div>
     );
 }
@@ -205,7 +242,7 @@ function Field({ label, value, onChange, placeholder, error, required, type = 't
 function SelectField({ label, value, onChange, options }) {
     return (
         <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">{label}</label>
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-tight mb-1">{label}</label>
             <select value={value} onChange={e => onChange(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1192a8]/25 focus:border-[#1192a8] bg-white transition-all cursor-pointer">
                 {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}

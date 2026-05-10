@@ -47,7 +47,7 @@ export default function LocationInventoryModal({ location, onClose }) {
     if (!location) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center backdrop-blur-sm p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex justify-center items-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 <div className="bg-[#1192a8] p-5 text-white flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-4">

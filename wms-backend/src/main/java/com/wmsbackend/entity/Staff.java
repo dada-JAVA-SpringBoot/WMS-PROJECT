@@ -55,6 +55,9 @@ public class Staff {
     @Column(name = "Notes")
     private String notes;
 
+    @Column(name = "LastActiveAt")
+    private LocalDateTime lastActiveAt;
+
     @Column(name = "CreatedAt", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 

@@ -12,12 +12,7 @@ import excelIcon  from '../components/common/icons/excel.png';
 import excel1Icon from '../components/common/icons/excel1.png';
 
 const createEmptyLineItem = () => ({
-    productId: "", batchId: "", locationId: "", qtyExpected: 1, qtyReceived: 1, price: 0, condition: "Bình thường"
-});
-
-const createEmptyBatchDraft = () => ({
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    productId: "", batchCode: "", manufactureDate: "", expiryDate: ""
+    productId: "", batchCode: "", expiryDate: "", locationId: "", qtyExpected: 1, qtyReceived: 1, price: 0, condition: "Bình thường", isNewBatch: false
 });
 
 const inboundStatusOptions = [
@@ -46,9 +41,9 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
 
     const [suppliers, setSuppliers] = useState([]);
     const [products, setProducts] = useState([]);
-    const [batches, setBatches] = useState([]);
     const [locations, setLocations] = useState([]);
     const [staffs, setStaffs] = useState([]);
+    const [productBatches, setProductBatches] = useState({}); // { productId: [batch1, batch2] }
 
     const [supplierId, setSupplierId] = useState("");
     const [createdById, setCreatedById] = useState("");
@@ -56,25 +51,67 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
     const [receiptStatus, setReceiptStatus] = useState("DRAFT");
     const [notes, setNotes] = useState("");
     const [newItems, setNewItems] = useState([createEmptyLineItem()]);
-    const [newBatchDrafts, setNewBatchDrafts] = useState([createEmptyBatchDraft()]);
 
     const fetchData = useCallback(async () => {
+        setLoading(true);
         try {
-            const [resIn, resSup, resPro, resBat, resLoc, resStaff] = await Promise.all([
+            const results = await Promise.allSettled([
                 axiosClient.get('/api/inbound'),
                 axiosClient.get('/api/suppliers'),
                 axiosClient.get('/api/products/details'),
-                axiosClient.get('/api/batches'),
                 axiosClient.get('/api/locations'),
-                axiosClient.get('/api/staff')
+                axiosClient.get('/api/staff/names')
             ]);
-            setReceipts(resIn.data); setSuppliers(resSup.data); setProducts(resPro.data);
-            setBatches(resBat.data); setLocations(resLoc.data); setStaffs(resStaff.data);
-        } catch { console.error('Lỗi tải dữ liệu'); }
-        finally { setLoading(false); }
+
+            if (results[0].status === 'fulfilled') setReceipts(results[0].value.data);
+            if (results[1].status === 'fulfilled') setSuppliers(results[1].value.data);
+            if (results[2].status === 'fulfilled') setProducts(results[2].value.data);
+            if (results[3].status === 'fulfilled') setLocations(results[3].value.data);
+            if (results[4].status === 'fulfilled') setStaffs(results[4].value.data);
+            
+        } catch (error) {
+            console.error('Lỗi nghiêm trọng khi tải dữ liệu:', error);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
     useEffect(() => { fetchData(); }, [fetchData]);
+
+    const fetchBatches = async (productId) => {
+        if (!productId || productBatches[productId]) return;
+        try {
+            const res = await axiosClient.get(`/api/inbound/batches/${productId}`);
+            setProductBatches(prev => ({ ...prev, [productId]: res.data }));
+        } catch (e) {
+            console.error("Lỗi lấy lô hàng:", e);
+        }
+    };
+
+    // Tự động mở modal và điền dữ liệu từ workflow
+    useEffect(() => {
+        if (workflow && workflow.kind === 'inbound') {
+            setShowCreateModal(true);
+            
+            let items = [createEmptyLineItem()];
+            if (workflow.products && workflow.products.length > 0) {
+                items = workflow.products.map(p => {
+                    fetchBatches(p.id);
+                    return {
+                        ...createEmptyLineItem(),
+                        productId: p.id,
+                        price: p.price || 0,
+                        locationId: workflow.targetLocation?.id || ""
+                    };
+                });
+            } else if (workflow.targetLocation) {
+                items = [{ ...createEmptyLineItem(), locationId: workflow.targetLocation.id }];
+            }
+            
+            setNewItems(items);
+            clearWorkflow();
+        }
+    }, [workflow, clearWorkflow]);
 
     const getStaffName = (id) => staffs.find(s => s.id === id)?.fullName || `NV #${id}`;
 
@@ -119,6 +156,16 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
 
     const handleSaveReceipt = async () => {
         if (!supplierId || !createdById) return alert("Vui lòng chọn NCC và Nhân viên!");
+        
+        // Tạo batch drafts từ line items có mã lô
+        const batchDrafts = newItems
+            .filter(item => item.productId && item.batchCode && item.isNewBatch)
+            .map(item => ({
+                productId: parseInt(item.productId),
+                batchCode: item.batchCode,
+                expiryDate: item.expiryDate
+            }));
+
         const payload = {
             order: {
                 receiptCode: 'PN' + Date.now().toString().slice(-8),
@@ -127,16 +174,21 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
                 status: receiptStatus, createdBy: parseInt(createdById)
             },
             details: newItems.map(item => ({
-                productId: parseInt(item.productId), batchId: parseInt(item.batchId), locationId: parseInt(item.locationId),
-                quantityExpected: parseFloat(item.qtyExpected), quantityReceived: parseFloat(item.qtyReceived),
-                quantity: parseFloat(item.qtyReceived), unitPrice: parseFloat(item.price), itemCondition: item.condition
+                productId: parseInt(item.productId), 
+                locationId: parseInt(item.locationId),
+                quantityExpected: parseFloat(item.qtyExpected), 
+                quantityReceived: parseFloat(item.qtyReceived),
+                quantity: parseFloat(item.qtyReceived), 
+                unitPrice: parseFloat(item.price), 
+                itemCondition: item.condition,
+                batchCode: item.batchCode
             })),
-            newBatches: newBatchDrafts.filter(b => b.productId && b.batchCode)
+            newBatches: batchDrafts
         };
         try {
             await axiosClient.post('/api/inbound/confirm', payload);
             setShowCreateModal(false); fetchData();
-            setNewItems([createEmptyLineItem()]); setNewBatchDrafts([createEmptyBatchDraft()]);
+            setNewItems([createEmptyLineItem()]);
         } catch { alert('Lỗi lưu phiếu nhập'); }
     };
 
@@ -205,7 +257,7 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
             <VoucherContextMenu isOpen={!!contextMenu} x={contextMenu?.x || 0} y={contextMenu?.y || 0} title="Tác vụ nhanh" actions={[{ label: 'Xem chi tiết', onClick: () => { setSelectedReceipt(contextMenu.item); axiosClient.get(`/api/inbound/${contextMenu.item.id}/details`).then(res => { setDetailItems(res.data); setIsDetailModalOpen(true); }); } }, { label: 'Làm mới', onClick: fetchData }]} onClose={() => setContextMenu(null)} />
 
             {isDetailModalOpen && selectedReceipt && (
-                <div className="fixed inset-0 bg-black/60 z-[110] flex justify-center items-center backdrop-blur-sm p-4 text-left">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[110] flex justify-center items-center p-4 text-left">
                     <div className="bg-white rounded-3xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[90vh]">
                         <div className="bg-[#1192a8] p-5 text-white flex justify-between items-center">
                             <div><h2 className="font-bold uppercase tracking-widest text-sm text-left">Phiếu nhập: {selectedReceipt.receiptCode}</h2><p className="text-[10px] font-bold opacity-80 uppercase italic">Người lập: {getStaffName(selectedReceipt.createdBy)}</p></div>
@@ -228,9 +280,9 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
             )}
             
             {showCreateModal && (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex justify-center items-center backdrop-blur-sm p-4 animate-in slide-in-from-bottom-4 duration-300">
-                    <div className="bg-white rounded-3xl w-full max-w-6xl overflow-hidden flex flex-col max-h-[95vh]">
-                        <div className="bg-[#1192a8] p-5 text-white flex justify-between items-center"><h2 className="font-bold uppercase tracking-widest text-sm">Lập phiếu nhập mới</h2><button onClick={() => setShowCreateModal(false)} className="text-3xl">&times;</button></div>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[100] flex justify-center items-center p-4 animate-in slide-in-from-bottom-4 duration-300">
+                    <div className="bg-white rounded-3xl w-full max-w-[95%] overflow-hidden flex flex-col max-h-[95vh]">
+                        <div className="bg-[#1192a8] p-5 text-white flex justify-between items-center shrink-0"><h2 className="font-bold uppercase tracking-widest text-sm">Lập phiếu nhập mới</h2><button onClick={() => setShowCreateModal(false)} className="text-3xl">&times;</button></div>
                         <div className="p-8 overflow-y-auto flex-1 space-y-8 bg-gray-50/50">
                             <div className="grid grid-cols-4 gap-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-left">
                                 <div><label className="text-[10px] font-black text-gray-400 uppercase block mb-1">Nhà cung cấp</label><select value={supplierId} onChange={e => setSupplierId(e.target.value)} className="wms-select w-full !py-2"><option value="">-- Chọn --</option>{suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
@@ -239,13 +291,85 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
                                 <div><label className="text-[10px] font-black text-gray-400 uppercase block mb-1">Trạng thái</label><select value={receiptStatus} onChange={e => setReceiptStatus(e.target.value)} className="wms-select w-full !py-2">{inboundStatusOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
                             </div>
                             <div className="space-y-4 text-left">
-                                <div className="flex justify-between items-center"><h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Danh mục hàng hóa</h3><button onClick={() => setNewItems([...newItems, createEmptyLineItem()])} className="text-[10px] font-black text-[#1192a8] hover:underline">+ THÊM DÒNG</button></div>
-                                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden"><table className="w-full text-xs text-left"><thead><tr className="bg-gray-50 text-gray-400 font-bold uppercase"><th className="p-3">Sản phẩm</th><th className="p-3 text-center">SL Thực nhập</th><th className="p-3 text-right">Đơn giá</th><th className="p-3"></th></tr></thead>
-                                    <tbody>{newItems.map((item, i) => (<tr key={i} className="border-t border-gray-50"><td className="p-2"><select value={item.productId} onChange={e => { const next=[...newItems]; next[i].productId=e.target.value; setNewItems(next); }} className="w-full border-none outline-none font-bold text-gray-800 bg-transparent text-left"><option value="">-- Chọn SP --</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></td><td className="p-2"><input type="number" value={item.qtyReceived} onChange={e => { const next=[...newItems]; next[i].qtyReceived=e.target.value; setNewItems(next); }} className="w-full border-none outline-none text-center font-black text-teal-600 bg-transparent" /></td><td className="p-2"><input type="number" value={item.price} onChange={e => { const next=[...newItems]; next[i].price=e.target.value; setNewItems(next); }} className="w-full border-none outline-none text-right font-bold bg-transparent" /></td><td className="p-2"><button onClick={() => setNewItems(newItems.filter((_, idx) => idx !== i))} className="text-red-300 text-lg">&times;</button></td></tr>))}</tbody>
+                                <div className="flex justify-between items-center"><h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Danh mục hàng hóa & Lô hàng</h3><button onClick={() => setNewItems([...newItems, createEmptyLineItem()])} className="text-[10px] font-black text-[#1192a8] hover:underline">+ THÊM DÒNG</button></div>
+                                <div className="bg-white rounded-2xl border border-gray-100 overflow-x-auto"><table className="w-full text-xs text-left min-w-[1100px]"><thead><tr className="bg-gray-50 text-gray-400 font-bold uppercase"><th className="p-3">Sản phẩm</th><th className="p-3 w-48">Mã Lô</th><th className="p-3">Hạn dùng</th><th className="p-3">Vị trí kho</th><th className="p-3 text-center w-24">SL Nhập</th><th className="p-3 text-right w-32">Đơn giá</th><th className="p-3"></th></tr></thead>
+                                    <tbody>{newItems.map((item, i) => (
+                                        <tr key={i} className="border-t border-gray-50">
+                                            <td className="p-2">
+                                                <select value={item.productId} onChange={e => { 
+                                                    const next=[...newItems]; 
+                                                    next[i].productId=e.target.value; 
+                                                    next[i].batchCode = "";
+                                                    next[i].expiryDate = "";
+                                                    next[i].isNewBatch = false;
+                                                    setNewItems(next); 
+                                                    fetchBatches(e.target.value);
+                                                }} className="w-full border-none outline-none font-bold text-gray-800 bg-transparent text-left">
+                                                    <option value="">-- Chọn SP --</option>
+                                                    {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                                </select>
+                                            </td>
+                                            <td className="p-2">
+                                                <div className="flex items-center gap-1">
+                                                    {item.isNewBatch ? (
+                                                        <input 
+                                                            type="text" 
+                                                            value={item.batchCode} 
+                                                            onChange={e => { const next=[...newItems]; next[i].batchCode=e.target.value; setNewItems(next); }} 
+                                                            placeholder="Mã lô mới..." 
+                                                            className="w-full border border-teal-200 rounded px-2 py-1 bg-teal-50/30 text-teal-800 font-bold" 
+                                                        />
+                                                    ) : (
+                                                        <select 
+                                                            value={item.batchCode} 
+                                                            onChange={e => { 
+                                                                const next=[...newItems]; 
+                                                                next[i].batchCode=e.target.value; 
+                                                                const b = productBatches[item.productId]?.find(it => it.batchCode === e.target.value);
+                                                                if(b) next[i].expiryDate = b.expiryDate ? b.expiryDate.split('T')[0] : "";
+                                                                setNewItems(next); 
+                                                            }} 
+                                                            className="w-full border border-gray-100 rounded px-2 py-1 bg-gray-50/50"
+                                                        >
+                                                            <option value="">-- Chọn Lô --</option>
+                                                            {productBatches[item.productId]?.map(b => (
+                                                                <option key={b.id} value={b.batchCode}>{b.batchCode}</option>
+                                                            ))}
+                                                        </select>
+                                                    )}
+                                                    <button 
+                                                        onClick={() => { const next=[...newItems]; next[i].isNewBatch = !next[i].isNewBatch; next[i].batchCode=""; next[i].expiryDate=""; setNewItems(next); }}
+                                                        className={`w-8 h-8 rounded-lg flex items-center justify-center font-black transition-all ${item.isNewBatch ? 'bg-orange-100 text-orange-600' : 'bg-[#1192a8]/10 text-[#1192a8]'}`}
+                                                        title={item.isNewBatch ? "Hủy tạo mới" : "Thêm lô mới"}
+                                                    >
+                                                        {item.isNewBatch ? "×" : "+"}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td className="p-2">
+                                                <input 
+                                                    type="date" 
+                                                    value={item.expiryDate} 
+                                                    onChange={e => { const next=[...newItems]; next[i].expiryDate=e.target.value; setNewItems(next); }} 
+                                                    readOnly={!item.isNewBatch && item.batchCode !== ""}
+                                                    className={`w-full border border-gray-100 rounded px-2 py-1 ${!item.isNewBatch && item.batchCode !== "" ? 'bg-gray-100 opacity-60' : 'bg-gray-50/50'}`} 
+                                                />
+                                            </td>
+                                            <td className="p-2">
+                                                <select value={item.locationId} onChange={e => { const next=[...newItems]; next[i].locationId=e.target.value; setNewItems(next); }} className="w-full border-none outline-none font-medium bg-transparent">
+                                                    <option value="">-- Chọn vị trí --</option>
+                                                    {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.binCode} ({loc.zone})</option>)}
+                                                </select>
+                                            </td>
+                                            <td className="p-2"><input type="number" value={item.qtyReceived} onChange={e => { const next=[...newItems]; next[i].qtyReceived=e.target.value; setNewItems(next); }} className="w-full border-none outline-none text-center font-black text-teal-600 bg-transparent" /></td>
+                                            <td className="p-2"><input type="number" value={item.price} onChange={e => { const next=[...newItems]; next[i].price=e.target.value; setNewItems(next); }} className="w-full border-none outline-none text-right font-bold bg-transparent" /></td>
+                                            <td className="p-2 text-right"><button onClick={() => setNewItems(newItems.filter((_, idx) => idx !== i))} className="text-red-300 text-lg">&times;</button></td>
+                                        </tr>
+                                    ))}</tbody>
                                 </table></div>
                             </div>
                         </div>
-                        <div className="p-6 border-t bg-white flex justify-between items-center"><div className="text-left"><p className="text-[10px] font-black text-gray-400 uppercase">Tổng cộng</p><p className="text-2xl font-black text-teal-700">{newItems.reduce((s, i) => s + (i.qtyReceived * i.price), 0).toLocaleString()}đ</p></div><div className="flex gap-4"><button onClick={() => setShowCreateModal(false)} className="text-gray-400 font-bold uppercase text-xs hover:text-gray-600">Hủy</button><button onClick={handleSaveReceipt} className="px-10 py-3 bg-[#1192a8] text-white rounded-2xl font-black uppercase text-xs shadow-xl shadow-[#1192a8]/20 transition-all hover:scale-105 active:scale-95 transition-all">Xác nhận nhập</button></div></div>
+                        <div className="p-6 border-t bg-white flex justify-between items-center shrink-0"><div className="text-left"><p className="text-[10px] font-black text-gray-400 uppercase">Tổng cộng</p><p className="text-2xl font-black text-teal-700">{newItems.reduce((s, i) => s + (i.qtyReceived * i.price), 0).toLocaleString()}đ</p></div><div className="flex gap-4"><button onClick={() => setShowCreateModal(false)} className="text-gray-400 font-bold uppercase text-xs hover:text-gray-600">Hủy</button><button onClick={handleSaveReceipt} className="px-10 py-3 bg-[#1192a8] text-white rounded-2xl font-black uppercase text-xs shadow-xl shadow-[#1192a8]/20 transition-all hover:scale-105 active:scale-95 transition-all">Xác nhận nhập</button></div></div>
                     </div>
                 </div>
             )}

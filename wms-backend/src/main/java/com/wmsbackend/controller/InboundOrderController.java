@@ -21,13 +21,16 @@ public class InboundOrderController {
     private final InboundOrderRepository       orderRepo;
     private final InboundOrderDetailRepository detailRepo;
     private final InventoryRepository          inventoryRepo;
+    private final BatchRepository              batchRepo;
 
     public InboundOrderController(InboundOrderRepository orderRepo,
                                   InboundOrderDetailRepository detailRepo,
-                                  InventoryRepository inventoryRepo) {
+                                  InventoryRepository inventoryRepo,
+                                  BatchRepository batchRepo) {
         this.orderRepo     = orderRepo;
         this.detailRepo    = detailRepo;
         this.inventoryRepo = inventoryRepo;
+        this.batchRepo     = batchRepo;
     }
 
     // GET danh sách phiếu nhập — ADMIN, MANAGER xem báo cáo
@@ -45,6 +48,12 @@ public class InboundOrderController {
         return detailRepo.findByInboundOrderId(id);
     }
 
+    @GetMapping("/batches/{productId}")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF')")
+    public List<Batch> getBatchesByProduct(@PathVariable Integer productId) {
+        return batchRepo.findByProductId(productId);
+    }
+
     // POST xác nhận nhập kho — chỉ INBOUND_STAFF thực hiện (ADMIN luôn có quyền)
     @PostMapping("/confirm")
     @PreAuthorize("hasAnyRole('ADMIN','INBOUND_STAFF')")
@@ -52,8 +61,24 @@ public class InboundOrderController {
     public String confirmInbound(@RequestBody InboundRequest request) {
         InboundOrder order = request.getOrder();
         List<InboundOrderDetail> details = request.getDetails() != null ? request.getDetails() : List.of();
+        List<Batch> newBatches = request.getNewBatches() != null ? request.getNewBatches() : List.of();
 
-        // Xử lý thông tin thời gian (Kết hợp từ nhánh main và UX)
+        // 0. Lưu các lô hàng mới nếu có (De-duplicate để tránh lỗi)
+        java.util.Set<String> processedBatches = new java.util.HashSet<>();
+        for (Batch b : newBatches) {
+            if (b.getBatchCode() != null && !b.getBatchCode().isBlank()) {
+                String key = b.getProductId() + "_" + b.getBatchCode();
+                if (processedBatches.contains(key)) continue;
+                processedBatches.add(key);
+
+                // Kiểm tra xem lô hàng này đã tồn tại trong DB chưa
+                if (batchRepo.findByProductIdAndBatchCode(b.getProductId(), b.getBatchCode()).isEmpty()) {
+                    batchRepo.save(b);
+                }
+            }
+        }
+
+        // 1. Xử lý thông tin thời gian (Kết hợp từ nhánh main và UX)
         order.setCreatedAt(LocalDateTime.now());
         if (order.getReceiptDate() == null) {
             order.setReceiptDate(LocalDateTime.now());
@@ -70,6 +95,18 @@ public class InboundOrderController {
 
         for (InboundOrderDetail item : details) {
             item.setInboundOrderId(savedOrder.getId());
+            
+            // Tìm BatchId từ BatchCode nếu BatchId chưa có hoặc bằng 0
+            if ((item.getBatchId() == null || item.getBatchId() == 0) && item.getBatchCode() != null) {
+                batchRepo.findByProductIdAndBatchCode(item.getProductId(), item.getBatchCode())
+                        .ifPresent(b -> item.setBatchId(b.getId()));
+            }
+
+            // Mặc định BatchId = 1 (Lô mặc định) nếu vẫn không tìm thấy
+            if (item.getBatchId() == null) {
+                item.setBatchId(1);
+            }
+
             detailRepo.save(item);
 
             // Chỉ cộng tồn kho thực tế nếu trạng thái đã hoàn thành (COMPLETED)
@@ -191,6 +228,7 @@ public class InboundOrderController {
 class InboundRequest {
     private InboundOrder order;
     private List<InboundOrderDetail> details;
+    private List<Batch> newBatches;
 
     public InboundRequest() {}
 
@@ -199,4 +237,7 @@ class InboundRequest {
 
     public List<InboundOrderDetail> getDetails() { return details; }
     public void setDetails(List<InboundOrderDetail> details) { this.details = details; }
+
+    public List<Batch> getNewBatches() { return newBatches; }
+    public void setNewBatches(List<Batch> newBatches) { this.newBatches = newBatches; }
 }

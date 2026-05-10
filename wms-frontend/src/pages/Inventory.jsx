@@ -791,10 +791,6 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                     <div onClick={() => handleOpenDetail(selectedProducts)}>
                         <ActionButton iconSrc={infoIcon} label="CHI TIẾT" />
                     </div>
-                    {/* Add Scan icon from main branch for future integration */}
-                    <div>
-                         <ActionButton iconSrc={scanIcon} label="QUÉT MÃ" />
-                    </div>
                     <div onClick={() => handleCreateReceiptFlow('inbound')}>
                         <ActionButton iconSrc={inboundIcon} label="NHẬP KHO" />
                     </div>

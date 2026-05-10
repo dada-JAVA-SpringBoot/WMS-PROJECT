@@ -5,11 +5,38 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7661f23e-b336-45c8-a5a3-5af4fc5b2f4a" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/config/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/AuthController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/security/StaffUserDetailsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/security/StaffUserDetailsService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/InboundOrderController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/InboundOrderController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/StaffController.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/controller/StaffController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/dto/StaffDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/dto/StaffDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/InboundOrderDetail.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/InboundOrderDetail.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/Staff.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/entity/Staff.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/BatchRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/BatchRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/StaffRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/repository/StaffRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/security/JwtAuthFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/security/JwtAuthFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/service/impl/StaffServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/wms-backend/src/main/java/com/wmsbackend/service/impl/StaffServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-database/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/wms-database/Dockerfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wms-database/setup.sql" beforeDir="false" afterPath="$PROJECT_DIR$/wms-database/setup.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/App.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/api/axiosClient.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/api/axiosClient.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/components/layout/sidebar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/components/layout/sidebar.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/components/modals/BulkEditModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/components/modals/BulkEditModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/components/modals/CopyFieldsModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/components/modals/CopyFieldsModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/components/modals/ExportExcelModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/components/modals/ExportExcelModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/components/modals/InventoryFilterModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/components/modals/InventoryFilterModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/components/modals/LocationInventoryModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/components/modals/LocationInventoryModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/components/modals/ProductDetailModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/components/modals/ProductDetailModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/components/modals/ProductModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/components/modals/ProductModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/components/modals/StaffModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/components/modals/StaffModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/components/modals/SystemDialog.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/components/modals/SystemDialog.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/components/modals/TransferModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/components/modals/TransferModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/ImportReceipts.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/ImportReceipts.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Inventory.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Inventory.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/OutboundOrder.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/OutboundOrder.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/Staff.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/Staff.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wms-frontend/src/pages/WarehouseArea.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wms-frontend/src/pages/WarehouseArea.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -17,7 +44,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="86" />
+    <option name="cachedIndexableFilesCount" value="95" />
     <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="FileTemplateManagerImpl">
@@ -181,7 +208,13 @@
       <workItem from="1778156480462" duration="5000" />
       <workItem from="1778167092018" duration="8000" />
       <workItem from="1778214557367" duration="40000" />
-      <workItem from="1778215743562" duration="4988000" />
+      <workItem from="1778215743562" duration="5507000" />
+      <workItem from="1778221367308" duration="10000" />
+      <workItem from="1778241838191" duration="10950000" />
+      <workItem from="1778307308904" duration="345000" />
+      <workItem from="1778310517604" duration="13100000" />
+      <workItem from="1778341984365" duration="73000" />
+      <workItem from="1778372296660" duration="306000" />
     </task>
     <servers />
   </component>
