@@ -6,7 +6,7 @@ import Features from './Sections/Features';
 import Pricing from './Sections/Pricing';
 import About from './Sections/About';
 
-export default function LandingPage({ onEnter }) {
+export default function LandingPage({ onEnter, onLogin }) {
 
     const [view, setView] = useState('home');
 
@@ -47,7 +47,7 @@ export default function LandingPage({ onEnter }) {
 
 
                     <div className="hidden md:flex items-center gap-4">
-                        <button onClick={onEnter} className="px-6 py-2 border-2 border-[#149ca8] text-[#149ca8] rounded-full font-bold hover:bg-blue-50 transition active:scale-95">
+                        <button onClick={onLogin ?? onEnter} className="px-6 py-2 border-2 border-[#149ca8] text-[#149ca8] rounded-full font-bold hover:bg-blue-50 transition active:scale-95">
                             Đăng nhập
                         </button>
                         <button onClick={onEnter} className="px-6 py-2 bg-[#149ca8] text-white rounded-full font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 active:scale-95">
