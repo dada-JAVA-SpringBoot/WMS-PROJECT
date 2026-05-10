@@ -11,8 +11,8 @@ import infoIcon from '../components/common/icons/info.png';
 import excelIcon  from '../components/common/icons/excel.png';
 import excel1Icon from '../components/common/icons/excel1.png';
 
-const createEmptyDetail = () => ({ 
-    id: Math.random(), productId: '', productName: '', unit: '-', quantity: 1, price: 0, total: 0 
+const createEmptyDetail = () => ({
+    id: Math.random(), productId: '', productName: '', unit: '-', quantity: 1, price: 0, total: 0
 });
 
 const outboundStatusOptions = [
@@ -27,7 +27,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [contextMenu, setContextMenu] = useState(null);
-    
+
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isViewDetailOpen, setIsViewDetailOpen] = useState(false);
     const [viewingVoucher, setViewingVoucher] = useState(null);
@@ -50,7 +50,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
         try {
             const res = await axiosClient.get("/api/outbound-orders");
             setExportData(Array.isArray(res.data) ? res.data : []);
-        } catch (e) { 
+        } catch (e) {
             console.error("Lỗi API Phiếu xuất:", e);
             setExportData([]);
         }
@@ -145,7 +145,8 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
         const now = new Date();
         const dateStr = now.toISOString().split('T')[0];
         setFormData({
-            voucherCode: `XK${dateStr.replace(/-/g, '')}${now.getSeconds()}`,
+            // FIX 1: Dùng Date.now().toString().slice(-6) thay vì getSeconds() để tránh trùng mã phiếu
+            voucherCode: `XK${dateStr.replace(/-/g, '')}${Date.now().toString().slice(-6)}`,
             voucherDate: dateStr, customerId: '', staffId: '', note: ''
         });
         setDetails(seed.length > 0 ? seed : [createEmptyDetail()]);
@@ -203,35 +204,35 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
             <div className="flex-1 bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
                 <table className="w-full text-left">
                     <thead className="bg-gray-50 border-b text-[10px] font-black text-gray-400 uppercase">
-                        <tr>
-                            <th className="p-5 w-16">#</th>
-                            <th className="p-5 cursor-pointer hover:text-[#1192a8]" onClick={() => requestSort('issueCode')}>Mã phiếu <SortIcon col="issueCode" /></th>
-                            <th className="p-5 cursor-pointer hover:text-[#1192a8]" onClick={() => requestSort('createdAt')}>Thời gian tạo <SortIcon col="createdAt" /></th>
-                            <th className="p-5 cursor-pointer hover:text-[#1192a8]" onClick={() => requestSort('customerName')}>Khách hàng <SortIcon col="customerName" /></th>
-                            <th className="p-5 text-right cursor-pointer hover:text-[#1192a8]" onClick={() => requestSort('totalAmount')}>Tổng tiền <SortIcon col="totalAmount" /></th>
-                            <th className="p-5 text-center w-56">Trạng thái</th>
-                        </tr>
+                    <tr>
+                        <th className="p-5 w-16">#</th>
+                        <th className="p-5 cursor-pointer hover:text-[#1192a8]" onClick={() => requestSort('issueCode')}>Mã phiếu <SortIcon col="issueCode" /></th>
+                        <th className="p-5 cursor-pointer hover:text-[#1192a8]" onClick={() => requestSort('createdAt')}>Thời gian tạo <SortIcon col="createdAt" /></th>
+                        <th className="p-5 cursor-pointer hover:text-[#1192a8]" onClick={() => requestSort('customerName')}>Khách hàng <SortIcon col="customerName" /></th>
+                        <th className="p-5 text-right cursor-pointer hover:text-[#1192a8]" onClick={() => requestSort('totalAmount')}>Tổng tiền <SortIcon col="totalAmount" /></th>
+                        <th className="p-5 text-center w-56">Trạng thái</th>
+                    </tr>
                     </thead>
                     <tbody className="text-sm">
-                        {isLoading ? <tr><td colSpan="6" className="py-20 text-center animate-pulse text-[#1192a8] font-bold">ĐANG TẢI...</td></tr> : filteredData.map((item, idx) => (
-                            <tr key={item.id} onClick={() => setSelectedRowId(item.id)} onDoubleClick={() => { setViewingVoucher(item); setIsViewDetailOpen(true); }} onContextMenu={e => { setSelectedRowId(item.id); setContextMenu({ x: e.clientX, y: e.clientY, item }); e.preventDefault(); }}
-                                className={`border-b border-gray-50 cursor-pointer ${selectedRowId === item.id ? 'bg-[#1192a8]/5' : 'hover:bg-gray-50'}`}>
-                                <td className="p-5 text-gray-300 font-bold">{idx + 1}</td>
-                                <td className="p-5 font-black text-[#1192a8] uppercase truncate">{item.issueCode}</td>
-                                <td className="p-5 text-gray-500 font-bold">{item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : '---'}</td>
-                                <td className="p-5 font-bold text-gray-700">{getCustName(item.customerId)}</td>
-                                <td className="p-5 text-right font-black text-teal-700">{Number(item.totalAmount || 0).toLocaleString()}đ</td>
-                                <td className="p-5 text-center" onClick={e => e.stopPropagation()}>
-                                    <select 
-                                        value={item.status} 
-                                        onChange={e => handleUpdateStatus(item.id, e.target.value)}
-                                        className={`w-fit mx-auto !py-1 !px-2 !text-[10px] uppercase font-black rounded-lg border-2 ${outboundStatusOptions.find(o => o.value === item.status)?.color || ''} cursor-pointer outline-none focus:ring-2 focus:ring-[#1192a8]/20 transition-all`}
-                                    >
-                                        {outboundStatusOptions.map(o => <option key={o.value} value={o.value} className="bg-white text-gray-700 font-bold">{o.label}</option>)}
-                                    </select>
-                                </td>
-                            </tr>
-                        ))}
+                    {isLoading ? <tr><td colSpan="6" className="py-20 text-center animate-pulse text-[#1192a8] font-bold">ĐANG TẢI...</td></tr> : filteredData.map((item, idx) => (
+                        <tr key={item.id} onClick={() => setSelectedRowId(item.id)} onDoubleClick={() => { setViewingVoucher(item); setIsViewDetailOpen(true); }} onContextMenu={e => { setSelectedRowId(item.id); setContextMenu({ x: e.clientX, y: e.clientY, item }); e.preventDefault(); }}
+                            className={`border-b border-gray-50 cursor-pointer ${selectedRowId === item.id ? 'bg-[#1192a8]/5' : 'hover:bg-gray-50'}`}>
+                            <td className="p-5 text-gray-300 font-bold">{idx + 1}</td>
+                            <td className="p-5 font-black text-[#1192a8] uppercase truncate">{item.issueCode}</td>
+                            <td className="p-5 text-gray-500 font-bold">{item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : '---'}</td>
+                            <td className="p-5 font-bold text-gray-700">{getCustName(item.customerId)}</td>
+                            <td className="p-5 text-right font-black text-teal-700">{Number(item.totalAmount || 0).toLocaleString()}đ</td>
+                            <td className="p-5 text-center" onClick={e => e.stopPropagation()}>
+                                <select
+                                    value={item.status}
+                                    onChange={e => handleUpdateStatus(item.id, e.target.value)}
+                                    className={`w-fit mx-auto !py-1 !px-2 !text-[10px] uppercase font-black rounded-lg border-2 ${outboundStatusOptions.find(o => o.value === item.status)?.color || ''} cursor-pointer outline-none focus:ring-2 focus:ring-[#1192a8]/20 transition-all`}
+                                >
+                                    {outboundStatusOptions.map(o => <option key={o.value} value={o.value} className="bg-white text-gray-700 font-bold">{o.label}</option>)}
+                                </select>
+                            </td>
+                        </tr>
+                    ))}
                     </tbody>
                 </table>
             </div>
@@ -253,10 +254,10 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                             <table className="w-full text-sm">
                                 <thead className="bg-gray-50 text-gray-400 text-[10px] uppercase font-bold text-left"><tr><th className="p-3">Sản phẩm</th><th className="p-3 text-center">Số lượng</th><th className="p-3 text-right">Đơn giá</th><th className="p-3 text-right">Thành tiền</th></tr></thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {viewingVoucher.items?.map((row, i) => {
-                                        const p = products.find(prod => prod.id === row.productId);
-                                        return (<tr key={i}><td className="p-3 font-bold text-left"><p>{p?.name || `SP #${row.productId}`}</p><p className="text-[10px] text-gray-400 font-mono">{p?.sku || ''}</p></td><td className="p-3 text-center font-black text-gray-700">{row.quantity?.toLocaleString()}</td><td className="p-3 text-right text-gray-400">{Number(row.unitPrice || 0).toLocaleString()}đ</td><td className="p-3 text-right font-black text-[#1192a8]">{(row.quantity * (row.unitPrice || 0)).toLocaleString()}đ</td></tr>);
-                                    })}
+                                {viewingVoucher.items?.map((row, i) => {
+                                    const p = products.find(prod => prod.id === row.productId);
+                                    return (<tr key={i}><td className="p-3 font-bold text-left"><p>{p?.name || `SP #${row.productId}`}</p><p className="text-[10px] text-gray-400 font-mono">{p?.sku || ''}</p></td><td className="p-3 text-center font-black text-gray-700">{row.quantity?.toLocaleString()}</td><td className="p-3 text-right text-gray-400">{Number(row.unitPrice || 0).toLocaleString()}đ</td><td className="p-3 text-right font-black text-[#1192a8]">{(row.quantity * (row.unitPrice || 0)).toLocaleString()}đ</td></tr>);
+                                })}
                                 </tbody>
                             </table>
                         </div>
@@ -264,7 +265,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                     </div>
                 </div>
             )}
-            
+
             {isCreateOpen && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[100] flex justify-center items-center p-4 animate-in slide-in-from-bottom-4 duration-300">
                     <div className="bg-white rounded-3xl w-full max-w-6xl overflow-hidden flex flex-col max-h-[95vh]">
@@ -278,7 +279,27 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                             </div>
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center"><h3 className="text-xs font-black text-gray-400 uppercase tracking-widest text-left">Hàng hóa</h3><button onClick={() => setDetails([...details, createEmptyDetail()])} className="text-[10px] font-black text-blue-600">+ THÊM DÒNG</button></div>
-                                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden text-left"><table className="w-full text-xs"><thead><tr className="bg-gray-50 text-gray-400 font-bold uppercase"><th className="p-3">Sản phẩm</th><th className="p-3 text-center w-24">SL</th><th className="p-3 text-right w-32">Giá</th><th className="p-3 w-10"></th></tr></thead><tbody>{details.map((row, i) => (<tr key={row.id} className="border-t border-gray-50"><td className="p-2"><select value={row.productId} onChange={e => { const next = [...details]; next[i].productId = e.target.value; const p = products.find(it => String(it.id) === e.target.value); if(p){ next[i].productName = p.name; next[i].price = p.price || 0; } next[i].total = Number(next[i].quantity) * Number(next[i].price); setDetails(next); }} className="w-full border-none outline-none font-bold bg-transparent text-left">{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}<option value="">-- Chọn SP --</option></select></td><td className="p-2"><input type="number" value={row.quantity} onChange={e => { const next = [...details]; next[i].quantity = e.target.value; next[i].total = Number(e.target.value) * Number(next[i].price); setDetails(next); }} className="w-full text-center font-black text-teal-600 bg-transparent outline-none" /></td><td className="p-2"><input type="number" value={row.price} onChange={e => { const next = [...details]; next[i].price = e.target.value; next[i].total = Number(next[i].quantity) * Number(e.target.value); setDetails(next); }} className="w-full text-right font-bold bg-transparent outline-none" /></td><td className="p-2 text-right"><button onClick={() => setDetails(details.filter((_, idx) => idx !== i))} className="text-red-300 text-lg">&times;</button></td></tr>))}</tbody></table></div>
+                                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden text-left">
+                                    <table className="w-full text-xs">
+                                        <thead><tr className="bg-gray-50 text-gray-400 font-bold uppercase"><th className="p-3">Sản phẩm</th><th className="p-3 text-center w-24">SL</th><th className="p-3 text-right w-32">Giá</th><th className="p-3 w-10"></th></tr></thead>
+                                        <tbody>
+                                        {details.map((row, i) => (
+                                            <tr key={row.id} className="border-t border-gray-50">
+                                                <td className="p-2">
+                                                    {/* FIX 2: "-- Chọn SP --" lên đầu để productId mặc định là '' */}
+                                                    <select value={row.productId} onChange={e => { const next = [...details]; next[i].productId = e.target.value; const p = products.find(it => String(it.id) === e.target.value); if(p){ next[i].productName = p.name; next[i].price = p.price || 0; } next[i].total = Number(next[i].quantity) * Number(next[i].price); setDetails(next); }} className="w-full border-none outline-none font-bold bg-transparent text-left">
+                                                        <option value="">-- Chọn SP --</option>
+                                                        {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                                    </select>
+                                                </td>
+                                                <td className="p-2"><input type="number" value={row.quantity} onChange={e => { const next = [...details]; next[i].quantity = e.target.value; next[i].total = Number(e.target.value) * Number(next[i].price); setDetails(next); }} className="w-full text-center font-black text-teal-600 bg-transparent outline-none" /></td>
+                                                <td className="p-2"><input type="number" value={row.price} onChange={e => { const next = [...details]; next[i].price = e.target.value; next[i].total = Number(next[i].quantity) * Number(e.target.value); setDetails(next); }} className="w-full text-right font-bold bg-transparent outline-none" /></td>
+                                                <td className="p-2 text-right"><button onClick={() => setDetails(details.filter((_, idx) => idx !== i))} className="text-red-300 text-lg">&times;</button></td>
+                                            </tr>
+                                        ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                         <div className="p-6 border-t bg-white flex justify-between items-center"><div className="text-left"><p className="text-[10px] font-black text-gray-400 uppercase text-left">Tổng giá trị</p><p className="text-2xl font-black text-[#1192a8]">{details.reduce((s, r) => s + r.total, 0).toLocaleString()}đ</p></div><div className="flex gap-4"><button onClick={() => setIsCreateOpen(false)} className="text-gray-400 font-bold uppercase text-xs">Hủy</button><button onClick={handleSave} className="px-10 py-3 bg-[#1192a8] text-white rounded-2xl font-black uppercase text-xs shadow-lg">Xác nhận phiếu</button></div></div>

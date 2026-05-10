@@ -4,7 +4,7 @@ spring:
   datasource:
     url: jdbc:sqlserver://localhost:14333;databaseName=WMS_DB;encrypt=true;trustServerCertificate=true;
     username: sa
-    password: <MAT_KHAU_SQL_SERVER>
+    password: WmsPassword123!@#
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
 
   jpa:
@@ -15,6 +15,6 @@ spring:
 # ── JWT Configuration ─────────────────────────────────────────────────────────
 jwt:
   # Secret key tối thiểu 32 ký tự — đổi thành chuỗi bí mật riêng của bạn!
-  secret: <MAT_KHAU_DA_THONG_NHAT>
+  secret: WmsSecretKey2024!@#$%VeryLongSecretKeyForJWT
   # Thời hạn token: 24h = 86400000ms | 8h = 28800000ms
   expiration-ms: 86400000
