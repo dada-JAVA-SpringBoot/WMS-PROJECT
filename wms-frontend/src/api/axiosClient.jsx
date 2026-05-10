@@ -2,8 +2,7 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-    baseURL: '/api',
-    headers: { 'Content-Type': 'application/json' },
+    baseURL: '', // Để trống vì các file gọi API đã có sẵn tiền tố /api
     timeout: 30000, // Tăng timeout cho VPS
 });
 

@@ -55,10 +55,10 @@ export default function Supplier({ onCreateInbound }) {
     // Lọc dữ liệu ở Client theo tiêu chí (searchBy) dựa trên kết quả trả về
     const filtered = searchBy === 'all' ? data : data.filter(row => {
         const q = search.toLowerCase();
-        if (searchBy === 'name')    return row.name?.toLowerCase().includes(q);
-        if (searchBy === 'code')    return row.supplierCode?.toLowerCase().includes(q);
-        if (searchBy === 'phone')   return row.phone?.toLowerCase().includes(q);
-        if (searchBy === 'address') return row.address?.toLowerCase().includes(q);
+        if (searchBy === 'name')    return (row.name || '').toLowerCase().includes(q);
+        if (searchBy === 'code')    return (row.supplierCode || '').toLowerCase().includes(q);
+        if (searchBy === 'phone')   return (row.phone || '').toLowerCase().includes(q);
+        if (searchBy === 'address') return (row.address || '').toLowerCase().includes(q);
         return true;
     });
 

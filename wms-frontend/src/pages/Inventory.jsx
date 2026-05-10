@@ -15,6 +15,7 @@ import SystemDialog from '../components/modals/SystemDialog';
 import RowContextMenu from '../components/modals/RowContextMenu';
 import CopyFieldsModal from '../components/modals/CopyFieldsModal';
 import ExportExcelModal from '../components/modals/ExportExcelModal';
+import ScannerModal from '../components/modals/ScannerModal';
 
 // Import Icons
 import addIcon from '../components/common/icons/add.png';
@@ -42,6 +43,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
     const [isCopyModalOpen, setIsCopyModalOpen] = useState(false);
     const [copyTargetProducts, setCopyTargetProducts] = useState([]);
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [exportFileName, setExportFileName] = useState(`inventory_${new Date().toISOString().slice(0, 10)}.xlsx`);
     const [exportSaveMode, setExportSaveMode] = useState('download');
     const [inventoryViewMode, setInventoryViewMode] = useState('list');
@@ -184,31 +186,31 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
             const matchesKeyword = !keyword || (() => {
                 switch (searchType) {
                     case 'Theo tên SP':
-                        return item.name?.toLowerCase().includes(keyword);
+                        return (item.name || '').toLowerCase().includes(keyword);
                     case 'Theo SKU':
-                        return item.sku?.toLowerCase().includes(keyword);
+                        return (item.sku || '').toLowerCase().includes(keyword);
                     case 'Theo Mã vạch':
-                        return item.barcode?.toLowerCase().includes(keyword);
+                        return (item.barcode || '').toLowerCase().includes(keyword);
                     case 'Theo phân loại': {
                         const category = categoryMap.get(String(item.categoryId));
                         return (
-                            category?.name?.toLowerCase().includes(keyword) ||
-                            category?.categoryCode?.toLowerCase().includes(keyword)
+                            (category?.name || '').toLowerCase().includes(keyword) ||
+                            (category?.categoryCode || '').toLowerCase().includes(keyword)
                         );
                     }
                     case 'Theo NCC':
-                        return item.supplierCodes?.toLowerCase().includes(keyword);
+                        return (item.supplierCodes || '').toLowerCase().includes(keyword);
                     default: {
                         const category = categoryMap.get(String(item.categoryId));
                         return (
-                            item.name?.toLowerCase().includes(keyword) ||
-                            item.sku?.toLowerCase().includes(keyword) ||
-                            item.barcode?.toLowerCase().includes(keyword) ||
-                            item.supplierCodes?.toLowerCase().includes(keyword) ||
+                            (item.name || '').toLowerCase().includes(keyword) ||
+                            (item.sku || '').toLowerCase().includes(keyword) ||
+                            (item.barcode || '').toLowerCase().includes(keyword) ||
+                            (item.supplierCodes || '').toLowerCase().includes(keyword) ||
                             normalizeUnitName(item.baseUnit).toLowerCase().includes(keyword) ||
                             normalizeStorageTemp(item.storageTemp).toLowerCase().includes(keyword) ||
-                            category?.name?.toLowerCase().includes(keyword) ||
-                            category?.categoryCode?.toLowerCase().includes(keyword)
+                            (category?.name || '').toLowerCase().includes(keyword) ||
+                            (category?.categoryCode || '').toLowerCase().includes(keyword)
                         );
                     }
                 }
@@ -759,14 +761,20 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         setExportFileName(nextValue);
     };
 
+    const handleScanSuccess = (decodedText) => {
+        setSearchKeyword(decodedText);
+        setSearchType('Tất cả');
+        setIsScannerOpen(false);
+    };
+
     return (
-        <div className="p-6 h-full flex flex-col bg-gray-50">
-            <div className="flex items-center justify-between bg-white p-4 mb-4 rounded-xl shadow-sm border border-gray-100">
-                <div className="flex gap-6">
-                    <div onClick={() => setIsAddModalOpen(true)}>
+        <div className="p-4 lg:p-6 h-full flex flex-col bg-gray-50">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between bg-white p-4 mb-4 rounded-xl shadow-sm border border-gray-100 gap-4">
+                <div className="flex overflow-x-auto no-scrollbar pb-2 lg:pb-0 gap-6 lg:gap-8 snap-x">
+                    <div className="shrink-0" onClick={() => setIsAddModalOpen(true)}>
                         <ActionButton iconSrc={addIcon} label="THÊM MỚI" />
                     </div>
-                    <div onClick={() => {
+                    <div className="shrink-0" onClick={() => {
                         if (selectedProducts.length === 0) {
                             showMessage("Thiếu lựa chọn", "Vui lòng chọn một sản phẩm trong bảng trước.");
                             return;
@@ -779,7 +787,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                     }}>
                         <ActionButton iconSrc={fixIcon} label="SỬA" />
                     </div>
-                    <div onClick={() => {
+                    <div className="shrink-0" onClick={() => {
                         if (selectedProducts.length === 0) {
                             showMessage("Thiếu lựa chọn", "Vui lòng chọn ít nhất một sản phẩm trong bảng trước.");
                             return;
@@ -788,66 +796,73 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                     }}>
                         <ActionButton iconSrc={deleteIcon} label="XÓA" />
                     </div>
-                    <div onClick={() => handleOpenDetail(selectedProducts)}>
+                    <div className="shrink-0" onClick={() => handleOpenDetail(selectedProducts)}>
                         <ActionButton iconSrc={infoIcon} label="CHI TIẾT" />
                     </div>
-                    <div onClick={() => handleCreateReceiptFlow('inbound')}>
+                    <div className="shrink-0" onClick={() => handleCreateReceiptFlow('inbound')}>
                         <ActionButton iconSrc={inboundIcon} label="NHẬP KHO" />
                     </div>
-                    <div onClick={() => handleCreateReceiptFlow('outbound')}>
+                    <div className="shrink-0" onClick={() => handleCreateReceiptFlow('outbound')}>
                         <ActionButton iconSrc={outboundIcon} label="XUẤT KHO" />
                     </div>
-                    <div onClick={openExportModal}>
+                    <div className="shrink-0" onClick={openExportModal}>
                         <ActionButton iconSrc={excelIcon} label="XUẤT EXCEL" />
                     </div>
+                    <div className="shrink-0" onClick={() => setIsScannerOpen(true)}>
+                        <ActionButton iconSrc={scanIcon} label="QUÉT MÃ" />
+                    </div>
                 </div>
-                <div className="text-xs text-gray-500 font-medium">
-                    {selectedProducts.length > 0 ? `Đã chọn ${selectedProducts.length} sản phẩm` : 'Chưa chọn sản phẩm nào'}
-                </div>
-                <div className="flex items-center gap-3">
+                
+                <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
+                    <div className="text-xs text-gray-500 font-medium lg:mr-4 hidden lg:block">
+                        {selectedProducts.length > 0 ? `Đã chọn ${selectedProducts.length} sản phẩm` : 'Chưa chọn sản phẩm nào'}
+                    </div>
                     <button
                         type="button"
                         onClick={() => setIsFilterModalOpen(true)}
-                        className="bg-white border border-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm font-medium hover:bg-gray-50 flex items-center gap-2 transition"
+                        className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded text-sm font-medium hover:bg-gray-50 flex items-center justify-center gap-2 transition"
                     >
                         Bộ lọc
                     </button>
-                    <select
-                        value={searchType}
-                        onChange={(e) => setSearchType(e.target.value)}
-                        className="border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 bg-white"
-                    >
-                        <option>Tất cả</option>
-                        <option>Theo tên SP</option>
-                        <option>Theo SKU</option>
-                        <option>Theo Mã vạch</option>
-                        <option>Theo phân loại</option>
-                        <option>Theo NCC</option>
-                    </select>
-                    <input
-                        type="text"
-                        value={searchKeyword}
-                        onChange={(e) => setSearchKeyword(e.target.value)}
-                        className="border border-gray-300 rounded px-4 py-1.5 w-48 text-sm focus:outline-none focus:border-blue-500"
-                        placeholder="Nhập từ khóa tìm kiếm..."
-                    />
+                    <div className="flex gap-2">
+                        <select
+                            value={searchType}
+                            onChange={(e) => setSearchType(e.target.value)}
+                            className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 bg-white flex-1 lg:flex-none"
+                        >
+                            <option>Tất cả</option>
+                            <option>Theo tên SP</option>
+                            <option>Theo SKU</option>
+                            <option>Theo Mã vạch</option>
+                            <option>Theo phân loại</option>
+                            <option>Theo NCC</option>
+                        </select>
+                        <input
+                            type="text"
+                            value={searchKeyword}
+                            onChange={(e) => setSearchKeyword(e.target.value)}
+                            className="border border-gray-300 rounded px-4 py-2 w-full lg:w-48 text-sm focus:outline-none focus:border-blue-500 flex-[2] lg:flex-none"
+                            placeholder="Nhập từ khóa tìm kiếm..."
+                        />
+                    </div>
                     <button
                         onClick={fetchProducts}
-                        className="bg-[#1192a8] text-white px-4 py-1.5 rounded text-sm font-medium hover:bg-teal-700 flex items-center gap-2 transition"
+                        className="bg-[#1192a8] text-white px-4 py-2 rounded text-sm font-medium hover:bg-teal-700 flex items-center justify-center gap-2 transition"
                     >
                         <span>↻</span> Làm mới
                     </button>
                 </div>
             </div>
-            <div className="bg-white flex-1 overflow-auto rounded-xl shadow-sm border border-gray-200">
-                {isLoading ? (
-                    <div className="flex justify-center items-center h-full text-gray-500 font-medium">
-                        <span className="animate-pulse">Đang tải dữ liệu từ máy chủ...</span>
-                    </div>
-                ) : (
-                    inventoryViewMode === 'list' ? (
-                        <table className="w-full text-center text-sm">
-                        <thead className="bg-gray-100 sticky top-0 shadow-sm z-10">
+            <div className="bg-white flex-1 overflow-hidden rounded-xl shadow-sm border border-gray-200 flex flex-col">
+                <div className="overflow-x-auto flex-1 no-scrollbar lg:scrollbar-thin">
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-full text-gray-500 font-medium">
+                            <span className="animate-pulse">Đang tải dữ liệu từ máy chủ...</span>
+                        </div>
+                    ) : (
+                        inventoryViewMode === 'list' ? (
+                            <table className="w-full text-center text-sm min-w-[1000px]">
+                            <thead className="bg-gray-100 sticky top-0 shadow-sm z-10">
                         <tr className="text-gray-700 uppercase text-xs tracking-wider">
                             <th className="p-4 font-bold text-left">{renderSortableHeader('Mã SKU', 'SKU')}</th>
                             <th className="p-4 font-bold text-left">{renderSortableHeader('Tên sản phẩm', 'NAME')}</th>
@@ -1125,6 +1140,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                     )
                 )}
             </div>
+        </div>
 
             <button
                 type="button"
@@ -1283,6 +1299,12 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                 onClose={() => setSystemDialog(null)}
                 onConfirm={systemDialog?.onConfirm}
                 confirmLabel="Xác nhận"
+            />
+
+            <ScannerModal 
+                isOpen={isScannerOpen}
+                onClose={() => setIsScannerOpen(false)}
+                onScanSuccess={handleScanSuccess}
             />
         </div>
     );
