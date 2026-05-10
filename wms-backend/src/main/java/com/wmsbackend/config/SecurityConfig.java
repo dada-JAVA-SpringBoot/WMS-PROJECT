@@ -72,6 +72,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/inventory/**")
                         .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","INBOUND_STAFF","OUTBOUND_STAFF","CHECKER")
 
+                        // Thống kê: ADMIN, MANAGER
+                        .requestMatchers("/api/stats/**").hasAnyRole("ADMIN", "MANAGER")
+
                         // Tất cả request còn lại cần đăng nhập
                         .anyRequest().authenticated()
                 )

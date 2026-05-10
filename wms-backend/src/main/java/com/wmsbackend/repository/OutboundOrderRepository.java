@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface OutboundOrderRepository extends JpaRepository<OutboundOrder, Long> {
     long countByStatus(String status);
+    long countByStatusIn(java.util.List<String> statuses);
 }

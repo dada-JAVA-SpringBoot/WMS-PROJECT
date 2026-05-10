@@ -39,4 +39,31 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
             "JOIN Product p ON i.productId = p.id " +
             "WHERE i.locationId = :locationId")
     List<InventoryDetailDTO> findInventoryDetailsByLocationId(@Param("locationId") Integer locationId);
+
+    // ── Dashboard queries ──────────────────────────────────────────────────
+
+    @Query("SELECT COALESCE(SUM(i.quantityOnHand), 0) FROM Inventory i")
+    Double sumTotalQuantityOnHand();
+
+    @Query("SELECT pc.name, COALESCE(SUM(i.quantityOnHand), 0) " +
+            "FROM Inventory i " +
+            "JOIN Product p ON i.productId = p.id " +
+            "JOIN ProductCategory pc ON p.categoryId = pc.id " +
+            "GROUP BY pc.name " +
+            "ORDER BY SUM(i.quantityOnHand) DESC")
+    List<Object[]> findStockByCategory();
+
+    @Query("SELECT p.id, p.sku, p.name, COALESCE(SUM(i.quantityOnHand), 0) " +
+            "FROM Inventory i " +
+            "JOIN Product p ON i.productId = p.id " +
+            "GROUP BY p.id, p.sku, p.name " +
+            "ORDER BY SUM(i.quantityOnHand) DESC")
+    List<Object[]> findTopStockProducts();
+
+    @Query("SELECT p.id, p.sku, p.name, COALESCE(SUM(i.quantityOnHand), 0) " +
+            "FROM Inventory i " +
+            "JOIN Product p ON i.productId = p.id " +
+            "GROUP BY p.id, p.sku, p.name " +
+            "HAVING SUM(i.quantityOnHand) > 0")
+    List<Object[]> findProductsWithStock();
 }
