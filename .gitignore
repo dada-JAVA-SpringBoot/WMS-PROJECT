@@ -29,3 +29,6 @@ logs/
 
 # Docker Local Data
 wms-db-data/
+
+docker-compose.yml
+structure.txt
