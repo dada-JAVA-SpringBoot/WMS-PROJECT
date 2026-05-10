@@ -67,11 +67,17 @@ public class Staff {
 
     @Column(name = "Password", length = 255)
     private String password;   // BCrypt hash
+@Column(name = "Enabled")
+private Boolean enabled = true;
 
-    @Column(name = "Enabled")
-    private Boolean enabled = true;
+@Column(name = "Avatar", columnDefinition = "NVARCHAR(MAX)")
+private String avatar;
 
-    // ── Phân quyền (Many-to-Many với Roles) ───────────────
+@ManyToOne(fetch = FetchType.EAGER)
+@JoinColumn(name = "ShiftId")
+private WorkShift shift;
+
+// ── Phân quyền (Many-to-Many với Roles) ───────────────
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "Staff_Roles",

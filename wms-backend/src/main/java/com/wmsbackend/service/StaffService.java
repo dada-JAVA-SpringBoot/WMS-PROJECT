@@ -10,5 +10,6 @@ public interface StaffService {
     List<StaffDTO> searchStaff(String keyword);
     Staff createStaff(Staff staff);
     Staff updateStaff(Integer id, Staff staff);
+    void updateAvatar(Integer id, String avatar);
     void deleteStaff(Integer id);
 }

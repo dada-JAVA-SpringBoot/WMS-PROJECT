@@ -5,30 +5,27 @@ import { useModalDismiss } from './useModalDismiss';
 const API = '/api/staff';
 
 const CONTRACT_TYPES = [
-    { value: 'FULL_TIME',  label: 'Toàn thời gian (Full-time)' },
+    { value: 'PERMANENT',  label: 'Hợp đồng vô thời hạn' },
     { value: 'PART_TIME',  label: 'Bán thời gian (Part-time)' },
-    { value: 'PROBATION',  label: 'Thử việc' },
-    { value: 'INTERN',     label: 'Thực tập sinh' },
+    { value: 'SEASONAL',   label: 'Hợp đồng thời vụ' },
+    { value: 'EXPIRED',    label: 'Hợp đồng hết hạn (Nghỉ việc)' },
 ];
 
 const WAREHOUSE_ROLES = [
-    { value: 'WAREHOUSE_MANAGER',  label: 'Quản lý kho (Admin)' },
+    { value: 'WAREHOUSE_MANAGER',  label: 'Quản lý kho (Admin/Manager)' },
     { value: 'WAREHOUSE_KEEPER',   label: 'Thủ kho (Storekeeper)' },
     { value: 'INBOUND_STAFF',      label: 'Nhân viên nhập kho' },
     { value: 'OUTBOUND_STAFF',     label: 'Nhân viên xuất kho' },
     { value: 'INVENTORY_CHECKER',  label: 'Kiểm kê viên (Checker)' },
-];
-
-const WORK_STATUSES = [
-    { value: 'ON_SHIFT',  label: 'Đang trong ca' },
-    { value: 'OFF_SHIFT', label: 'Không trong ca' },
-    { value: 'RESIGNED',  label: 'Đã nghỉ làm' },
+    { value: 'HANDLER',            label: 'NV Điều chuyển (Internal)' },
+    { value: 'ACCOUNTANT',         label: 'Kế toán kho' },
+    { value: 'INTERN',             label: 'Thực tập sinh' },
 ];
 
 const emptyForm = {
     employeeCode: '', fullName: '', gender: 'MALE', dateOfBirth: '',
-    phone: '', email: '', hireDate: '', contractType: 'FULL_TIME',
-    warehouseRole: 'INBOUND_STAFF', workStatus: 'OFF_SHIFT', notes: '',
+    phone: '', email: '', hireDate: '', contractType: 'PERMANENT',
+    warehouseRole: 'INBOUND_STAFF', notes: '',
     username: '', password: '',
 };
 
@@ -49,9 +46,8 @@ export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
                 phone:         editData.phone         || '',
                 email:         editData.email         || '',
                 hireDate:      editData.hireDate      || '',
-                contractType:  editData.contractType  || 'FULL_TIME',
+                contractType:  editData.contractType  || 'PERMANENT',
                 warehouseRole: editData.warehouseRole || 'INBOUND_STAFF',
-                workStatus:    editData.workStatus    || 'OFF_SHIFT',
                 notes:         editData.notes         || '',
                 username:      editData.username      || '',
                 password:      '', // Không load password cũ
@@ -186,12 +182,10 @@ export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
                             onChange={v => handleChange('contractType', v)} options={CONTRACT_TYPES} />
                     </div>
 
-                    {/* Hàng 5: Vai trò + Trạng thái */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <SelectField label="Vai trò (Sẽ được gán Role tương ứng)" value={form.warehouseRole}
+                    {/* Hàng 5: Vai trò */}
+                    <div className="grid grid-cols-1">
+                        <SelectField label="Vai trò (Hệ thống sẽ tự động gán quyền tương ứng)" value={form.warehouseRole}
                             onChange={v => handleChange('warehouseRole', v)} options={WAREHOUSE_ROLES} />
-                        <SelectField label="Trạng thái làm việc" value={form.workStatus}
-                            onChange={v => handleChange('workStatus', v)} options={WORK_STATUSES} />
                     </div>
 
                     {/* Ghi chú */}

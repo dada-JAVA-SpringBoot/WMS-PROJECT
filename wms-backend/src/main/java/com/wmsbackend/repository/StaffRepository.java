@@ -21,12 +21,12 @@ public interface StaffRepository extends JpaRepository<Staff, Integer> {
 
     // ── Queries cập nhật ──────────────────────────────────
     @Query("SELECT new com.wmsbackend.dto.StaffDTO(s.id, s.employeeCode, s.fullName, s.gender, " +
-            "s.dateOfBirth, s.phone, s.email, s.hireDate, s.contractType, s.warehouseRole, s.workStatus, s.notes, s.username, s.enabled, s.lastActiveAt) " +
+            "s.dateOfBirth, s.phone, s.email, s.hireDate, s.contractType, s.warehouseRole, s.workStatus, s.notes, s.username, s.enabled, s.avatar, s.lastActiveAt) " +
             "FROM Staff s ORDER BY s.id DESC")
     List<StaffDTO> findAllStaff();
 
     @Query("SELECT new com.wmsbackend.dto.StaffDTO(s.id, s.employeeCode, s.fullName, s.gender, " +
-            "s.dateOfBirth, s.phone, s.email, s.hireDate, s.contractType, s.warehouseRole, s.workStatus, s.notes, s.username, s.enabled, s.lastActiveAt) " +
+            "s.dateOfBirth, s.phone, s.email, s.hireDate, s.contractType, s.warehouseRole, s.workStatus, s.notes, s.username, s.enabled, s.avatar, s.lastActiveAt) " +
             "FROM Staff s WHERE " +
             "LOWER(s.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(s.employeeCode) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +

@@ -24,9 +24,9 @@ public class StaffController {
     @Autowired private StaffRepository staffRepository;
     @Autowired private PasswordEncoder passwordEncoder;
 
-    // GET đầy đủ thông tin — CHỈ ADMIN
+    // GET đầy đủ thông tin — ADMIN & MANAGER
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public List<StaffDTO> getStaff(@RequestParam(required = false) String keyword) {
         if (keyword != null && !keyword.isBlank()) return staffService.searchStaff(keyword);
         return staffService.getAllStaff();
@@ -57,6 +57,27 @@ public class StaffController {
         return staffService.updateStaff(id, staff);
     }
 
+    @Autowired private com.wmsbackend.service.FileService fileService;
+
+    @PostMapping(value = "/{id}/avatar", consumes = {"multipart/form-data"})
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<?> updateAvatar(@PathVariable Integer id, @RequestPart("file") org.springframework.web.multipart.MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "File không hợp lệ hoặc trống"));
+        }
+        try {
+            // Lấy thông tin cũ để xóa file cũ trên ổ cứng
+            Staff staff = staffRepository.findById(id).orElseThrow();
+            String oldPath = staff.getAvatar();
+
+            String fileUrl = fileService.saveAvatar(file, id, oldPath);
+            staffService.updateAvatar(id, fileUrl);
+            return ResponseEntity.ok(Map.of("message", "Cập nhật ảnh thành công", "url", fileUrl));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", "Lỗi lưu file: " + e.getMessage()));
+        }
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteStaff(@PathVariable Integer id) {
@@ -64,18 +85,38 @@ public class StaffController {
     }
 
     @PostMapping("/{id}/reset-password")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<?> resetPassword(@PathVariable Integer id, @RequestBody Map<String, String> body) {
         Staff staff = staffRepository.findById(id).orElseThrow();
+        
+        // Kiểm tra bảo mật: MANAGER không được sửa ADMIN
+        boolean targetIsAdmin = staff.getRoles().stream().anyMatch(r -> r.getRoleName().equals("ADMIN"));
+        boolean currentUserIsAdmin = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (targetIsAdmin && !currentUserIsAdmin) {
+            return ResponseEntity.status(403).body(Map.of("message", "Quản lý không có quyền thay đổi mật khẩu của Quản trị viên"));
+        }
+
         staff.setPassword(passwordEncoder.encode(body.get("newPassword")));
         staffRepository.save(staff);
         return ResponseEntity.ok(Map.of("message", "Đặt lại mật khẩu thành công"));
     }
 
     @PostMapping("/{id}/toggle-enabled")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<?> toggleEnabled(@PathVariable Integer id) {
         Staff staff = staffRepository.findById(id).orElseThrow();
+
+        // Kiểm tra bảo mật: MANAGER không được vô hiệu hóa ADMIN
+        boolean targetIsAdmin = staff.getRoles().stream().anyMatch(r -> r.getRoleName().equals("ADMIN"));
+        boolean currentUserIsAdmin = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        if (targetIsAdmin && !currentUserIsAdmin) {
+            return ResponseEntity.status(403).body(Map.of("message", "Quản lý không có quyền vô hiệu hóa tài khoản của Quản trị viên"));
+        }
+
         staff.setEnabled(!Boolean.TRUE.equals(staff.getEnabled()));
         staffRepository.save(staff);
         return ResponseEntity.ok(Map.of("message", staff.getEnabled() ? "Đã kích hoạt" : "Đã vô hiệu hóa"));

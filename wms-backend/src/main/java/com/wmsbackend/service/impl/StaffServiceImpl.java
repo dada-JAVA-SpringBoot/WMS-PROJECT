@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class StaffServiceImpl implements StaffService {
@@ -24,13 +25,36 @@ public class StaffServiceImpl implements StaffService {
 
     @Override
     public List<StaffDTO> getAllStaff() {
-        return staffRepository.findAllStaff();
+        return staffRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<StaffDTO> searchStaff(String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) return staffRepository.findAllStaff();
-        return staffRepository.searchStaff(keyword.trim());
+        if (keyword == null || keyword.trim().isEmpty()) return getAllStaff();
+        return staffRepository.findAll().stream()
+                .filter(s -> (s.getFullName() != null && s.getFullName().toLowerCase().contains(keyword.toLowerCase())) ||
+                             (s.getEmployeeCode() != null && s.getEmployeeCode().toLowerCase().contains(keyword.toLowerCase())))
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    private StaffDTO convertToDTO(Staff s) {
+        List<String> roleNames = s.getRoles().stream()
+                .map(Role::getRoleName)
+                .collect(Collectors.toList());
+        
+        String start = s.getShift() != null ? s.getShift().getStartTime().toString() : null;
+        String end   = s.getShift() != null ? s.getShift().getEndTime().toString() : null;
+
+        return new StaffDTO(
+                s.getId(), s.getEmployeeCode(), s.getFullName(), s.getGender(),
+                s.getDateOfBirth(), s.getPhone(), s.getEmail(), s.getHireDate(),
+                s.getContractType(), s.getWarehouseRole(), s.getWorkStatus(), s.getNotes(),
+                s.getUsername(), s.getEnabled(), s.getAvatar(), roleNames, 
+                start, end, s.getLastActiveAt()
+        );
     }
 
     @Override
@@ -110,6 +134,12 @@ public class StaffServiceImpl implements StaffService {
             roleRepository.findByRoleName("OUTBOUND_STAFF").ifPresent(roles::add);
         } else if ("INVENTORY_CHECKER".equals(wRole)) {
             roleRepository.findByRoleName("CHECKER").ifPresent(roles::add);
+        } else if ("HANDLER".equals(wRole)) {
+            roleRepository.findByRoleName("HANDLER").ifPresent(roles::add);
+        } else if ("ACCOUNTANT".equals(wRole)) {
+            roleRepository.findByRoleName("ACCOUNTANT").ifPresent(roles::add);
+        } else if ("INTERN".equals(wRole)) {
+            roleRepository.findByRoleName("INTERN").ifPresent(roles::add);
         }
         
         // Mặc định ít nhất có 1 quyền
@@ -118,6 +148,14 @@ public class StaffServiceImpl implements StaffService {
         }
         
         staff.setRoles(roles);
+    }
+
+    @Override
+    public void updateAvatar(Integer id, String avatar) {
+        Staff staff = staffRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên"));
+        staff.setAvatar(avatar);
+        staffRepository.save(staff);
     }
 
     @Override

@@ -235,7 +235,29 @@ BEGIN
     );
 END
 
--- 12. BẢNG NHÂN SỰ
+-- 12. BẢNG PHÂN QUYỀN
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Roles')
+BEGIN
+    CREATE TABLE Roles (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        RoleName VARCHAR(50) UNIQUE NOT NULL,
+        Description NVARCHAR(255) NULL
+    );
+END
+
+-- 13. BẢNG CA LÀM VIỆC
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'WorkShifts')
+BEGIN
+    CREATE TABLE WorkShifts (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        ShiftName NVARCHAR(100) NOT NULL,
+        StartTime TIME NOT NULL,
+        EndTime TIME NOT NULL,
+        GracePeriodMinutes INT DEFAULT 15
+    );
+END
+
+-- 14. BẢNG NHÂN SỰ
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Staff')
 BEGIN
     CREATE TABLE Staff (
@@ -254,6 +276,8 @@ BEGIN
         Username VARCHAR(100) UNIQUE NOT NULL,
         Password VARCHAR(255) NOT NULL,
         Enabled BIT NOT NULL DEFAULT 1,
+        Avatar NVARCHAR(500) DEFAULT 'default',
+        ShiftId INT NULL FOREIGN KEY REFERENCES WorkShifts(Id),
         LastActiveAt DATETIME2 NULL,
         CreatedAt DATETIME2 DEFAULT GETDATE()
     );
@@ -264,16 +288,14 @@ BEGIN
     BEGIN
         ALTER TABLE Staff ADD LastActiveAt DATETIME2 NULL;
     END
-END
-
--- 13. BẢNG PHÂN QUYỀN
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Roles')
-BEGIN
-    CREATE TABLE Roles (
-        Id INT IDENTITY(1,1) PRIMARY KEY,
-        RoleName VARCHAR(50) UNIQUE NOT NULL,
-        Description NVARCHAR(255) NULL
-    );
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Staff') AND name = 'Avatar')
+    BEGIN
+        ALTER TABLE Staff ADD Avatar NVARCHAR(500) DEFAULT 'default';
+    END
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Staff') AND name = 'ShiftId')
+    BEGIN
+        ALTER TABLE Staff ADD ShiftId INT NULL FOREIGN KEY REFERENCES WorkShifts(Id);
+    END
 END
 
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Staff_Roles')
@@ -282,18 +304,6 @@ BEGIN
         StaffId INT NOT NULL FOREIGN KEY REFERENCES Staff(Id),
         RoleId  INT NOT NULL FOREIGN KEY REFERENCES Roles(Id),
         PRIMARY KEY (StaffId, RoleId)
-    );
-END
-
--- 14. BẢNG CA LÀM VIỆC
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'WorkShifts')
-BEGIN
-    CREATE TABLE WorkShifts (
-        Id INT IDENTITY(1,1) PRIMARY KEY,
-        ShiftName NVARCHAR(100) NOT NULL,
-        StartTime TIME NOT NULL,
-        EndTime TIME NOT NULL,
-        GracePeriodMinutes INT DEFAULT 15
     );
 END
 
@@ -460,10 +470,13 @@ BEGIN
     INSERT INTO Roles (RoleName, Description) VALUES
     ('ADMIN',           N'Quản trị hệ thống toàn quyền'),
     ('MANAGER',         N'Quản lý kho — xem báo cáo, duyệt phiếu'),
-    ('STOREKEEPER',     N'Thủ kho — quản lý tồn kho, vị trí'),
-    ('INBOUND_STAFF',   N'Nhân viên nhập kho — tạo và xử lý phiếu nhập'),
-    ('OUTBOUND_STAFF',  N'Nhân viên xuất kho — tạo và xử lý phiếu xuất'),
-    ('CHECKER',         N'Kiểm kê viên — kiểm tra và đối soát tồn kho');
+    ('ACCOUNTANT',      N'Kế toán kho — quản lý giá vốn, chi phí, doanh thu'),
+    ('STOREKEEPER',     N'Thủ kho — quản lý sơ đồ vị trí và lô hàng'),
+    ('HANDLER',         N'Nhân viên điều chuyển — di chuyển hàng nội bộ'),
+    ('INBOUND_STAFF',   N'Nhân viên nhập kho'),
+    ('OUTBOUND_STAFF',  N'Nhân viên xuất kho'),
+    ('CHECKER',         N'Kiểm kê viên'),
+    ('INTERN',          N'Thực tập sinh — quyền hạn hạn chế');
 END
 
 -- 10. WorkShifts
@@ -475,59 +488,35 @@ BEGIN
     (N'Ca chiều', '14:00:00', '22:00:00', 10);
 END
 
--- 11. Staff (Tất cả dùng mật khẩu chuẩn Admin@123)
--- Verified Hash: $2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2
+-- 11. Staff (Mật khẩu chuẩn Admin@123 cho tất cả)
+-- Xóa data cũ để tạo bộ khung chuyên nghiệp khi khởi tạo
+DELETE FROM Staff_Roles;
+DELETE FROM Staff;
 
-IF NOT EXISTS (SELECT 1 FROM Staff WHERE Username = 'admin')
-    INSERT INTO Staff (EmployeeCode, FullName, Username, Password, Enabled, WarehouseRole, WorkStatus)
-    VALUES ('EMP-ADMIN', N'Quản trị viên', 'admin', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'WAREHOUSE_MANAGER', 'ON_SHIFT');
+INSERT INTO Staff (EmployeeCode, FullName, Username, Password, Enabled, WarehouseRole, WorkStatus, ContractType, ShiftId)
+VALUES 
+('EMP-ADMIN', N'Hệ Thống Admin', 'admin', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'WAREHOUSE_MANAGER', 'OFF_SHIFT', 'PERMANENT', 1),
+('EMP-MGR01', N'Trần Quang Quản Lý', 'manager_01', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'WAREHOUSE_MANAGER', 'OFF_SHIFT', 'PERMANENT', 1),
+('EMP-ACC01', N'Lê Mai Kế Toán', 'accountant_01', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'ACCOUNTANT', 'OFF_SHIFT', 'PERMANENT', 1),
+('EMP-SK01',  N'Vũ Trọng Thủ Kho', 'storekeeper_01', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'WAREHOUSE_KEEPER', 'OFF_SHIFT', 'PERMANENT', 2),
+('EMP-IN01',  N'Hoàng Văn Nhập', 'inbound_01', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'INBOUND_STAFF', 'OFF_SHIFT', 'PERMANENT', 2),
+('EMP-OUT01', N'Nguyễn Văn Xuất', 'outbound_01', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'OUTBOUND_STAFF', 'OFF_SHIFT', 'PERMANENT', 3),
+('EMP-HD01',  N'Phạm Văn Chuyển', 'handler_01', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'HANDLER', 'OFF_SHIFT', 'PERMANENT', 3),
+('EMP-INT01', N'Bùi Văn Thực Tập 1', 'intern_01', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'INTERN', 'OFF_SHIFT', 'SEASONAL', 2),
+('EMP-INT02', N'Đặng Thị Thực Tập 2', 'intern_02', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'INTERN', 'OFF_SHIFT', 'SEASONAL', 3),
+('EMP-OFF01', N'Trương Văn Nghỉ', 'retired_staff', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 0, 'OUTBOUND_STAFF', 'OFF_SHIFT', 'EXPIRED', NULL);
 
-IF NOT EXISTS (SELECT 1 FROM Staff WHERE Username = 'emp_001')
-    INSERT INTO Staff (EmployeeCode, FullName, Phone, Username, Password, Enabled, WarehouseRole, WorkStatus)
-    VALUES ('EMP-001', N'Nguyễn Minh Tuấn', '0901234561', 'emp_001', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'WAREHOUSE_MANAGER', 'ON_SHIFT');
-
-IF NOT EXISTS (SELECT 1 FROM Staff WHERE Username = 'emp_002')
-    INSERT INTO Staff (EmployeeCode, FullName, Phone, Username, Password, Enabled, WarehouseRole, WorkStatus)
-    VALUES ('EMP-002', N'Trần Thị Lan', '0901234562', 'emp_002', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'WAREHOUSE_KEEPER', 'ON_SHIFT');
-
-IF NOT EXISTS (SELECT 1 FROM Staff WHERE Username = 'emp_003')
-    INSERT INTO Staff (EmployeeCode, FullName, Phone, Username, Password, Enabled, WarehouseRole, WorkStatus)
-    VALUES ('EMP-003', N'Lê Văn Hùng', '0901234563', 'emp_003', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'INBOUND_STAFF', 'OFF_SHIFT');
-
-IF NOT EXISTS (SELECT 1 FROM Staff WHERE Username = 'emp_004')
-    INSERT INTO Staff (EmployeeCode, FullName, Phone, Username, Password, Enabled, WarehouseRole, WorkStatus)
-    VALUES ('EMP-004', N'Phạm Thị Hoa', '0901234564', 'emp_004', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'OUTBOUND_STAFF', 'OFF_SHIFT');
-
-IF NOT EXISTS (SELECT 1 FROM Staff WHERE Username = 'emp_005')
-    INSERT INTO Staff (EmployeeCode, FullName, Phone, Username, Password, Enabled, WarehouseRole, WorkStatus)
-    VALUES ('EMP-005', N'Hoàng Đức Mạnh', '0901234565', 'emp_005', '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2', 1, 'INVENTORY_CHECKER', 'OFF_SHIFT');
-
--- LUÔN ĐẢM BẢO MẬT KHẨU CHUẨN KỂ CẢ KHI VOLUME CŨ ĐANG CHẠY
-UPDATE Staff SET Password = '$2a$10$IS2milLlKmbykA2gf6hf4.hP8F.tQ1mwCXZYhh5cWcqoMF7Iu5fb2'
-WHERE Username IN ('admin', 'emp_001', 'emp_002', 'emp_003', 'emp_004', 'emp_005');
-
--- Gán Roles mẫu
+-- Gán Roles
 INSERT INTO Staff_Roles (StaffId, RoleId)
-SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.Username = 'admin' AND r.RoleName = 'ADMIN'
-AND NOT EXISTS (SELECT 1 FROM Staff_Roles sr WHERE sr.StaffId = s.Id AND sr.RoleId = r.Id);
-
-INSERT INTO Staff_Roles (StaffId, RoleId)
-SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.EmployeeCode = 'EMP-001' AND r.RoleName = 'MANAGER'
-AND NOT EXISTS (SELECT 1 FROM Staff_Roles sr WHERE sr.StaffId = s.Id AND sr.RoleId = r.Id);
-
-INSERT INTO Staff_Roles (StaffId, RoleId)
-SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.EmployeeCode = 'EMP-002' AND r.RoleName = 'STOREKEEPER'
-AND NOT EXISTS (SELECT 1 FROM Staff_Roles sr WHERE sr.StaffId = s.Id AND sr.RoleId = r.Id);
-
-INSERT INTO Staff_Roles (StaffId, RoleId)
-SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.EmployeeCode = 'EMP-003' AND r.RoleName = 'INBOUND_STAFF'
-AND NOT EXISTS (SELECT 1 FROM Staff_Roles sr WHERE sr.StaffId = s.Id AND sr.RoleId = r.Id);
-
-INSERT INTO Staff_Roles (StaffId, RoleId)
-SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.EmployeeCode = 'EMP-004' AND r.RoleName = 'OUTBOUND_STAFF'
-AND NOT EXISTS (SELECT 1 FROM Staff_Roles sr WHERE sr.StaffId = s.Id AND sr.RoleId = r.Id);
-
-INSERT INTO Staff_Roles (StaffId, RoleId)
-SELECT s.Id, r.Id FROM Staff s, Roles r WHERE s.EmployeeCode = 'EMP-005' AND r.RoleName = 'CHECKER'
-AND NOT EXISTS (SELECT 1 FROM Staff_Roles sr WHERE sr.StaffId = s.Id AND sr.RoleId = r.Id);
+SELECT s.Id, r.Id FROM Staff s, Roles r 
+WHERE (s.Username = 'admin' AND r.RoleName = 'ADMIN')
+OR (s.Username = 'manager_01' AND r.RoleName = 'MANAGER')
+OR (s.Username = 'accountant_01' AND r.RoleName = 'ACCOUNTANT')
+OR (s.Username = 'storekeeper_01' AND r.RoleName = 'STOREKEEPER')
+OR (s.Username = 'inbound_01' AND r.RoleName = 'INBOUND_STAFF')
+OR (s.Username = 'outbound_01' AND r.RoleName = 'OUTBOUND_STAFF')
+OR (s.Username = 'handler_01' AND r.RoleName = 'HANDLER')
+OR (s.Username LIKE 'intern%' AND r.RoleName = 'INTERN')
+OR (s.Username = 'retired_staff' AND r.RoleName = 'OUTBOUND_STAFF');
+GO
 GO

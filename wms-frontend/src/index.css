@@ -7,6 +7,7 @@
 
   body, #root, * {
     user-select: none;
+    -webkit-user-drag: none;
   }
 
   input, textarea, select, option, button, [contenteditable="true"] {
@@ -43,5 +44,26 @@
   .wms-select:focus {
     border-color: #1192a8;
     box-shadow: 0 0 0 4px rgba(17, 146, 168, 0.1);
+  }
+
+  /* Responsive Table Container */
+  .wms-table-container {
+    @apply w-full overflow-x-auto rounded-3xl border border-gray-100 bg-white shadow-sm;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer utilities {
+  .touch-none {
+    touch-action: none;
   }
 }

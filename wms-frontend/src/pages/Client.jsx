@@ -46,10 +46,10 @@ export default function Client({ onCreateOutbound }) {
 
     const filtered = searchBy === 'all' ? data : data.filter(row => {
         const q = search.toLowerCase();
-        if (searchBy === 'name')    return row.name?.toLowerCase().includes(q);
-        if (searchBy === 'code')    return row.customerCode?.toLowerCase().includes(q);
-        if (searchBy === 'phone')   return row.phone?.toLowerCase().includes(q);
-        if (searchBy === 'address') return row.address?.toLowerCase().includes(q);
+        if (searchBy === 'name')    return (row.name || '').toLowerCase().includes(q);
+        if (searchBy === 'code')    return (row.customerCode || '').toLowerCase().includes(q);
+        if (searchBy === 'phone')   return (row.phone || '').toLowerCase().includes(q);
+        if (searchBy === 'address') return (row.address || '').toLowerCase().includes(q);
         return true;
     });
 

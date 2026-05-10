@@ -37,56 +37,62 @@ function isTokenExpired(token) {
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(() => {
-        const token    = localStorage.getItem('wms_token');
-        const userJson = localStorage.getItem('wms_user');
+        try {
+            const token    = localStorage.getItem('wms_token');
+            const userJson = localStorage.getItem('wms_user');
 
-        if (token && !isTokenExpired(token) && userJson) {
-            try {
-                const stored  = JSON.parse(userJson);
+            if (token && !isTokenExpired(token) && userJson) {
+                const stored  = JSON.parse(userJson) || {};
                 const decoded = parseToken(token);
-                if (decoded) return { ...stored, ...decoded };
-            } catch {
-                localStorage.removeItem('wms_token');
-                localStorage.removeItem('wms_user');
+                if (decoded) {
+                    return { 
+                        token,
+                        username:     decoded.username || stored.username,
+                        fullName:     stored.fullName || 'User',
+                        employeeCode: stored.employeeCode || '---',
+                        avatar:       stored.avatar || 'default',
+                        roles:        decoded.roles || stored.roles || [],
+                        exp:          decoded.exp,
+                    };
+                }
             }
-        } else {
-            localStorage.removeItem('wms_token');
-            localStorage.removeItem('wms_user');
+        } catch (e) {
+            console.error("Auth init error:", e);
         }
+        localStorage.removeItem('wms_token');
+        localStorage.removeItem('wms_user');
         return null;
     });
 
-    const [loading] = useState(false); // Đổi thành false vì đã init ở trên
+    const [loading] = useState(false);
 
-    // ── Đăng xuất ─────────────────────────────────────────────────────────
     const logout = useCallback(() => {
         localStorage.removeItem('wms_token');
         localStorage.removeItem('wms_user');
         setUser(null);
     }, []);
 
-    // ── Lắng nghe sự kiện 401 từ axiosClient ─────────────────────────────
     useEffect(() => {
         const handleUnauthorized = () => logout();
         window.addEventListener('wms:unauthorized', handleUnauthorized);
         return () => window.removeEventListener('wms:unauthorized', handleUnauthorized);
     }, [logout]);
 
-    // ── Đăng nhập ─────────────────────────────────────────────────────────
     const login = useCallback(async (username, password) => {
-        // Dùng axios trực tiếp (không gắn token vì đây là public endpoint)
         const res  = await axiosClient.post('/api/auth/login', { username, password });
-        const data = res.data;
-        // data = { token, username, fullName, employeeCode, roles }
+        const data = res.data || {};
 
         const decoded = parseToken(data.token);
+        if (!decoded) throw new Error("Invalid token received from server");
+
         const userObj = {
             token:        data.token,
-            username:     data.username,
-            fullName:     data.fullName,
-            employeeCode: data.employeeCode,
-            roles:        data.roles ?? decoded?.roles ?? [],
-            exp:          decoded?.exp,
+            username:     data.username || decoded.username,
+            fullName:     data.fullName || 'User',
+            employeeCode: data.employeeCode || '---',
+            avatar:       data.avatar || 'default',
+            roles:        data.roles || decoded.roles || [],
+            exp:          decoded.exp,
         };
 
         localStorage.setItem('wms_token', data.token);

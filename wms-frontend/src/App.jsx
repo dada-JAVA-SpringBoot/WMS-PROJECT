@@ -9,9 +9,9 @@ import Home               from './pages/Home.jsx';
 import Staff              from './pages/Staff.jsx';
 import Statistical        from './pages/Statistical.jsx';
 import Account            from './pages/Account.jsx';
+import AccountManagement   from './pages/AccountManagement.jsx';
 import AttendanceHistory  from './pages/AttendanceHistory.jsx';
 import AttendanceManagement from './pages/AttendanceManagement.jsx';
-import AttributesPage     from './pages/AttributesPage.jsx';
 import ImportReceiptsPage from './pages/ImportReceipts.jsx';
 import WarehouseAreaPage  from './pages/WarehouseArea.jsx';
 import Supplier           from './pages/Supplier.jsx';
@@ -21,13 +21,19 @@ import LandingPage        from './pages/LandingPage/LandingPage.jsx';
 import PrivateRoute       from './components/PrivateRoute';
 import UnauthorizedPage   from './pages/UnauthorizedPage.jsx';
 import AttendanceModal    from './components/modals/AttendanceModal';
+import { getAvatarSrc }    from './components/common/avatarUtils';
 
 // ── Layout chính cho khu vực quản trị ──────────────────────────────────────
 function AdminLayout() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    
+    // Safety check: Nếu chưa có user thì không render để tránh crash
+    if (!user) return null;
+
     const [workflow, setWorkflow] = useState(null);
     const [showAttendance, setShowAttendance] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const openWorkflow = (nextWorkflow) => {
         if (!nextWorkflow?.kind) return;
@@ -38,63 +44,84 @@ function AdminLayout() {
     const clearWorkflow = () => setWorkflow(null);
 
     return (
-        <div className="flex h-screen bg-gray-50 overflow-hidden">
-            <Sidebar user={user} onLogout={logout} />
-            <main className="flex-1 flex flex-col overflow-hidden">
-                <div className="flex-1 overflow-auto bg-gray-50">
+        <div className="flex h-screen bg-gray-50 overflow-hidden relative">
+            <Sidebar 
+                user={user} 
+                onLogout={logout} 
+                isOpen={isSidebarOpen} 
+                onClose={() => setIsSidebarOpen(false)} 
+            />
+            
+            <main className="flex-1 flex flex-col overflow-hidden w-full">
+                {/* Mobile Header Toggle */}
+                <div className="lg:hidden bg-white border-b p-4 flex items-center justify-between shrink-0">
+                    <button 
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                    >
+                        <div className="w-6 h-0.5 bg-[#1192a8] mb-1.5"></div>
+                        <div className="w-6 h-0.5 bg-[#1192a8] mb-1.5"></div>
+                        <div className="w-4 h-0.5 bg-[#1192a8]"></div>
+                    </button>
+                    <h1 className="text-[#1192a8] font-black text-sm tracking-widest uppercase">WMS System</h1>
+                    <div className="w-10 h-10 bg-gray-100 rounded-full overflow-hidden border border-gray-200 shadow-sm">
+                        <img src={getAvatarSrc(user?.avatar)} alt="User" className="w-full h-full object-cover" />
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-auto bg-gray-50 no-scrollbar">
                     <Routes>
                         <Route path="home" element={<Home />} />
                         <Route path="products" element={
                             <Inventory onCreateInbound={openWorkflow} onCreateOutbound={openWorkflow} />
                         } />
-                        <Route path="attribute" element={
-                            <PrivateRoute roles={['ADMIN']}>
-                                <AttributesPage />
-                            </PrivateRoute>
-                        } />
                         <Route path="warehouse-area" element={
-                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER']}>
+                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','HANDLER']}>
                                 <WarehouseAreaPage onCreateInbound={openWorkflow} />
                             </PrivateRoute>
                         } />
                         <Route path="inbound" element={
-                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF']}>
+                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','ACCOUNTANT']}>
                                 <ImportReceiptsPage workflow={workflow} clearWorkflow={clearWorkflow} openWorkflow={openWorkflow} />
                             </PrivateRoute>
                         } />
                         <Route path="outbound" element={
-                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','OUTBOUND_STAFF']}>
+                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','OUTBOUND_STAFF','ACCOUNTANT']}>
                                 <ExportReceipts workflow={workflow} clearWorkflow={clearWorkflow} openWorkflow={openWorkflow} />
                             </PrivateRoute>
                         } />
-                        <Route path="attendance" element={<AttendanceHistory />} />
+                        <Route path="attendance" element={
+                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','CHECKER','ACCOUNTANT','HANDLER']}>
+                                <AttendanceHistory />
+                            </PrivateRoute>
+                        } />
                         <Route path="attendance-manage" element={
                             <PrivateRoute roles={['ADMIN','MANAGER']}>
                                 <AttendanceManagement />
                             </PrivateRoute>
                         } />
                         <Route path="client" element={
-                            <PrivateRoute roles={['ADMIN','MANAGER','OUTBOUND_STAFF']}>
+                            <PrivateRoute roles={['ADMIN','MANAGER','OUTBOUND_STAFF','ACCOUNTANT']}>
                                 <Client onCreateOutbound={openWorkflow} />
                             </PrivateRoute>
                         } />
                         <Route path="supplier" element={
-                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF']}>
+                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','ACCOUNTANT']}>
                                 <Supplier onCreateInbound={openWorkflow} />
                             </PrivateRoute>
                         } />
                         <Route path="staff" element={
-                            <PrivateRoute roles={['ADMIN']}>
+                            <PrivateRoute roles={['ADMIN','MANAGER']}>
                                 <Staff onCreateInbound={openWorkflow} onCreateOutbound={openWorkflow} />
                             </PrivateRoute>
                         } />
                         <Route path="account" element={
-                            <PrivateRoute roles={['ADMIN']}>
-                                <Account />
+                            <PrivateRoute roles={['ADMIN','MANAGER']}>
+                                <AccountManagement />
                             </PrivateRoute>
                         } />
                         <Route path="statistical" element={
-                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','CHECKER']}>
+                            <PrivateRoute roles={['ADMIN','MANAGER','ACCOUNTANT']}>
                                 <Statistical />
                             </PrivateRoute>
                         } />

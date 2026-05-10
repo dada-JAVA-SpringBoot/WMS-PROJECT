@@ -125,7 +125,7 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
         let result = receipts.filter(r => {
             const kw = filterKeyword.toLowerCase().trim();
             const sName = suppliers.find(s => s.id === r.supplierId)?.name || '';
-            const matchesKw = !kw || (r.receiptCode?.toLowerCase().includes(kw) || sName.toLowerCase().includes(kw));
+            const matchesKw = !kw || ((r.receiptCode || '').toLowerCase().includes(kw) || sName.toLowerCase().includes(kw));
             const matchesSup = filterSupplier === 'ALL' || String(r.supplierId) === filterSupplier;
             const matchesSta = filterStatus === 'ALL' || r.status === filterStatus;
             return matchesKw && matchesSup && matchesSta;

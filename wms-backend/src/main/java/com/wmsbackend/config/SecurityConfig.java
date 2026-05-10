@@ -40,12 +40,12 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public — chỉ cho phép login/register/debug
-                        .requestMatchers("/api/auth/**", "/api/debug/**").permitAll()
+                        // Public — chỉ cho phép login/register/debug/uploads
+                        .requestMatchers("/api/auth/**", "/api/debug/**", "/uploads/**").permitAll()
 
                         // ── Phân quyền theo API ─────────────────────────────────────
-                        // Quản lý nhân viên: chỉ ADMIN
-                        .requestMatchers("/api/staff/**").hasRole("ADMIN")
+                        // Quản lý nhân viên: ADMIN, MANAGER
+                        .requestMatchers("/api/staff/**").hasAnyRole("ADMIN", "MANAGER")
 
                         // Quản lý nhà cung cấp: ADMIN, MANAGER, STOREKEEPER, INBOUND_STAFF
                         .requestMatchers("/api/suppliers/**").hasAnyRole("ADMIN", "MANAGER", "STOREKEEPER", "INBOUND_STAFF")
