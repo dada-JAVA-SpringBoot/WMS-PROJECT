@@ -26,4 +26,15 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             "(SELECT MIN(b.expiryDate) FROM Inventory i JOIN Batch b ON i.batchId = b.id WHERE i.productId = p.id)) " +
             "FROM Product p")
     List<ProductDTO> findAllProductsWithTotalStock();
+
+    // ── Dashboard: Đếm sản phẩm dưới định mức ─────────────────────────────
+    @Query("SELECT COUNT(DISTINCT p.id) FROM Product p " +
+            "WHERE p.safetyStock IS NOT NULL AND p.safetyStock > 0 " +
+            "AND (SELECT COALESCE(SUM(i.quantityOnHand), 0) - COALESCE(SUM(i.quantityAllocated), 0) " +
+            "     FROM Inventory i WHERE i.productId = p.id) < p.safetyStock")
+    long countLowStockProducts();
+
+    // ── Inventory Stats: Lấy tất cả sản phẩm active ───────────────────────
+    @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY p.name")
+    List<Product> findAllActiveProducts();
 }

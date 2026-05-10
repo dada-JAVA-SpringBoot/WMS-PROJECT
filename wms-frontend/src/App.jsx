@@ -133,7 +133,10 @@ function AppContent() {
 
     return (
         <Routes>
-            <Route path="/" element={<LandingPage onEnter={() => navigate('/admin/home')} />} />
+            {/* 1. Landing Page */}
+            <Route path="/" element={<LandingPage onEnter={() => navigate('/admin/home')} onLogin={() => navigate('/login')} />} />
+
+            {/* 2. Login Page */}
             <Route path="/login" element={<Login onLoginSuccess={() => navigate('/admin/home')} />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
             <Route path="/admin/*" element={

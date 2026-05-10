@@ -1,13 +1,13 @@
 package com.wmsbackend.controller;
 
-import com.wmsbackend.dto.FinancialDetailDTO;
-import com.wmsbackend.dto.FinancialSummaryDTO;
+import com.wmsbackend.dto.DashboardDTO;
+import com.wmsbackend.dto.DailyFlowDTO;
+import com.wmsbackend.dto.InventoryStatsDTO;
 import com.wmsbackend.dto.StatisticalSummaryDTO;
 import com.wmsbackend.repository.*;
-import com.wmsbackend.service.FinancialService;
+import com.wmsbackend.service.StatisticalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,22 +18,57 @@ import java.util.*;
 @RequestMapping("/api/stats")
 public class StatisticalController {
 
-    @Autowired private ProductRepository      productRepository;
-    @Autowired private InventoryRepository    inventoryRepository;
-    @Autowired private InboundOrderRepository  inboundOrderRepository;
-    @Autowired private OutboundOrderRepository outboundOrderRepository;
-    @Autowired private LocationRepository     locationRepository;
-    @Autowired private CustomerRepository     customerRepository;
-    @Autowired private SupplierRepository     supplierRepository;
-    @Autowired private FinancialService       financialService;
+    @Autowired private StatisticalService statisticalService;
 
-    // ── /summary (giữ nguyên) ─────────────────────────────────────────────
+    // ── Legacy Repositories (giữ lại cho endpoint /summary cũ) ─────────────
+    @Autowired private ProductRepository productRepository;
+    @Autowired private InventoryRepository inventoryRepository;
+    @Autowired private InboundOrderRepository inboundOrderRepository;
+    @Autowired private OutboundOrderRepository outboundOrderRepository;
+    @Autowired private LocationRepository locationRepository;
+    @Autowired private CustomerRepository customerRepository;
+
+    // ════════════════════════════════════════════════════════════════════════
+    // 1. Dashboard Overview (MỚI)
+    // ════════════════════════════════════════════════════════════════════════
+    @GetMapping("/dashboard")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public DashboardDTO getDashboard() {
+        return statisticalService.getDashboard();
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // 2. Inventory Stats & ABC (MỚI)
+    // ════════════════════════════════════════════════════════════════════════
+    @GetMapping("/inventory")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public InventoryStatsDTO getInventoryStats(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        // Mặc định: tháng hiện tại
+        if (startDate == null) {
+            startDate = LocalDate.now().withDayOfMonth(1);
+        }
+        if (endDate == null) {
+            endDate = LocalDate.now();
+        }
+
+        return statisticalService.getInventoryStats(startDate, endDate);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // 3. Legacy endpoint (giữ tương thích ngược)
+    // ════════════════════════════════════════════════════════════════════════
     @GetMapping("/summary")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public StatisticalSummaryDTO getSummary() {
         StatisticalSummaryDTO dto = new StatisticalSummaryDTO();
         dto.setTotalSkus(productRepository.count());
 
+        // 2. Total Stock Quantity
         Double totalQty = inventoryRepository.findAll().stream()
                 .mapToDouble(i -> i.getQuantityOnHand().doubleValue()).sum();
         dto.setTotalStockQuantity(totalQty != null ? totalQty : 0.0);

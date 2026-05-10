@@ -8,8 +8,10 @@ USER root
 COPY setup.sql setup.sql
 COPY entrypoint.sh entrypoint.sh
 
-# Cấp quyền thực thi cho file entrypoint.sh
-RUN chmod +x entrypoint.sh
+# Cấp quyền thực thi cho file entrypoint.sh và xoá ký tự \r (do lỗi CRLF trên Windows)
+RUN sed -i -e 's/\r$//' entrypoint.sh && \
+    sed -i -e 's/\r$//' setup.sql && \
+    chmod +x entrypoint.sh
 
 # Khi bật container, chạy file entrypoint này đầu tiên
 CMD ["/bin/bash", "./entrypoint.sh"]
