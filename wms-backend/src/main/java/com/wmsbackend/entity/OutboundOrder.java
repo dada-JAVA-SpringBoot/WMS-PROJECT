@@ -28,9 +28,11 @@ public class OutboundOrder {
     @Column(name = "CreatedAt", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Transient
     @Column(name = "TotalAmount")
     private java.math.BigDecimal totalAmount;
 
+    @Transient
     @Column(name = "Note", length = 500)
     private String note;
 
