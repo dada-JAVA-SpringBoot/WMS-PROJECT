@@ -2,10 +2,54 @@ import React from 'react';
 
 import imgHelp from '../../../components/common/icons/a1.png';
 import imgQL from '../../../components/common/icons/a13.png';
-import imgCup from '../../../components/common/icons/cup.png';
+import cup1 from '../../../components/common/icons/cup.jpg';
+import cup2 from '../../../components/common/icons/cup2.jpg';
+import cup3 from '../../../components/common/icons/cup3.jpg';
+import cup4 from '../../../components/common/icons/cup4.jpg';
+import cup5 from '../../../components/common/icons/cup5.jpg';
 import imgLogo from '../../../components/common/icons/a12.png';
 import imgHero from '../../../components/common/icons/a5.png';
 import imgProduct from "../../../components/common/icons/a11.png";
+
+import duoc1 from '../../../components/common/icons/duoc1.jpg';
+import duoc2 from '../../../components/common/icons/duoc2.jpg';
+import duoc3 from '../../../components/common/icons/duoc3.jpg';
+import duoc4 from '../../../components/common/icons/duoc4.png';
+
+import tp1 from '../../../components/common/icons/thucpham1.png';
+import tp2 from '../../../components/common/icons/thucpham2.png';
+import tp3 from '../../../components/common/icons/thucpham3.jpg';
+import tp4 from '../../../components/common/icons/thucpham4.jpg';
+
+import cn1 from '../../../components/common/icons/congnghe1.jpg';
+import cn2 from '../../../components/common/icons/congnghe2.jpg';
+import cn3 from '../../../components/common/icons/congnghe3.png';
+import cn4 from '../../../components/common/icons/congnghe4..png';
+
+import qa1 from '../../../components/common/icons/quanao1.png';
+import qa2 from '../../../components/common/icons/quanao2.jpg';
+import qa3 from '../../../components/common/icons/quanao3.png';
+import qa4 from '../../../components/common/icons/quanao4.jpg';
+
+import td1 from '../../../components/common/icons/tieudung1.png';
+import td2 from '../../../components/common/icons/tieudung2.jpg';
+import td3 from '../../../components/common/icons/tieudung3.png';
+import td4 from '../../../components/common/icons/tieudung4.png';
+
+import xd1 from '../../../components/common/icons/xaydung1.png';
+import xd2 from '../../../components/common/icons/xaydung2.png';
+import xd3 from '../../../components/common/icons/xaydung3.jpg';
+import xd4 from '../../../components/common/icons/xaydung4.jpg';
+
+import oto1 from '../../../components/common/icons/oto1.jpg';
+import oto2 from '../../../components/common/icons/oto2.jpg';
+import oto3 from '../../../components/common/icons/oto3.png';
+import oto4 from '../../../components/common/icons/oto4.jpg';
+
+import mp1 from '../../../components/common/icons/mypham1.jpg';
+import mp2 from '../../../components/common/icons/mypham2.jpg';
+import mp3 from '../../../components/common/icons/mypham3.png';
+import mp4 from '../../../components/common/icons/mypham4.png';
 const Hero = ({ onEnter }) => {
     return (
         <div className="animate-fade-in">
@@ -18,7 +62,7 @@ const Hero = ({ onEnter }) => {
                             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                             Phiên bản mới nhất 2026
                         </div>
-                        <h1 className="text-4xl lg:text-5xl font-black leading-tight">
+                        <h1 className="text-3xl lg:text-4xl font-black leading-tight">
                             Giải pháp quản lý Kho hàng <br/>
                             thông minh, linh hoạt
                         </h1>
@@ -140,47 +184,37 @@ const Hero = ({ onEnter }) => {
 
 
             <section className="bg-[#149ca8] text-white py-24 relative overflow-hidden">
-
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-400/20 to-transparent"></div>
-
                 <div className="max-w-[1200px] mx-auto px-6 relative z-10">
-                    <h2 className="text-3xl lg:text-4xl font-black text-center mb-16">Ứng dụng công nghệ hiện đại</h2>
+                    <h2 className="text-3xl lg:text-4xl font-black text-center mb-16">Công cụ hỗ trợ vận hành thông minh</h2>
                     <div className="grid md:grid-cols-3 gap-8">
-
-
-                        <div className="bg-white text-gray-800 p-8 rounded-3xl shadow-xl hover:-translate-y-2 transition-transform duration-300">
-
-                            <div className="w-14 h-14 bg-[#149ca8] rounded-2xl flex items-center justify-center text-white text-2xl mb-6 shadow-md">
-                                ✨
-                            </div>
-                            <h3 className="font-bold text-xl mb-4 text-gray-900">AI dự báo nhu cầu nhập hàng</h3>
-                            <p className="text-gray-500 leading-relaxed text-sm">
-                                Dựa trên lịch sử tiêu thụ và xu hướng thị trường, AI giúp dự báo chính xác nhu cầu nhập hàng, tránh tình trạng thừa hoặc thiếu hàng.
-                            </p>
-                        </div>
-
-
                         <div className="bg-white text-gray-800 p-8 rounded-3xl shadow-xl hover:-translate-y-2 transition-transform duration-300">
                             <div className="w-14 h-14 bg-[#149ca8] rounded-2xl flex items-center justify-center text-white text-2xl mb-6 shadow-md">
-                                📡
+                                🤖
                             </div>
-                            <h3 className="font-bold text-xl mb-4 text-gray-900">Tích hợp RFID</h3>
+                            <h3 className="font-bold text-xl mb-4 text-gray-900">Trợ lý ảo hỗ trợ công việc</h3>
                             <p className="text-gray-500 leading-relaxed text-sm">
-                                Công nghệ nhận dạng tần số vô tuyến giúp theo dõi hàng hóa theo thời gian thực, nâng cao độ chính xác trong quản lý kho.
+                                Gợi ý các công việc cần ưu tiên dựa trên dữ liệu thực tế, giúp quản lý và nhân viên kho nắm bắt tình hình tức thời.
                             </p>
                         </div>
-
-
                         <div className="bg-white text-gray-800 p-8 rounded-3xl shadow-xl hover:-translate-y-2 transition-transform duration-300">
                             <div className="w-14 h-14 bg-[#149ca8] rounded-2xl flex items-center justify-center text-white text-2xl mb-6 shadow-md">
-                                🕹️
+                                📸
                             </div>
-                            <h3 className="font-bold text-xl mb-4 text-gray-900">IoT theo dõi hàng hóa</h3>
+                            <h3 className="font-bold text-xl mb-4 text-gray-900">Quét Barcode & QR Code</h3>
                             <p className="text-gray-500 leading-relaxed text-sm">
-                                Các thiết bị IoT được tích hợp giúp theo dõi hàng hóa theo thời gian thực, cung cấp thông tin chính xác về vị trí và tình trạng hàng hóa.
+                                Tích hợp quét mã vạch qua camera điện thoại hoặc máy quét cầm tay để thực hiện các thao tác nhập xuất, kiểm kê nhanh chóng.
                             </p>
                         </div>
-
+                        <div className="bg-white text-gray-800 p-8 rounded-3xl shadow-xl hover:-translate-y-2 transition-transform duration-300">
+                            <div className="w-14 h-14 bg-[#149ca8] rounded-2xl flex items-center justify-center text-white text-2xl mb-6 shadow-md">
+                                📊
+                            </div>
+                            <h3 className="font-bold text-xl mb-4 text-gray-900">Thống kê theo thời gian thực</h3>
+                            <p className="text-gray-500 leading-relaxed text-sm">
+                                Biểu đồ và số liệu báo cáo được cập nhật ngay khi có biến động, giúp đưa ra các quyết định vận hành chính xác.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -190,64 +224,25 @@ const Hero = ({ onEnter }) => {
                 <div className="max-w-[1200px] mx-auto px-6">
                     <h2 className="text-3xl lg:text-4xl font-black text-center mb-16 text-gray-900">Giải thưởng đạt được</h2>
 
-
                     <div className="flex overflow-x-auto lg:grid lg:grid-cols-5 gap-6 pb-8 lg:pb-0 snap-x snap-mandatory">
-
-
-                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center min-w-[200px] snap-center hover:shadow-lg transition-shadow">
-                            <div className="h-32 w-24 bg-yellow-100 rounded-lg flex items-center justify-center mb-4 text-xs text-yellow-600 border border-yellow-200">
-                                <img
-                                    src={imgCup}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                />
+                        {[
+                            { name: "Cúp vàng Gold Cup", icon: cup1 },
+                            { name: "Sao Khuê", icon: cup2 },
+                            { name: "Sản phẩm ưa chuộng nhất", icon: cup3 },
+                            { name: "Giải vàng Make in Vietnam", icon: cup4 },
+                            { name: "Chuyển Đổi Số Việt Nam", icon: cup5 }
+                        ].map((award, index) => (
+                            <div key={index} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center min-w-[200px] snap-center hover:shadow-lg transition-shadow">
+                                <div className="h-32 w-24 bg-gray-50 rounded-lg flex items-center justify-center mb-4 overflow-hidden border border-gray-100 group">
+                                    <img
+                                        src={award.icon}
+                                        alt={award.name}
+                                        className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700"
+                                    />
+                                </div>
+                                <p className="font-bold text-gray-800 text-sm">{award.name}</p>
                             </div>
-                            <p className="font-bold text-gray-800 text-sm">Cúp vàng Gold Cup</p>
-                        </div>
-
-
-                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center min-w-[200px] snap-center hover:shadow-lg transition-shadow">
-                            <div className="h-32 w-24 bg-yellow-100 rounded-lg flex items-center justify-center mb-4 text-xs text-yellow-600 border border-yellow-200">
-                                <img
-                                    src={imgCup}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                />
-                            </div>
-                            <p className="font-bold text-gray-800 text-sm">Sao Khuê</p>
-                        </div>
-
-
-                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center min-w-[200px] snap-center hover:shadow-lg transition-shadow">
-                            <div className="h-32 w-24 bg-gray-100 rounded-lg flex items-center justify-center mb-4 text-xs text-gray-500 border border-gray-200">
-                                <img
-                                    src={imgCup}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                />
-                            </div>
-                            <p className="font-bold text-gray-800 text-sm">Sản phẩm ưa chuộng nhất do người tiêu dùng bình chọn</p>
-                        </div>
-
-
-                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center min-w-[200px] snap-center hover:shadow-lg transition-shadow">
-                            <div className="h-32 w-24 bg-yellow-100 rounded-lg flex items-center justify-center mb-4 text-xs text-yellow-600 border border-yellow-200">
-                                <img
-                                    src={imgCup}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                />
-                            </div>
-                            <p className="font-bold text-gray-800 text-sm">Giải vàng Make in Vietnam</p>
-                        </div>
-
-
-                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center min-w-[200px] snap-center hover:shadow-lg transition-shadow">
-                            <div className="h-32 w-24 bg-yellow-100 rounded-lg flex items-center justify-center mb-4 text-xs text-yellow-600 border border-yellow-200">
-                                <img
-                                    src={imgCup}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                />
-                            </div>
-                            <p className="font-bold text-gray-800 text-sm">Giải thưởng Chuyển Đổi Số Việt Nam VDCA</p>
-                        </div>
-
+                        ))}
                     </div>
                 </div>
             </section>
@@ -260,336 +255,54 @@ const Hero = ({ onEnter }) => {
                     </h2>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {[
+                            "Dược phẩm",
+                            "Thực phẩm & Đồ uống",
+                            "Điện tử & Công nghệ",
+                            "Thời trang & May mặc",
+                            "Hàng tiêu dùng (FMCG)",
+                            "Vật liệu xây dựng",
+                            "Phụ tùng ô tô",
+                            "Mỹ phẩm & Làm đẹp"
+                        ].map((industry, index) => {
+                            const isPharma = industry === "Dược phẩm";
+                            const isFood = industry === "Thực phẩm & Đồ uống";
+                            const isTech = industry === "Điện tử & Công nghệ";
+                            const isFashion = industry === "Thời trang & May mặc";
+                            const isConsumer = industry === "Hàng tiêu dùng (FMCG)";
+                            const isConstruction = industry === "Vật liệu xây dựng";
+                            const isOto = industry === "Phụ tùng ô tô";
+                            const isMyPham = industry === "Mỹ phẩm & Làm đẹp";
 
+                            const getIcon = (pos) => {
+                                if (isPharma) return [duoc1, duoc2, duoc3, duoc4][pos];
+                                if (isFood) return [tp1, tp2, tp3, tp4][pos];
+                                if (isTech) return [cn1, cn2, cn3, cn4][pos];
+                                if (isFashion) return [qa1, qa2, qa3, qa4][pos];
+                                if (isConsumer) return [td1, td2, td3, td4][pos];
+                                if (isConstruction) return [xd1, xd2, xd3, xd4][pos];
+                                if (isOto) return [oto1, oto2, oto3, oto4][pos];
+                                if (isMyPham) return [mp1, mp2, mp3, mp4][pos];
+                                return imgLogo;
+                            };
 
-                        <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Dược phẩm</div>
-
-                            <div className="p-4 grid grid-cols-2 gap-4">
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 1"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
+                            return (
+                                <div key={index} className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
+                                    <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">{industry}</div>
+                                    <div className="p-4 grid grid-cols-2 gap-4">
+                                        {[0, 1, 2, 3].map((pos) => (
+                                            <div key={pos} className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                                <img
+                                                    src={getIcon(pos)}
+                                                    alt={`Logo ${pos + 1}`}
+                                                    className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 2"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 3"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 4"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                            </div>
-                        </div>
-
-
-                        <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Dược phẩm</div>
-
-                            <div className="p-4 grid grid-cols-2 gap-4">
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 1"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 2"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 3"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 4"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                            </div>
-                        </div>
-
-
-                        <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Dược phẩm</div>
-
-                           <div className="p-4 grid grid-cols-2 gap-4">
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 1"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 2"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 3"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 4"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                            </div>
-                        </div>
-
-
-                        <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Dược phẩm</div>
-
-                            <div className="p-4 grid grid-cols-2 gap-4">
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 1"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 2"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 3"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 4"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                            </div>
-                        </div>
-
-
-
-                        <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Dược phẩm</div>
-
-                            <div className="p-4 grid grid-cols-2 gap-4">
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 1"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 2"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 3"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 4"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                            </div>
-                        </div>
-
-
-                        <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Dược phẩm</div>
-
-                            <div className="p-4 grid grid-cols-2 gap-4">
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 1"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 2"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 3"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 4"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                            </div>
-                        </div>
-
-
-                        <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Dược phẩm</div>
-
-                            <div className="p-4 grid grid-cols-2 gap-4">
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 1"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 2"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 3"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 4"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                            </div>
-                        </div>
-
-
-                        <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Dược phẩm</div>
-
-                            <div className="p-4 grid grid-cols-2 gap-4">
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 1"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 2"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 3"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
-                                    <img
-                                        src={imgLogo}
-                                        alt="Logo 4"
-                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
-
-                            </div>
-                        </div>
-
+                            );
+                        })}
                     </div>
                 </div>
             </section>

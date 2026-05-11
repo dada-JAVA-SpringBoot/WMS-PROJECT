@@ -4,7 +4,7 @@ spring:
   datasource:
     url: jdbc:sqlserver://localhost:14333;databaseName=WMS_DB;encrypt=true;trustServerCertificate=true;
     username: sa
-    password: WmsPassword123!@#
+    password: <MAT_KHAU_SQL_SERVER>
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
 
   jpa:

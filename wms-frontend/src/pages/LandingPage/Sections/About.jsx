@@ -140,11 +140,11 @@ const About = () => {
                     </p>
                     <div className="flex justify-center">
                         <div className="w-[500px] h-[400px] bg-gray-200 rounded-xl flex items-center justify-center text-gray-500">
-                           <img
-                                    src={img17}
-                                    alt="Màn hình Quản lý Danh mục Sản phẩm"
-                                    className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
-                                />
+                            <img
+                                src={img17}
+                                alt="Màn hình Quản lý Danh mục Sản phẩm"
+                                className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                            />
                         </div>
                     </div>
                 </div>
@@ -183,7 +183,7 @@ const About = () => {
                                 <img
                                     src={img21}
                                     alt="Màn hình Quản lý Danh mục Sản phẩm"
-                                   className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                                    className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
                                 />
                             </div>
                         </div>
@@ -207,7 +207,7 @@ const About = () => {
                                 <img
                                     src={img18}
                                     alt="Màn hình Quản lý Danh mục Sản phẩm"
-                                   className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                                    className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
                                 />
                             </div>
                         </div>
