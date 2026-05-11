@@ -25,23 +25,33 @@ function createAreaPath(points, height, padding) {
 }
 
 export default function LineAreaChart({
-    labels,
-    series,
+    labels = [],
+    series = [],
     title,
     height = 380,
     yTicks = 5,
 }) {
     const width = 1180;
     const padding = { top: 40, right: 30, bottom: 55, left: 82 };
-    const maxValue = Math.max(...series.flatMap((item) => item.data), 1);
-    const roundedMax = Math.ceil(maxValue / yTicks / 1000000) * yTicks * 1000000;
+    
+    // Safety check for empty or undefined series
+    if (!series || series.length === 0 || !series[0].data) {
+        return <div className="h-full flex items-center justify-center text-gray-400 italic">Không có dữ liệu biểu đồ</div>;
+    }
+
+    const maxValue = Math.max(...series.flatMap((item) => item.data || [0]), 1);
+    
+    // Adaptive rounding based on magnitude
+    const magnitude = Math.pow(10, Math.floor(Math.log10(maxValue / yTicks)) || 0);
+    const roundedMax = Math.ceil(maxValue / yTicks / magnitude) * yTicks * magnitude;
+    
     const ticks = Array.from({ length: yTicks + 1 }, (_, index) => (roundedMax / yTicks) * index).reverse();
 
     return (
-        <div className="border border-slate-200 bg-white p-6">
+        <div className="bg-white p-2 h-full">
             {title && <h3 className="mb-4 text-center text-[20px] font-medium text-slate-900">{title}</h3>}
-            <div className="w-full overflow-x-auto">
-                <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[980px] w-full">
+            <div className="w-full h-full overflow-hidden">
+                <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
                     {ticks.map((tick, index) => {
                         const y = padding.top + (index * (height - padding.top - padding.bottom)) / yTicks;
                         return (

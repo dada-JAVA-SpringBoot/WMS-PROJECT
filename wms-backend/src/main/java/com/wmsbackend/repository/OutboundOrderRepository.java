@@ -15,6 +15,7 @@ public interface OutboundOrderRepository extends JpaRepository<OutboundOrder, Lo
 
     // ── Đếm theo status (đã có từ StatisticalController) ─────────────────
     long countByStatus(String status);
+    long countByStatusIn(List<String> statuses);
 
     // ════════════════════════════════════════════════════════════════════════
     // FINANCIAL STATISTICS — REVENUE QUERIES
@@ -90,4 +91,6 @@ public interface OutboundOrderRepository extends JpaRepository<OutboundOrder, Lo
             @Param("fromYear") int fromYear,
             @Param("toYear")   int toYear
     );
+
+    List<OutboundOrder> findByWaveId(Long waveId);
 }

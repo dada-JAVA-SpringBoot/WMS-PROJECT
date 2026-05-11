@@ -87,6 +87,7 @@ export function AuthProvider({ children }) {
 
         const userObj = {
             token:        data.token,
+            id:           data.id, // Store numeric ID
             username:     data.username || decoded.username,
             fullName:     data.fullName || 'User',
             employeeCode: data.employeeCode || '---',

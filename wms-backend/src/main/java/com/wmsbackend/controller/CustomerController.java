@@ -6,7 +6,7 @@ package com.wmsbackend.controller;
 import com.wmsbackend.dto.CustomerDTO;
 import com.wmsbackend.entity.Customer;
 import com.wmsbackend.service.CustomerService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,16 +16,20 @@ import java.util.List;
 @RequestMapping("/api/customers")
 public class CustomerController {
 
-    @Autowired
-    private CustomerService customerService;
+    private final CustomerService customerService;
 
-    // GET — OUTBOUND_STAFF cần tra cứu khách hàng để tạo phiếu xuất
-    //       MANAGER xem để báo cáo
+    public CustomerController(CustomerService customerService) {
+        this.customerService = customerService;
+    }
+
+    // GET — Các vai trò vận hành đều cần xem danh sách khách hàng
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','OUTBOUND_STAFF')")
-    public List<CustomerDTO> getCustomers(@RequestParam(required = false) String keyword) {
-        if (keyword != null && !keyword.isBlank()) return customerService.searchCustomers(keyword);
-        return customerService.getAllCustomers();
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','OUTBOUND_STAFF','QUALITY_CONTROL')")
+    public ResponseEntity<List<CustomerDTO>> getCustomers(@RequestParam(required = false) String keyword) {
+        if (keyword != null && !keyword.isBlank()) {
+            return ResponseEntity.ok(customerService.searchCustomers(keyword));
+        }
+        return ResponseEntity.ok(customerService.getAllCustomers());
     }
 
     // POST — chỉ ADMIN

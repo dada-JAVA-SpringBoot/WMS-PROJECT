@@ -44,19 +44,18 @@ public class StaffServiceImpl implements StaffService {
         List<String> roleNames = s.getRoles().stream()
                 .map(Role::getRoleName)
                 .collect(Collectors.toList());
-        
-        String start = s.getShift() != null ? s.getShift().getStartTime().toString() : null;
-        String end   = s.getShift() != null ? s.getShift().getEndTime().toString() : null;
+
+        String start = s.getShiftStartTime() != null ? s.getShiftStartTime().toString() : null;
+        String end   = s.getShiftEndTime() != null ? s.getShiftEndTime().toString() : null;
 
         return new StaffDTO(
                 s.getId(), s.getEmployeeCode(), s.getFullName(), s.getGender(),
                 s.getDateOfBirth(), s.getPhone(), s.getEmail(), s.getHireDate(),
                 s.getContractType(), s.getWarehouseRole(), s.getWorkStatus(), s.getNotes(),
-                s.getUsername(), s.getEnabled(), s.getAvatar(), roleNames, 
+                s.getUsername(), s.getEnabled(), s.getAvatar(), roleNames,
                 start, end, s.getLastActiveAt()
         );
     }
-
     @Override
     @Transactional
     public Staff createStaff(Staff staff) {
@@ -105,6 +104,8 @@ public class StaffServiceImpl implements StaffService {
         
         existing.setWorkStatus(updated.getWorkStatus());
         existing.setNotes(updated.getNotes());
+        existing.setShiftStartTime(updated.getShiftStartTime());
+        existing.setShiftEndTime(updated.getShiftEndTime());
         
         // Không cho phép đổi username qua đây để tránh lỗi logic
         // Nếu muốn đổi username nên có method riêng hoặc kiểm tra kỹ

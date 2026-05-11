@@ -1,15 +1,19 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { ActionButton } from '../components/common/SharedUI';
 import VoucherContextMenu from '../components/modals/VoucherContextMenu';
 import LocationInventoryModal from '../components/modals/LocationInventoryModal';
 import TransferModal from '../components/modals/TransferModal';
+import SystemDialog from '../components/modals/SystemDialog';
+import ScannerModal from '../components/modals/ScannerModal';
 import axiosClient from '../api/axiosClient';
 import addIcon from '../components/common/icons/add.png';
 import fixIcon from '../components/common/icons/fix.png';
 import deleteIcon from '../components/common/icons/delete.png';
 import excel1Icon from '../components/common/icons/excel1.png';
 import excelIcon from "../components/common/icons/excel.png";
+import scanIcon from '../components/common/icons/scan.png';
 
 const emptyFormData = {
     warehouseId: 1, // Fix tạm thời mặc định là 1 để tránh lỗi validation BE
@@ -54,11 +58,12 @@ function getStorageTypeLabel(storageType) {
 }
 
 export default function WarehouseAreaPage({ onCreateInbound }) {
+    const reactLocation = useLocation();
     const [locations, setLocations] = useState([]);
     const [units, setUnits] = useState([]);
     const [selectedLocationId, setSelectedLocationId] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    
+
     const [searchKeyword, setSearchKeyword] = useState('');
     const [searchType, setSearchType] = useState('Tất cả');
     const [filterZone, setFilterZone] = useState('ALL');
@@ -73,6 +78,29 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
     const [formMode, setFormMode] = useState('create');
     const [formData, setFormData] = useState(emptyFormData);
     const [formError, setFormError] = useState('');
+
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
+
+    // --- System Dialog States ---
+    const [dialog, setDialog] = useState({ isOpen: false, title: '', message: '', variant: 'info', onConfirm: null });
+    const showMsg = (title, message, variant = 'info') => setDialog({ isOpen: true, title, message, variant, onConfirm: null });
+    const showConfirm = (title, message, onConfirm) => setDialog({ isOpen: true, title, message, variant: 'confirm', onConfirm });
+
+    // Xử lý query param từ Global Scan
+    useEffect(() => {
+        const params = new URLSearchParams(reactLocation.search);
+        const searchCode = params.get('search');
+        if (searchCode) {
+            setSearchKeyword(searchCode);
+            setSearchType('Theo mã vị trí');
+        }
+    }, [reactLocation.search]);
+
+    const handleScanSuccess = (decodedText) => {
+        setIsScannerOpen(false);
+        setSearchKeyword(decodedText.trim());
+        setSearchType('Theo mã vị trí');
+    };
 
     const unitMap = useMemo(() => {
         const m = new Map();
@@ -94,6 +122,20 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
         const meta = getContainerMeta(containerType);
         return <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${meta.className}`}>{meta.label}</span>;
     }
+
+    const lastClickRef = useRef({ id: null, time: 0 });
+    const handleLocClick = (loc) => {
+        const now = Date.now();
+        const isDoubleTap = lastClickRef.current.id === loc.id && (now - lastClickRef.current.time < 300);
+        if (isDoubleTap) {
+            setViewingLocation(loc);
+            setIsInventoryOpen(true);
+            lastClickRef.current = { id: null, time: 0 };
+            return;
+        }
+        lastClickRef.current = { id: loc.id, time: now };
+        setSelectedLocationId(loc.id);
+    };
 
     const fetchLocations = useCallback(async () => {
         setIsLoading(true);
@@ -238,7 +280,7 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
         const payload = { ...formData, capacity: parseInt(formData.capacity || 100, 10) };
         const url = formMode === 'create' ? `/api/locations` : `/api/locations/${selectedLocationId}`;
         try {
-            if (formMode === 'create') { await axiosClient.post(url, payload); } 
+            if (formMode === 'create') { await axiosClient.post(url, payload); }
             else { await axiosClient.put(url, payload); }
             setIsFormOpen(false); setFormError(''); await fetchLocations();
         } catch { setFormError('Không lưu được dữ liệu vị trí.'); }
@@ -246,12 +288,14 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
 
     const handleDeleteLocation = async (location = selectedLocation) => {
         if (!location) return;
-        if (!window.confirm(`Bạn có chắc chắn muốn xóa vị trí ${location.binCode}?`)) return;
-        try {
-            await axiosClient.delete(`/api/locations/${location.id}`);
-            if (selectedLocationId === location.id) setSelectedLocationId(null);
-            await fetchLocations();
-        } catch { window.alert('Lỗi: Không thể xóa vị trí (Có thể đang có hàng tồn kho).'); }
+        showConfirm("Xác nhận xóa", `Bạn có chắc chắn muốn xóa vị trí ${location.binCode}?`, async () => {
+            try {
+                await axiosClient.delete(`/api/locations/${location.id}`);
+                if (selectedLocationId === location.id) setSelectedLocationId(null);
+                await fetchLocations();
+                showMsg("Thành công", "Đã xóa vị trí thành công.");
+            } catch { showMsg("Lỗi", 'Không thể xóa vị trí (Có thể đang có hàng tồn kho).'); }
+        });
     };
 
     const handleRowContextMenu = (event, location) => {
@@ -264,75 +308,143 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
 
     return (
         <div className="p-6 bg-[#f8f9fa] min-h-full flex flex-col text-left font-sans text-gray-800">
-            {/* Header Toolbar */}
-            <div className="sticky top-0 z-20 flex items-center justify-between bg-white/95 backdrop-blur-sm p-5 rounded-3xl shadow-sm border border-gray-100 mb-6 transition-all">
-                <div className="flex gap-4">
-                    <ActionButton label="THÊM MỚI" iconSrc={addIcon} onClick={openCreateForm} />
-                    <ActionButton label="SỬA" iconSrc={fixIcon} onClick={() => openEditForm()} />
-                    <ActionButton label="XÓA" iconSrc={deleteIcon} onClick={() => handleDeleteLocation()} />
-                    <ActionButton label="LÀM MỚI" iconSrc={excel1Icon} onClick={fetchLocations} />
-                    <ActionButton label="XUẤT EXCEL" iconSrc={excelIcon} onClick={handleExportGlobalExcel} />
+            <SystemDialog 
+                isOpen={dialog.isOpen}
+                title={dialog.title}
+                message={dialog.message}
+                variant={dialog.variant}
+                onConfirm={() => { dialog.onConfirm?.(); setDialog({ ...dialog, isOpen: false }); }}
+                onClose={() => setDialog({ ...dialog, isOpen: false })}
+            />
+            <ScannerModal 
+                isOpen={isScannerOpen}
+                onClose={() => setIsScannerOpen(false)}
+                onScanSuccess={handleScanSuccess}
+            />
+            {/* Header Toolbar & Status Legend */}
+            <div className="sticky top-0 z-20 flex flex-col bg-white/95 backdrop-blur-sm p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 mb-4 md:mb-6 transition-all gap-4">
+                <div className="flex items-center justify-between w-full">
+                    <div className="flex gap-4 md:gap-6 overflow-x-auto no-scrollbar pb-1 flex-1">
+                        <ActionButton label="THÊM MỚI" iconSrc={addIcon} onClick={openCreateForm} />
+                        <ActionButton label="QUÉT MÃ" iconSrc={scanIcon} onClick={() => setIsScannerOpen(true)} />
+                        <ActionButton label="SỬA" iconSrc={fixIcon} onClick={() => openEditForm()} />
+                        <ActionButton label="XÓA" iconSrc={deleteIcon} onClick={() => handleDeleteLocation()} />
+                        <ActionButton label="LÀM MỚI" iconSrc={excel1Icon} onClick={fetchLocations} />
+                    </div>
+                    <div className="text-xs font-black text-gray-300 uppercase tracking-widest hidden lg:block ml-4">Quản lý sơ đồ vị trí</div>
                 </div>
-                <div className="flex gap-2 bg-gray-50 px-3 py-1.5 rounded-2xl border border-gray-100">
-                    <StatusLegend label="Trống" value={statusCounts.EMPTY || 0} className="bg-gray-100 text-gray-600 border-gray-200" />
-                    <StatusLegend label="Chật" value={statusCounts.FULL || 0} className="bg-amber-100 text-amber-800 border-amber-200" />
-                    <StatusLegend label="Phân bổ" value={statusCounts.ALLOCATED || 0} className="bg-blue-100 text-blue-700 border-blue-200" />
-                    <StatusLegend label="Đang dùng" value={statusCounts.OCCUPIED || 0} className="bg-cyan-100 text-cyan-700 border-cyan-200" />
+                
+                {/* Status Legend - Moved below toolbar for mobile */}
+                <div className="flex flex-wrap gap-2 md:gap-3 bg-gray-50/50 p-2 md:p-3 rounded-xl md:rounded-2xl border border-gray-100/50 justify-center sm:justify-start">
+                    <StatusLegend label="Trống" value={statusCounts.EMPTY || 0} className="bg-white text-gray-500 border-gray-200" />
+                    <StatusLegend label="Chật" value={statusCounts.FULL || 0} className="bg-amber-50 text-amber-700 border-amber-100" />
+                    <StatusLegend label="Phân bổ" value={statusCounts.ALLOCATED || 0} className="bg-blue-50 text-blue-700 border-blue-100" />
+                    <StatusLegend label="Đang dùng" value={statusCounts.OCCUPIED || 0} className="bg-cyan-50 text-cyan-700 border-cyan-100" />
                 </div>
             </div>
 
             {/* Filter Bar */}
-            <div className="grid grid-cols-1 gap-6 mb-6">
-                <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col gap-4">
-                    <div className="flex items-center gap-4">
-                        <select value={searchType} onChange={(e) => setSearchType(e.target.value)} className="wms-select w-48 !text-xs !py-2">
-                            <option value="Tất cả">Tất cả kiểu tìm</option>
-                            <option value="Theo mã vị trí">Theo mã vị trí</option>
-                            <option value="Theo khu vực">Theo khu vực</option>
-                            <option value="Theo loại kho">Theo loại kho</option>
+            <div className="bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 flex flex-col gap-4 mb-4 md:mb-6">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <select value={searchType} onChange={(e) => setSearchType(e.target.value)} className="wms-select w-full sm:w-48 !text-sm !py-2.5 md:!py-3">
+                        <option value="Tất cả">Tất cả kiểu tìm</option>
+                        <option value="Theo mã vị trí">Theo mã vị trí</option>
+                        <option value="Theo khu vực">Theo khu vực</option>
+                        <option value="Theo loại kho">Theo loại kho</option>
+                    </select>
+                    <div className="relative flex-1">
+                        <input type="text" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} placeholder="Nhập từ khóa tìm kiếm nhanh..." className="w-full border-2 border-gray-100 rounded-xl px-4 py-2.5 md:py-3 text-sm outline-none focus:border-[#1192a8] focus:ring-4 focus:ring-[#1192a8]/10 transition-all bg-white"/>
+                    </div>
+                </div>
+                
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-gray-50 pt-4">
+                    <div className="flex items-center gap-2 flex-1 sm:flex-none min-w-[140px]">
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase shrink-0">Khu vực:</span>
+                        <select value={filterZone} onChange={(e) => setFilterZone(e.target.value)} className="wms-select w-full !text-[11px] !py-1.5 !px-2">
+                            <option value="ALL">Tất cả</option>
+                            {zones.map(z => <option key={z} value={z}>{z}</option>)}
                         </select>
-                        <input type="text" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} placeholder="Nhập từ khóa tìm kiếm nhanh..." className="border-2 border-gray-100 rounded-xl px-4 py-2 text-xs outline-none flex-1 focus:border-[#1192a8] focus:ring-4 focus:ring-[#1192a8]/10 transition-all"/>
                     </div>
-                    <div className="flex items-center gap-4 border-t pt-4">
-                        <div className="flex items-center gap-2"><span className="text-[10px] font-black text-gray-400 uppercase">Khu vực:</span><select value={filterZone} onChange={(e) => setFilterZone(e.target.value)} className="wms-select !text-[11px] !py-1.5 !px-3 min-w-[140px]"><option value="ALL">Tất cả khu vực</option>{zones.map(z => <option key={z} value={z}>{z}</option>)}</select></div>
-                        <div className="flex items-center gap-2"><span className="text-[10px] font-black text-gray-400 uppercase">Trạng thái:</span><select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="wms-select !text-[11px] !py-1.5 !px-3 min-w-[140px]"><option value="ALL">Tất cả trạng thái</option>{Object.entries(STATUS_META).map(([code, meta]) => <option key={code} value={code}>{meta.label}</option>)}</select></div>
-                        <div className="flex items-center gap-2"><span className="text-[10px] font-black text-gray-400 uppercase">Loại kho:</span><select value={filterStorage} onChange={(e) => setFilterStorage(e.target.value)} className="wms-select !text-[11px] !py-1.5 !px-3 min-w-[140px]"><option value="ALL">Tất cả loại kho</option>{Object.entries(STORAGE_META).map(([code, meta]) => <option key={code} value={code}>{meta.label}</option>)}</select></div>
-                        <button onClick={() => { setFilterZone('ALL'); setFilterStatus('ALL'); setFilterStorage('ALL'); setSearchKeyword(''); }} className="ml-auto text-[10px] font-black text-gray-400 hover:text-red-500 uppercase tracking-tighter">Xóa bộ lọc ✕</button>
+                    <div className="flex items-center gap-2 flex-1 sm:flex-none min-w-[140px]">
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase shrink-0">Trạng thái:</span>
+                        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="wms-select w-full !text-[11px] !py-1.5 !px-2">
+                            <option value="ALL">Tất cả</option>
+                            {Object.entries(STATUS_META).map(([code, meta]) => <option key={code} value={code}>{meta.label}</option>)}
+                        </select>
                     </div>
+                    <div className="flex items-center gap-2 flex-1 sm:flex-none min-w-[140px]">
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase shrink-0">Loại kho:</span>
+                        <select value={filterStorage} onChange={(e) => setFilterStorage(e.target.value)} className="wms-select w-full !text-[11px] !py-1.5 !px-2">
+                            <option value="ALL">Tất cả</option>
+                            {Object.entries(STORAGE_META).map(([code, meta]) => <option key={code} value={code}>{meta.label}</option>)}
+                        </select>
+                    </div>
+                    <button 
+                        onClick={() => { setFilterZone('ALL'); setFilterStatus('ALL'); setFilterStorage('ALL'); setSearchKeyword(''); }} 
+                        className="ml-auto text-[9px] md:text-[10px] font-black text-gray-400 hover:text-red-500 uppercase tracking-tighter cursor-pointer transition-colors"
+                    >
+                        Xóa bộ lọc ✕
+                    </button>
                 </div>
             </div>
 
-            {/* Main Content */}
-            <div className="flex-1 bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-                {isLoading ? <div className="py-20 text-center text-[#1192a8] font-bold animate-pulse">ĐANG TẢI DỮ LIỆU...</div> : (
-                    <div className="space-y-8">
-                        {groupedLocations.map((group) => (
-                            <section key={group.zoneLabel} className="rounded-3xl border border-gray-100 overflow-hidden">
-                                <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-                                    <h4 className="text-base font-black text-[#1192a8] uppercase">Khu vực: {group.zoneLabel}</h4>
-                                    <span className="text-xs font-bold text-gray-500">{group.locations.length} vị trí</span>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-                                    {group.locations.map((loc, idx) => (
-                                        <div key={loc.id} onClick={() => setSelectedLocationId(loc.id)} onDoubleClick={() => { setViewingLocation(loc); setIsInventoryOpen(true); }} onContextMenu={(e) => handleRowContextMenu(e, loc)} className={`border rounded-2xl p-4 transition-all cursor-pointer bg-white group ${selectedLocationId === loc.id ? 'border-[#1192a8] shadow-md bg-cyan-50/20' : 'border-gray-100 hover:shadow-md hover:border-cyan-200'}`}>
-                                            <div className="flex justify-between items-start mb-3">
-                                                <span className="text-[10px] font-bold text-gray-400">#{idx + 1}</span>
-                                                <div className="flex items-center gap-1.5 flex-wrap justify-end"><StorageBadge storageType={loc.storageType} /><ContainerBadge containerType={loc.containerType} /><StatusBadge statusCode={loc.statusCode} /></div>
-                                            </div>
-                                            <div className="flex items-baseline justify-between mb-4">
-                                                <div className="flex items-baseline gap-3"><h5 className="text-lg font-black text-[#1192a8] truncate" title={loc.binCode}>{loc.binCode}</h5>{viewMode === 'details' && <span className="text-xs font-medium text-gray-400 uppercase tracking-tighter italic">Lô hàng:</span>}</div>
-                                                {viewMode === 'details' && <div className="text-right"><span className="text-[10px] font-bold text-gray-400 uppercase block leading-none mb-0.5">Tỉ lệ lấp đầy</span><span className="text-sm font-black text-gray-700">{(loc.quantityOnHand || 0).toLocaleString()} / {(loc.capacity || 0).toLocaleString()}</span></div>}
-                                            </div>
-                                            {viewMode === 'grid' ? (
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <CardField label="Lối/Kệ" value={`${loc.aisle || '-'}/${loc.rack || '-'}`} /><CardField label="Tầng" value={loc.level} /><CardField label="Sức chứa" value={loc.capacity} /><CardField label="Tồn thực tế" value={`${loc.quantityOnHand || 0}/${loc.capacity || 0}`} />
+            {/* Main Content Area */}
+            <div className="flex-1 bg-white rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 p-4 md:p-6 overflow-hidden flex flex-col">
+                {isLoading ? (
+                    <div className="flex-1 flex flex-col justify-center items-center py-20 text-[#1192a8] font-bold">
+                        <div className="w-10 h-10 border-4 border-[#1192a8] border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <span className="animate-pulse tracking-widest uppercase text-xs">Đang tải dữ liệu sơ đồ...</span>
+                    </div>
+                ) : (
+                    <div className="flex-1 overflow-y-auto no-scrollbar pr-1">
+                        <div className="space-y-6 md:space-y-8">
+                            {groupedLocations.length > 0 ? groupedLocations.map((group) => (
+                                <section key={group.zoneLabel} className="rounded-2xl md:rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
+                                    <div className="px-4 md:px-6 py-3 md:py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center">
+                                        <h4 className="text-sm md:text-base font-black text-[#1192a8] uppercase tracking-wide">Khu vực: {group.zoneLabel}</h4>
+                                        <span className="text-[10px] md:text-xs font-bold text-gray-400 bg-white px-2 py-0.5 rounded-full border border-gray-200">{group.locations.length} vị trí</span>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 p-4 md:p-6 bg-white">
+                                        {group.locations.map((loc, idx) => (
+                                            <div key={loc.id} onClick={() => handleLocClick(loc)} onDoubleClick={() => { setViewingLocation(loc); setIsInventoryOpen(true); }} onContextMenu={(e) => handleRowContextMenu(e, loc)} className={`border rounded-2xl p-4 transition-all cursor-pointer bg-white group ${selectedLocationId === loc.id ? 'border-[#1192a8] shadow-md bg-cyan-50/20' : 'border-gray-100 hover:shadow-md hover:border-cyan-200'}`}>
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <span className="text-[10px] font-bold text-gray-300">#{idx + 1}</span>
+                                                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                                                        <StorageBadge storageType={loc.storageType} />
+                                                        <ContainerBadge containerType={loc.containerType} />
+                                                        <StatusBadge statusCode={loc.statusCode} />
+                                                    </div>
                                                 </div>
-                                            ) : <div className="mt-2"><LocationInventoryInline locationId={loc.id} onTransferSuccess={fetchLocations}/></div>}
-                                        </div>
-                                    ))}
+                                                <div className="flex items-baseline justify-between mb-4">
+                                                    <div className="flex items-baseline gap-3 min-w-0">
+                                                        <h5 className="text-lg font-black text-[#1192a8] truncate uppercase" title={loc.binCode}>{loc.binCode}</h5>
+                                                        {viewMode === 'details' && <span className="text-[9px] font-bold text-gray-300 uppercase italic shrink-0">Hàng hóa:</span>}
+                                                    </div>
+                                                    {viewMode === 'details' && (
+                                                        <div className="text-right shrink-0">
+                                                            <span className="text-[8px] font-bold text-gray-400 uppercase block leading-none mb-0.5">Tỉ lệ</span>
+                                                            <span className="text-xs font-black text-gray-700">{(loc.quantityOnHand || 0).toLocaleString()} / {(loc.capacity || 0).toLocaleString()}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {viewMode === 'grid' ? (
+                                                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 border-t border-gray-50 pt-3">
+                                                        <CardField label="Lối/Kệ" value={`${loc.aisle || '-'}/${loc.rack || '-'}`} />
+                                                        <CardField label="Tầng" value={loc.level || '-'} />
+                                                        <CardField label="Sức chứa" value={loc.capacity} />
+                                                        <CardField label="Tồn thực tế" value={`${(loc.quantityOnHand || 0).toLocaleString()} / ${(loc.capacity || 0).toLocaleString()}`} />
+                                                    </div>
+                                                ) : <div className="mt-2 border-t border-gray-50 pt-3"><LocationInventoryInline locationId={loc.id} onTransferSuccess={fetchLocations}/></div>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            )) : (
+                                <div className="py-20 text-center text-gray-400 italic font-medium uppercase text-xs tracking-widest animate-pulse">
+                                    Không có dữ liệu vị trí phù hợp với bộ lọc.
                                 </div>
-                            </section>
-                        ))}
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
@@ -366,14 +478,14 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
                 </div>
             )}
 
-            <VoucherContextMenu 
-                isOpen={!!contextMenu} x={contextMenu?.x || 0} y={contextMenu?.y || 0} title="Tác vụ nhanh" subtitle={contextMenu?.item?.binCode || ''} 
+            <VoucherContextMenu
+                isOpen={!!contextMenu} x={contextMenu?.x || 0} y={contextMenu?.y || 0} title="Tác vụ nhanh" subtitle={contextMenu?.item?.binCode || ''}
                 actions={[
                     { label: 'Xem tồn kho', onClick: () => { closeContextMenu(); setViewingLocation(contextMenu?.item); setIsInventoryOpen(true); } },
                     { label: 'Lập phiếu nhập', onClick: () => { closeContextMenu(); handleCreateInboundFromLoc(contextMenu?.item); } },
                     { label: 'Sửa thông tin', onClick: () => { closeContextMenu(); openEditForm(contextMenu?.item); } },
                     { label: 'Xóa vị trí này', danger: true, onClick: () => { closeContextMenu(); handleDeleteLocation(contextMenu?.item); } }
-                ]} 
+                ]}
                 onClose={closeContextMenu}
             />
             {isInventoryOpen && viewingLocation && (<LocationInventoryModal location={viewingLocation} onClose={() => { setIsInventoryOpen(false); setViewingLocation(null); }} />)}
@@ -406,7 +518,7 @@ function LocationInventoryInline({ locationId, onTransferSuccess }) {
     useEffect(() => {
         const fetchItems = async () => {
             setLoading(true);
-            try { const res = await axiosClient.get(`/api/inventory/location/${locationId}`); setInventory(res.data); } 
+            try { const res = await axiosClient.get(`/api/inventory/location/${locationId}`); setInventory(res.data); }
             catch { setInventory([]); } finally { setLoading(false); }
         };
         fetchItems();

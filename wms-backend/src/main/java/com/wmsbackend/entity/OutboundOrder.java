@@ -34,19 +34,10 @@ public class OutboundOrder {
     @Column(name = "Note", length = 500)
     private String note;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "OutboundOrderId")
-    private java.util.List<OutboundOrderDetail> items = new java.util.ArrayList<>();
+    @Column(name = "WaveId")
+    private Long waveId;
 
     // Getter Setter
-
-    public java.util.List<OutboundOrderDetail> getItems() {
-        return items;
-    }
-
-    public void setItems(java.util.List<OutboundOrderDetail> items) {
-        this.items = items;
-    }
 
     public Long getId() {
         return id;
@@ -118,5 +109,13 @@ public class OutboundOrder {
 
     public void setNote(String note) {
         this.note = note;
+    }
+
+    public Long getWaveId() {
+        return waveId;
+    }
+
+    public void setWaveId(Long waveId) {
+        this.waveId = waveId;
     }
 }

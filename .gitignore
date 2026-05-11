@@ -30,5 +30,23 @@ logs/
 # Docker Local Data
 wms-db-data/
 
-docker-compose.yml
 structure.txt
+
+# OS
+Desktop.ini
+$RECYCLE.BIN/
+
+# Java/Maven
+.mvn/wrapper/maven-wrapper.jar
+dependency-reduced-pom.xml
+*.log
+
+# Node/Vite
+.vite/
+.output/
+.nuxt/
+.vercel/
+
+# Cấu hình cá nhân
+*.user
+*.bak

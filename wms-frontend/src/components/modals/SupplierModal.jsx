@@ -60,24 +60,24 @@ export default function SupplierModal({ isOpen, onClose, onSaved, editData }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-2 md:p-4">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[98vh] md:max-h-[90vh]">
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-[#00529c] to-[#1192a8] px-8 py-5 flex items-center justify-between">
-                    <div>
-                        <h2 className="text-white font-bold text-lg">
+                <div className="bg-gradient-to-r from-[#00529c] to-[#1192a8] px-5 md:px-8 py-4 md:py-5 flex items-center justify-between shrink-0">
+                    <div className="min-w-0">
+                        <h2 className="text-white font-bold text-base md:text-lg truncate">
                             {isEdit ? 'Chỉnh sửa nhà cung cấp' : 'Thêm nhà cung cấp mới'}
                         </h2>
-                        <p className="text-white/70 text-xs mt-0.5">
+                        <p className="text-white/70 text-[10px] md:text-xs mt-0.5 truncate">
                             {isEdit ? `Đang sửa: ${editData.name}` : 'Điền thông tin để tạo nhà cung cấp'}
                         </p>
                     </div>
-                    <button onClick={onClose} className="text-white/70 hover:text-white text-2xl leading-none transition-colors">×</button>
+                    <button onClick={onClose} className="text-white/70 hover:text-white text-2xl leading-none transition-colors ml-4">&times;</button>
                 </div>
 
                 {/* Body */}
-                <div className="px-8 py-6 space-y-5">
+                <div className="px-5 md:px-8 py-4 md:py-6 space-y-4 md:space-y-5 overflow-y-auto flex-1">
                     <Field
                         label="Mã nhà cung cấp"
                         required
@@ -103,29 +103,29 @@ export default function SupplierModal({ isOpen, onClose, onSaved, editData }) {
                         type="tel"
                     />
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Địa chỉ</label>
+                        <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Địa chỉ liên hệ</label>
                         <textarea
                             rows={2}
                             value={form.address}
                             onChange={e => handleChange('address', e.target.value)}
                             placeholder="VD: Khu công nghiệp Tân Bình, TP.HCM"
-                            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1192a8]/25 focus:border-[#1192a8] transition-all resize-none"
+                            className="w-full border border-gray-200 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1192a8]/25 focus:border-[#1192a8] transition-all resize-none bg-white"
                         />
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="px-8 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                <div className="px-5 md:px-8 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
                     <button
                         onClick={onClose}
-                        className="px-6 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-100 transition-all"
+                        className="order-2 sm:order-1 px-6 py-2.5 rounded-2xl text-sm font-black text-gray-400 bg-white border border-gray-100 hover:bg-gray-100 transition-all uppercase tracking-widest"
                     >
                         Hủy
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="px-7 py-2.5 rounded-xl text-sm font-bold text-white bg-[#1192a8] hover:bg-teal-700 hover:shadow-lg hover:shadow-teal-500/30 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="order-1 sm:order-2 px-7 py-3 rounded-2xl text-xs font-black text-white bg-[#1192a8] hover:bg-teal-700 hover:shadow-lg shadow-xl shadow-teal-500/20 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-widest"
                     >
                         {loading && <span className="animate-spin text-base">↻</span>}
                         {isEdit ? 'Lưu thay đổi' : 'Thêm mới'}

@@ -218,54 +218,54 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
     const previewBaseQty = (Number(quantity) * factor).toLocaleString();
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-[100] p-4">
-            <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                <div className="bg-[#1192a8] text-white px-6 py-4 flex justify-between items-center shrink-0">
-                    <h2 className="text-lg font-bold uppercase tracking-widest">Di chuyển lô hàng nội bộ</h2>
-                    <button onClick={onClose} className="text-3xl hover:text-red-200 leading-none">&times;</button>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-[100] p-2 md:p-4">
+            <div className="bg-white w-full max-w-4xl rounded-2xl md:rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[98vh] md:max-h-none">
+                <div className="bg-[#1192a8] text-white px-5 md:px-6 py-3 md:py-4 flex justify-between items-center shrink-0">
+                    <h2 className="text-sm md:text-lg font-bold uppercase tracking-widest truncate">Di chuyển lô hàng</h2>
+                    <button onClick={onClose} className="text-2xl md:text-3xl hover:text-red-200 leading-none">&times;</button>
                 </div>
                 
-                <div className="p-6 space-y-6">
+                <div className="p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto flex-1">
                     {/* Thông tin nguồn - Rộng hơn */}
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-sm grid grid-cols-2 gap-x-8 gap-y-2 shadow-sm">
-                        <div className="flex justify-between border-b border-gray-100 pb-1">
-                            <span className="text-gray-400 font-bold uppercase text-[10px]">Mặt hàng:</span>
-                            <span className="font-bold text-blue-700 truncate ml-2">{product.sku} - {product.name}</span>
+                    <div className="bg-gray-50 p-3 md:p-4 rounded-xl border border-gray-200 text-xs md:text-sm grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 shadow-sm">
+                        <div className="flex justify-between border-b border-gray-100 pb-1 sm:col-span-2">
+                            <span className="text-gray-400 font-bold uppercase text-[9px] md:text-[10px]">Mặt hàng:</span>
+                            <span className="font-black text-blue-700 truncate ml-2 uppercase">{product.sku} - {product.name}</span>
                         </div>
                         <div className="flex justify-between border-b border-gray-100 pb-1">
-                            <span className="text-gray-400 font-bold uppercase text-[10px]">Tồn khả dụng:</span>
-                            <span className="font-black text-green-600 ml-2">
+                            <span className="text-gray-400 font-bold uppercase text-[9px] md:text-[10px]">Tồn khả dụng:</span>
+                            <span className="font-black text-green-600 ml-2 text-sm">
                                 {(Number(stockLine.onHand || 0) - Number(stockLine.allocated || 0)).toLocaleString()} {product.baseUnit}
                             </span>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-400 font-bold uppercase text-[10px]">Số lô:</span>
-                            <span className="font-mono bg-white px-1.5 border rounded text-[11px] font-bold">{stockLine.batchCode}</span>
+                        <div className="flex justify-between border-b border-gray-100 pb-1 sm:border-b-0 sm:pb-0">
+                            <span className="text-gray-400 font-bold uppercase text-[9px] md:text-[10px]">Số lô:</span>
+                            <span className="font-mono bg-white px-1.5 border rounded text-[11px] font-bold text-[#1192a8]">{stockLine.batchCode}</span>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-400 font-bold uppercase text-[10px]">Vị trí hiện tại:</span>
-                            <span className="font-bold text-orange-600 uppercase">{stockLine.locCode}</span>
+                        <div className="flex justify-between sm:col-span-2 sm:pt-2 sm:border-t sm:border-gray-100">
+                            <span className="text-gray-400 font-bold uppercase text-[9px] md:text-[10px]">Vị trí hiện tại:</span>
+                            <span className="font-black text-orange-600 uppercase text-sm">{stockLine.locCode}</span>
                         </div>
                     </div>
 
                     {/* Thao tác chuyển - Grid 2 cột */}
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                         <div className="space-y-4">
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="col-span-2">
-                                    <label className="block text-[11px] font-black text-gray-500 uppercase mb-1">Số lượng chuyển:</label>
+                                    <label className="block text-[10px] md:text-[11px] font-black text-gray-500 uppercase mb-1">Số lượng chuyển:</label>
                                     <input 
                                         type="number" 
-                                        className="w-full border-2 border-gray-100 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none font-bold"
+                                        className="w-full border-2 border-gray-100 rounded-xl px-3 py-2.5 text-sm focus:border-blue-500 outline-none font-black text-blue-700"
                                         value={quantity}
                                         onChange={(e) => setQuantity(e.target.value)}
                                         min="1"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[11px] font-black text-gray-500 uppercase mb-1">Đơn vị:</label>
+                                    <label className="block text-[10px] md:text-[11px] font-black text-gray-500 uppercase mb-1">Đơn vị:</label>
                                         <select 
-                                            className="wms-select w-full !py-2 !px-3"
+                                            className="wms-select w-full !py-2.5 !px-2 !text-xs"
                                             value={selectedUnit ? selectedUnit.unitName : ''}
                                             onChange={(e) => handleUnitChange(e.target.value)}
                                         >
@@ -273,59 +273,59 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
                                                 <option key={u.unitName} value={u.unitName}>{u.unitName}</option>
                                             ))}
                                         </select>
-                                        </div>
-                                        </div>
+                                </div>
+                            </div>
 
-                                        {selectedUnit && !selectedUnit.isBase && (
-                                        <div className="bg-blue-50 p-2 rounded-lg border border-blue-100 flex justify-between items-center">
-                                        <span className="text-[10px] text-blue-400 font-bold italic">
+                            {selectedUnit && !selectedUnit.isBase && (
+                                <div className="bg-blue-50 p-2 md:p-3 rounded-xl border border-blue-100 flex justify-between items-center">
+                                    <span className="text-[10px] text-blue-400 font-bold italic">
                                         1 {selectedUnit.unitName} = {selectedUnit.conversionFactor} {product.baseUnit}
-                                        </span>
-                                        <div className="text-[12px] text-blue-700 font-black italic">
+                                    </span>
+                                    <div className="text-xs md:text-sm text-blue-700 font-black italic">
                                         = {previewBaseQty} {product.baseUnit}
-                                        </div>
-                                        </div>
-                                        )}
-                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
-                                        <div className="space-y-4">
-                                        <div>
-                                        <label className="block text-[11px] font-black text-gray-500 uppercase mb-1">Vị trí đích (Đề xuất tốt nhất):</label>
-                                        <select 
-                                        className="wms-select w-full !py-2 !px-3"
-                                        value={toLocationId}
-                                        onChange={(e) => handleLocationChange(e.target.value)}
-                                        >
-                                        <option value="">-- Chọn vị trí --</option>
-                                        {locations.map(loc => (
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-[10px] md:text-[11px] font-black text-gray-500 uppercase mb-1">Vị trí đích (Gợi ý):</label>
+                                <select 
+                                    className="wms-select w-full !py-2.5 !px-2 !text-[11px] font-bold"
+                                    value={toLocationId}
+                                    onChange={(e) => handleLocationChange(e.target.value)}
+                                >
+                                    <option value="">-- Chọn vị trí --</option>
+                                    {locations.map(loc => (
                                         <option key={loc.id} value={loc.id}>
-                                            [{loc.containerType || 'N/A'}] | {loc.suggestionLabel.split(':')[0].replace('(', '').replace(')', '')} | {loc.binCode} ({loc.quantityOnHand}/{loc.capacity})
+                                            {loc.binCode} | {loc.containerType} | {loc.suggestionLabel.split(':')[0].replace('(', '').replace(')', '')}
                                         </option>
-                                        ))}
-                                        </select>
-                                        <p className="text-[9px] text-gray-400 mt-1.5 italic font-medium">* Hệ thống ưu tiên vị trí cùng lô hàng hoặc vị trí trống khớp đơn vị.</p>
-                                        </div>
-                                        </div>                    </div>
+                                    ))}
+                                </select>
+                                <p className="text-[9px] text-gray-400 mt-2 italic font-medium leading-tight">* Ưu tiên vị trí cùng lô hàng hoặc vị trí trống khớp đơn vị.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="bg-gray-100 p-4 border-t flex justify-end gap-3">
+                <div className="bg-gray-50 p-4 border-t flex flex-col sm:flex-row justify-end gap-3 shrink-0">
                     <button 
                         onClick={onClose}
-                        className="px-4 py-2 text-gray-500 font-bold text-sm hover:text-gray-700 transition"
+                        className="order-2 sm:order-1 px-6 py-2.5 text-gray-400 font-black text-xs uppercase tracking-widest"
                     >
-                        HỦY BỎ
+                        Hủy bỏ
                     </button>
                     <button 
                         onClick={handleTransfer}
                         disabled={isSubmitting}
-                        className={`px-8 py-2.5 bg-[#1192a8] text-white rounded-lg font-black text-sm shadow-lg hover:bg-teal-700 active:scale-95 transition-all ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`order-1 sm:order-2 px-8 py-3 bg-[#1192a8] text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-teal-500/20 active:scale-95 transition-all ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                        {isSubmitting ? 'ĐANG XỬ LÝ...' : 'XÁC NHẬN CHUYỂN'}
+                        {isSubmitting ? 'Đang xử lý...' : 'Xác nhận chuyển'}
                     </button>
                 </div>
             </div>
 
-            {/* SystemDialog để hiển thị thông báo lỗi/thành công */}
             <SystemDialog 
                 isOpen={dialogConfig.isOpen}
                 title={dialogConfig.title}

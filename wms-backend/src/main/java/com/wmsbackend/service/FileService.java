@@ -20,7 +20,23 @@ public class FileService {
 
         String uploadDir = "uploads/avatars";
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-...
+
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        // Tạo tên file duy nhất: staff_ID_UUID.extension
+        String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
+        String fileExtension = "";
+        int i = originalFileName.lastIndexOf('.');
+        if (i > 0) {
+            fileExtension = originalFileName.substring(i);
+        }
+        String fileName = "staff_" + staffId + "_" + UUID.randomUUID().toString() + fileExtension;
+
+        Path targetLocation = uploadPath.resolve(fileName);
+        Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+
         // Trả về đường dẫn truy cập qua HTTP
         return "/uploads/avatars/" + fileName;
     }

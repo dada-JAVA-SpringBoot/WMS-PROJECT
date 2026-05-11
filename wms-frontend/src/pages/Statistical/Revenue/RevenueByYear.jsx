@@ -55,11 +55,12 @@ export default function RevenueByYear() {
             {detail && !loading && (
                 <>
                     <GroupedBarChart
-                        title="Chi phí vs Doanh thu theo năm"
+                        title="Chi phí, Doanh thu & Hao hụt theo năm"
                         labels={detail.labels}
                         series={[
-                            { label: 'Chi phí',   color: '#e6b06e', data: detail.costData    },
-                            { label: 'Doanh thu', color: '#74b9f5', data: detail.revenueData },
+                            { label: 'Chi phí (Nhập)', color: '#e6b06e', data: detail.costData    },
+                            { label: 'Doanh thu (Xuất)', color: '#74b9f5', data: detail.revenueData },
+                            { label: 'Hao hụt (Thất thoát)', color: '#ef4444', data: detail.lossData },
                         ]}
                     />
                     <LineAreaChart

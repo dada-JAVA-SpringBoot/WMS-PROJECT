@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import axiosClient from './api/axiosClient';
 
 import Sidebar            from './components/layout/sidebar';
 import Login              from './pages/LoginPage.jsx';
@@ -17,11 +18,20 @@ import WarehouseAreaPage  from './pages/WarehouseArea.jsx';
 import Supplier           from './pages/Supplier.jsx';
 import Client             from './pages/Client.jsx';
 import ExportReceipts     from './pages/OutboundOrder.jsx';
+import TransactionHistory from './pages/TransactionHistory.jsx';
+import WavePicking        from './pages/WavePicking.jsx';
+import CycleCounting      from './pages/CycleCounting.jsx';
 import LandingPage        from './pages/LandingPage/LandingPage.jsx';
 import PrivateRoute       from './components/PrivateRoute';
 import UnauthorizedPage   from './pages/UnauthorizedPage.jsx';
 import AttendanceModal    from './components/modals/AttendanceModal';
 import { getAvatarSrc }    from './components/common/avatarUtils';
+
+import { ContextMenuProvider } from './context/ContextMenuContext';
+import GlobalContextMenu from './components/modals/GlobalContextMenu';
+import ScannerModal      from './components/modals/ScannerModal';
+import ProductDetailModal from './components/modals/ProductDetailModal';
+import SystemDialog       from './components/modals/SystemDialog';
 
 // ── Layout chính cho khu vực quản trị ──────────────────────────────────────
 function AdminLayout() {
@@ -35,6 +45,65 @@ function AdminLayout() {
     const [showAttendance, setShowAttendance] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+    // Global Scanner States
+    const [isGlobalScannerOpen, setIsGlobalScannerOpen] = useState(false);
+    const [scannedProduct, setScannedProduct] = useState(null);
+    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [dialog, setDialog] = useState({ isOpen: false, title: '', message: '' });
+
+    useEffect(() => {
+        const handleOpenScanner = () => setIsGlobalScannerOpen(true);
+        const handleKeyDown = (e) => {
+            if (e.key === 'F2') {
+                e.preventDefault();
+                setIsGlobalScannerOpen(true);
+            }
+        };
+
+        window.addEventListener('wms:open-global-scanner', handleOpenScanner);
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('wms:open-global-scanner', handleOpenScanner);
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
+
+    const handleGlobalScan = async (decodedText) => {
+        setIsGlobalScannerOpen(false);
+        const code = decodedText.trim();
+        
+        try {
+            // 1. Thử tìm sản phẩm theo SKU/Barcode
+            const prodRes = await axiosClient.get(`/api/products/search?keyword=${code}`);
+            if (prodRes.data && prodRes.data.length > 0) {
+                setScannedProduct(prodRes.data[0]);
+                setIsProductModalOpen(true);
+                return;
+            }
+
+            // 2. Thử tìm theo Mã vị trí (BinCode)
+            const locRes = await axiosClient.get(`/api/locations/overview`);
+            const foundLoc = locRes.data.find(l => l.binCode === code);
+            if (foundLoc) {
+                navigate('/admin/warehouse-area');
+                // Có thể thêm logic highlight vị trí ở đây
+                return;
+            }
+
+            // 3. Thử tìm theo Mã phiếu (Inbound/Outbound)
+            if (code.startsWith('PN') || code.startsWith('XK') || code.startsWith('WV')) {
+                if (code.startsWith('PN')) navigate(`/admin/inbound?search=${code}`);
+                else if (code.startsWith('XK')) navigate(`/admin/outbound?search=${code}`);
+                else if (code.startsWith('WV')) navigate(`/admin/wave-picking?search=${code}`);
+                return;
+            }
+
+            setDialog({ isOpen: true, title: 'Không tìm thấy', message: `Mã "${code}" không khớp với bất kỳ Sản phẩm, Vị trí hoặc Phiếu nào trong hệ thống.` });
+        } catch (e) {
+            console.error("Lỗi khi xử lý quét mã:", e);
+        }
+    };
+
     const openWorkflow = (nextWorkflow) => {
         if (!nextWorkflow?.kind) return;
         setWorkflow(nextWorkflow);
@@ -45,6 +114,12 @@ function AdminLayout() {
 
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden relative">
+            <SystemDialog 
+                isOpen={dialog.isOpen} 
+                title={dialog.title} 
+                message={dialog.message} 
+                onClose={() => setDialog({ ...dialog, isOpen: false })} 
+            />
             <Sidebar 
                 user={user} 
                 onLogout={logout} 
@@ -69,29 +144,28 @@ function AdminLayout() {
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-auto bg-gray-50 no-scrollbar">
-                    <Routes>
-                        <Route path="home" element={<Home />} />
+                <div className="flex-1 overflow-auto bg-gray-50 no-scrollbar p-0">
+                    <Routes>                        <Route path="home" element={<Home />} />
                         <Route path="products" element={
                             <Inventory onCreateInbound={openWorkflow} onCreateOutbound={openWorkflow} />
                         } />
                         <Route path="warehouse-area" element={
-                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','HANDLER']}>
+                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','HANDLER','QUALITY_CONTROL']}>
                                 <WarehouseAreaPage onCreateInbound={openWorkflow} />
                             </PrivateRoute>
                         } />
                         <Route path="inbound" element={
-                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','ACCOUNTANT']}>
+                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','ACCOUNTANT','QUALITY_CONTROL']}>
                                 <ImportReceiptsPage workflow={workflow} clearWorkflow={clearWorkflow} openWorkflow={openWorkflow} />
                             </PrivateRoute>
                         } />
                         <Route path="outbound" element={
-                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','OUTBOUND_STAFF','ACCOUNTANT']}>
+                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','OUTBOUND_STAFF','ACCOUNTANT','QUALITY_CONTROL']}>
                                 <ExportReceipts workflow={workflow} clearWorkflow={clearWorkflow} openWorkflow={openWorkflow} />
                             </PrivateRoute>
                         } />
                         <Route path="attendance" element={
-                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','CHECKER','ACCOUNTANT','HANDLER']}>
+                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','CHECKER','ACCOUNTANT','HANDLER','QUALITY_CONTROL']}>
                                 <AttendanceHistory />
                             </PrivateRoute>
                         } />
@@ -125,6 +199,21 @@ function AdminLayout() {
                                 <Statistical />
                             </PrivateRoute>
                         } />
+                        <Route path="transactions" element={
+                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','ACCOUNTANT']}>
+                                <TransactionHistory />
+                            </PrivateRoute>
+                        } />
+                        <Route path="wave-picking" element={
+                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER']}>
+                                <WavePicking />
+                            </PrivateRoute>
+                        } />
+                        <Route path="cycle-counting" element={
+                            <PrivateRoute roles={['ADMIN','MANAGER','STOREKEEPER','CHECKER']}>
+                                <CycleCounting />
+                            </PrivateRoute>
+                        } />
                         <Route path="authority" element={
                             <PrivateRoute roles={['ADMIN']}>
                                 <div className="p-8 text-2xl font-bold">Màn hình Phân quyền (Đang xây dựng...)</div>
@@ -138,6 +227,23 @@ function AdminLayout() {
             {showAttendance && user && !user.roles.includes('ADMIN') && (
                 <AttendanceModal user={user} onClose={() => setShowAttendance(false)} />
             )}
+            
+            {/* Global Modals */}
+            <ScannerModal 
+                isOpen={isGlobalScannerOpen} 
+                onClose={() => setIsGlobalScannerOpen(false)} 
+                onScanSuccess={handleGlobalScan} 
+            />
+            {scannedProduct && (
+                <ProductDetailModal 
+                    isOpen={isProductModalOpen} 
+                    onClose={() => { setIsProductModalOpen(false); setScannedProduct(null); }} 
+                    product={scannedProduct} 
+                />
+            )}
+
+            {/* Global Context Menu */}
+            <GlobalContextMenu />
         </div>
     );
 }
@@ -179,7 +285,9 @@ function AppContent() {
 export default function App() {
     return (
         <AuthProvider>
-            <AppContent />
+            <ContextMenuProvider>
+                <AppContent />
+            </ContextMenuProvider>
         </AuthProvider>
     );
 }

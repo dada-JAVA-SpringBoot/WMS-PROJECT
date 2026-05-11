@@ -87,17 +87,23 @@ export default function AccountManagement() {
     };
 
     // ── Helpers Việt hóa có màu ──────────────────────────────
-    const getRoleLabel = (roleName) => {
+    const getRoleLabel = (roleName, contractType) => {
+        if (contractType === 'EXPIRED') {
+            return <span className="px-2 py-0.5 rounded-lg border border-red-200 text-[9px] font-black uppercase tracking-tighter bg-red-50 text-red-600">Đã nghỉ việc</span>;
+        }
+
         const map = {
-            'ADMIN':           { text: 'Quản trị',  cls: 'bg-purple-50 text-purple-600 border-purple-100' },
-            'MANAGER':         { text: 'Quản lý',   cls: 'bg-amber-50 text-amber-600 border-amber-100' },
-            'ACCOUNTANT':      { text: 'Kế toán',   cls: 'bg-blue-50 text-blue-600 border-blue-100' },
-            'STOREKEEPER':     { text: 'Thủ kho',   cls: 'bg-teal-50 text-teal-600 border-teal-100' },
-            'INBOUND_STAFF':   { text: 'NV Nhập',   cls: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-            'OUTBOUND_STAFF':  { text: 'NV Xuất',   cls: 'bg-orange-50 text-orange-600 border-orange-100' },
+            'ADMIN':           { text: 'Quản trị',    cls: 'bg-purple-50 text-purple-600 border-purple-100' },
+            'MANAGER':         { text: 'Quản lý',     cls: 'bg-amber-50 text-amber-600 border-amber-100' },
+            'ACCOUNTANT':      { text: 'Kế toán',     cls: 'bg-blue-50 text-blue-600 border-blue-100' },
+            'STOREKEEPER':     { text: 'Thủ kho',     cls: 'bg-teal-50 text-teal-600 border-teal-100' },
+            'WAREHOUSE_KEEPER':{ text: 'Thủ kho',     cls: 'bg-teal-50 text-teal-600 border-teal-100' },
+            'INBOUND_STAFF':   { text: 'Nhân viên nhập', cls: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+            'OUTBOUND_STAFF':  { text: 'Nhân viên xuất', cls: 'bg-orange-50 text-orange-600 border-orange-100' },
+            'QUALITY_CONTROL': { text: 'Kiểm duyệt (QC)', cls: 'bg-rose-50 text-rose-600 border-rose-100' },
             'HANDLER':         { text: 'Điều chuyển', cls: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
-            'CHECKER':         { text: 'Kiểm kê',   cls: 'bg-slate-50 text-slate-600 border-slate-100' },
-            'INTERN':          { text: 'Thực tập',  cls: 'bg-gray-50 text-gray-500 border-gray-100' },
+            'CHECKER':         { text: 'Kiểm kê',     cls: 'bg-slate-50 text-slate-600 border-slate-100' },
+            'INTERN':          { text: 'Thực tập sinh', cls: 'bg-gray-50 text-gray-500 border-gray-100' },
         };
         const item = map[roleName] || { text: roleName, cls: 'bg-gray-50 text-gray-500' };
         return <span className={`px-2 py-0.5 rounded-lg border text-[9px] font-black uppercase tracking-tighter ${item.cls}`}>{item.text}</span>;

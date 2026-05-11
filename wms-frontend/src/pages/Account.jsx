@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getAvatarSrc } from '../components/common/avatarUtils';
+import { getRoleLabel } from '../api/roleUtils';
 
 const Account = () => {
 
@@ -37,7 +38,7 @@ const Account = () => {
                         <div className="flex items-center gap-2 mt-1">
                             <span className="w-2 h-2 rounded-full bg-green-500"></span>
                             <span className="text-[11px] font-black text-[#1192a8] uppercase tracking-[0.2em]">
-                                {user?.roles?.[0] || 'Nhân viên'}
+                                {getRoleLabel(user?.roles)}
                             </span>
                         </div>
                         <p className="mt-4 text-xs text-gray-400 font-medium italic">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import axiosClient from '../../api/axiosClient';
+import SystemDialog from '../modals/SystemDialog';
 
 // Import icons
 import homeIcon from '../common/icons/home.png';
@@ -16,27 +17,35 @@ import statisticalIcon from '../common/icons/statistical.png';
 import authorityIcon from '../common/icons/authority.png';
 import logoutIcon from '../common/icons/logout.png';
 import historyIcon from '../common/icons/history.png';
+import pickingIcon from '../common/icons/picking.png';
+import inventoryIcon from '../common/icons/inventory.png';
+import scanIcon from '../common/icons/scan.png';
 import logoImg from '../common/icons/storage-stacks.png';
 import { getAvatarSrc } from '../common/avatarUtils';
+import { getRoleLabel } from '../../api/roleUtils';
 
 const menuItems = [
     { id: 'home',           path: '/admin/home',           label: 'Trang chủ',      iconSrc: homeIcon },
-    { id: 'products',       path: '/admin/products',       label: 'Sản phẩm',       iconSrc: productIcon },
-    { id: 'warehouse-area', path: '/admin/warehouse-area', label: 'Khu vực kho',    iconSrc: warehouseIcon,   roles: ['ADMIN', 'MANAGER', 'STOREKEEPER', 'HANDLER'] },
-    { id: 'inbound',        path: '/admin/inbound',        label: 'Phiếu nhập',     iconSrc: inboundIcon,     roles: ['ADMIN', 'MANAGER', 'STOREKEEPER', 'INBOUND_STAFF', 'ACCOUNTANT'] },
-    { id: 'outbound',       path: '/admin/outbound',       label: 'Phiếu xuất',     iconSrc: outboundIcon,    roles: ['ADMIN', 'MANAGER', 'STOREKEEPER', 'OUTBOUND_STAFF', 'ACCOUNTANT'] },
-    { id: 'attendance',     path: '/admin/attendance',     label: 'Lịch sử công',   iconSrc: historyIcon,     roles: ['ADMIN', 'MANAGER', 'STOREKEEPER', 'INBOUND_STAFF', 'OUTBOUND_STAFF', 'CHECKER', 'ACCOUNTANT', 'HANDLER'] },
+    { id: 'products',       path: '/admin/products',       label: 'Sản phẩm',       iconSrc: productIcon,    roles: ['ADMIN', 'MANAGER', 'QUALITY_CONTROL'] },
+    { id: 'warehouse-area', path: '/admin/warehouse-area', label: 'Khu vực kho',    iconSrc: warehouseIcon,   roles: ['ADMIN', 'MANAGER', 'STOREKEEPER', 'HANDLER', 'QUALITY_CONTROL'] },
+    { id: 'inbound',        path: '/admin/inbound',        label: 'Phiếu nhập',     iconSrc: inboundIcon,     roles: ['ADMIN', 'MANAGER', 'STOREKEEPER', 'INBOUND_STAFF', 'ACCOUNTANT', 'QUALITY_CONTROL'] },
+    { id: 'outbound',       path: '/admin/outbound',       label: 'Phiếu xuất',     iconSrc: outboundIcon,    roles: ['ADMIN', 'MANAGER', 'STOREKEEPER', 'OUTBOUND_STAFF', 'ACCOUNTANT', 'QUALITY_CONTROL'] },
+    { id: 'attendance',     path: '/admin/attendance',     label: 'Lịch sử công',   iconSrc: historyIcon,     roles: ['ADMIN', 'MANAGER', 'STOREKEEPER', 'INBOUND_STAFF', 'OUTBOUND_STAFF', 'CHECKER', 'ACCOUNTANT', 'HANDLER', 'QUALITY_CONTROL'] },
     { id: 'attendance-m',   path: '/admin/attendance-manage', label: 'Duyệt chấm công', iconSrc: authorityIcon, roles: ['ADMIN', 'MANAGER'] },
     { id: 'client',         path: '/admin/client',         label: 'Khách hàng',     iconSrc: clientIcon,      roles: ['ADMIN', 'MANAGER', 'OUTBOUND_STAFF', 'ACCOUNTANT'] },
     { id: 'supplier',       path: '/admin/supplier',       label: 'Nhà cung cấp',   iconSrc: supplierIcon,    roles: ['ADMIN', 'MANAGER', 'STOREKEEPER', 'INBOUND_STAFF', 'ACCOUNTANT'] },
     { id: 'staff',          path: '/admin/staff',          label: 'Nhân viên',      iconSrc: staffIcon,       roles: ['ADMIN', 'MANAGER'] },
     { id: 'account',        path: '/admin/account',        label: 'Quản trị TK',    iconSrc: accountIcon,     roles: ['ADMIN', 'MANAGER'] },
     { id: 'statistical',    path: '/admin/statistical',    label: 'Thống kê',       iconSrc: statisticalIcon, roles: ['ADMIN', 'MANAGER', 'ACCOUNTANT'] },
+    { id: 'transactions',   path: '/admin/transactions',   label: 'Lịch sử kho',    iconSrc: historyIcon,     roles: ['ADMIN', 'MANAGER', 'STOREKEEPER', 'ACCOUNTANT'] },
+    { id: 'wave-picking',   path: '/admin/wave-picking',   label: 'Wave Picking',   iconSrc: pickingIcon,     roles: ['ADMIN', 'MANAGER', 'STOREKEEPER'] },
+    { id: 'cycle-counting', path: '/admin/cycle-counting', label: 'Kiểm kê kho',    iconSrc: inventoryIcon,   roles: ['ADMIN', 'MANAGER', 'STOREKEEPER', 'CHECKER'] },
 ];
 
 export default function Sidebar({ user, onLogout, isOpen, onClose }) {
     const [attendance, setAttendance] = useState(null);
     const [loadingAt, setLoadingAt] = useState(false);
+    const [dialog, setDialog] = useState({ isOpen: false, title: '', message: '' });
 
     const fetchAttendance = () => {
         if (user && !user.roles.includes('ADMIN')) {
@@ -58,9 +67,9 @@ export default function Sidebar({ user, onLogout, isOpen, onClose }) {
             const endpoint = 'check-out';
             const res = await axiosClient.post(`/api/attendance/${endpoint}`);
             setAttendance(res.data);
-            alert('Kết thúc ca thành công!');
+            setDialog({ isOpen: true, title: 'Thành công', message: 'Kết thúc ca thành công!' });
         } catch (e) {
-            alert(e.response?.data?.message || 'Có lỗi xảy ra');
+            setDialog({ isOpen: true, title: 'Lỗi', message: e.response?.data?.message || 'Có lỗi xảy ra' });
         } finally {
             setLoadingAt(false);
         }
@@ -73,6 +82,12 @@ export default function Sidebar({ user, onLogout, isOpen, onClose }) {
 
     return (
         <>
+            <SystemDialog 
+                isOpen={dialog.isOpen}
+                title={dialog.title}
+                message={dialog.message}
+                onClose={() => setDialog({ ...dialog, isOpen: false })}
+            />
             {/* Mobile Backdrop */}
             {isOpen && (
                 <div 
@@ -82,7 +97,7 @@ export default function Sidebar({ user, onLogout, isOpen, onClose }) {
             )}
 
             <aside className={`
-                fixed lg:relative inset-y-0 left-0 w-48 bg-white border-r h-full flex flex-col shadow-2xl lg:shadow-xl z-[101] lg:z-20
+                fixed lg:relative inset-y-0 left-0 w-[193px] bg-white border-r h-full flex flex-col shadow-2xl lg:shadow-xl z-[101] lg:z-20
                 transition-transform duration-300 transform
                 ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
             `}>
@@ -108,7 +123,7 @@ export default function Sidebar({ user, onLogout, isOpen, onClose }) {
                                 {user?.fullName || 'User'}
                             </p>
                             <p className="text-[7px] text-[#1192a8] font-black uppercase tracking-widest">
-                                {user?.roles?.[0] || 'Nhân viên'}
+                                {getRoleLabel(user?.roles)}
                             </p>
                         </div>
                     </div>
@@ -143,7 +158,7 @@ export default function Sidebar({ user, onLogout, isOpen, onClose }) {
                 </div>
 
                 {/* Navigation Menu */}
-                <nav className="flex-1 overflow-y-auto p-1.5 space-y-1 custom-scrollbar">
+                <nav className="flex-1 overflow-y-auto p-1.5 space-y-1 no-scrollbar">
                     {filteredMenu.map((item) => (
                         <NavLink
                             key={item.id}

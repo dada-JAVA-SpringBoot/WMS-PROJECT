@@ -39,9 +39,6 @@ export default function Login({ onLoginSuccess }) {
 
                 {/* ── Header ── */}
                 <div className="bg-gradient-to-r from-[#00529c] to-[#1192a8] px-8 py-8 text-center">
-                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <span className="text-4xl">🏭</span>
-                    </div>
                     <h1 className="text-white text-2xl font-black tracking-tight">WMS System</h1>
                     <p className="text-white/70 text-sm mt-1">Hệ thống quản lý kho hàng</p>
                 </div>
@@ -118,11 +115,6 @@ export default function Login({ onLoginSuccess }) {
                         {loading && <span className="animate-spin text-base">↻</span>}
                         {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
                     </button>
-
-                    <p className="text-center text-xs text-gray-400">
-                        Tài khoản mặc định:{' '}
-                        <span className="font-mono font-bold text-gray-600">admin / Admin@123</span>
-                    </p>
                 </div>
             </div>
         </div>

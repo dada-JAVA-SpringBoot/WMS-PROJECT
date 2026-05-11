@@ -18,28 +18,36 @@ import java.util.List;
 @RequestMapping("/api/products")
 public class ProductController {
 
-    @Autowired
-    private ProductRepository productRepository;
+    private final ProductRepository productRepository;
+    private final com.wmsbackend.repository.ProductUnitConversionRepository conversionRepository;
 
-    @Autowired
-    private com.wmsbackend.repository.ProductUnitConversionRepository conversionRepository;
+    public ProductController(ProductRepository productRepository, 
+                             com.wmsbackend.repository.ProductUnitConversionRepository conversionRepository) {
+        this.productRepository = productRepository;
+        this.conversionRepository = conversionRepository;
+    }
 
-    // GET — tất cả role xem được sản phẩm
-    // (Lấy danh sách sản phẩm cùng tổng tồn kho)
-    @GetMapping("/details")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','CHECKER')")
-    public List<ProductDTO> getProducts() {
+    // GET - Trả về danh sách sản phẩm đầy đủ thông tin tồn kho cho các vai trò vận hành
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL','HANDLER')")
+    public ResponseEntity<List<ProductDTO>> getAllProducts() {
         List<ProductDTO> products = productRepository.findAllProductsWithTotalStock();
-        // Gắn danh sách quy đổi cho từng sản phẩm
         for (ProductDTO p : products) {
             p.setConversions(conversionRepository.findByProductId(p.getId()));
         }
-        return products;
+        return ResponseEntity.ok(products);
+    }
+
+    // GET — alias cho /details (tương thích ngược)
+    @GetMapping("/details")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL','HANDLER')")
+    public ResponseEntity<List<ProductDTO>> getProducts() {
+        return getAllProducts();
     }
 
     // 1b. Lấy danh sách quy đổi đơn vị của một sản phẩm
     @GetMapping("/{id}/conversions")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','CHECKER')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','CHECKER','QUALITY_CONTROL')")
     public List<com.wmsbackend.entity.ProductUnitConversion> getConversions(@PathVariable Integer id) {
         return conversionRepository.findByProductId(id);
     }

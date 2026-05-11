@@ -41,6 +41,7 @@ public class StaffController {
             Map<String, Object> map = new HashMap<>();
             map.put("id", s.getId());
             map.put("fullName", s.getFullName());
+            map.put("roles", s.getRoles());
             return map;
         }).collect(Collectors.toList());
     }

@@ -22,7 +22,7 @@ public class InboundOrderDetail {
     @Column(name = "LocationId", nullable = false)
     private Integer locationId;
 
-    @Column(name = "Quantity", nullable = false)
+    @Column(name = "QuantityReceived", nullable = false)
     private BigDecimal quantityReceived;
 
     @Column(name = "QuantityExpected")
@@ -34,10 +34,54 @@ public class InboundOrderDetail {
     @Column(name = "ItemCondition", length = 100)
     private String itemCondition;
 
+    @Column(name = "QuantityIntact")
+    private BigDecimal quantityIntact;
+
+    @Column(name = "QuantityDamaged")
+    private BigDecimal quantityDamaged;
+
+    @Column(name = "QualityRating", length = 50)
+    private String qualityRating;
+
+    @Column(name = "QcNotes", length = 500)
+    private String qcNotes;
+
     @Transient
     private String batchCode;
 
     // Getter Setter
+
+    public BigDecimal getQuantityIntact() {
+        return quantityIntact;
+    }
+
+    public void setQuantityIntact(BigDecimal quantityIntact) {
+        this.quantityIntact = quantityIntact;
+    }
+
+    public BigDecimal getQuantityDamaged() {
+        return quantityDamaged;
+    }
+
+    public void setQuantityDamaged(BigDecimal quantityDamaged) {
+        this.quantityDamaged = quantityDamaged;
+    }
+
+    public String getQualityRating() {
+        return qualityRating;
+    }
+
+    public void setQualityRating(String qualityRating) {
+        this.qualityRating = qualityRating;
+    }
+
+    public String getQcNotes() {
+        return qcNotes;
+    }
+
+    public void setQcNotes(String qcNotes) {
+        this.qcNotes = qcNotes;
+    }
 
     public String getBatchCode() {
         return batchCode;

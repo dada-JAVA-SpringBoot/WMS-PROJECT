@@ -9,6 +9,8 @@ import com.wmsbackend.repository.InboundOrderDetailRepository;
 import com.wmsbackend.repository.InboundOrderRepository;
 import com.wmsbackend.repository.InventoryRepository;
 import com.wmsbackend.repository.LocationRepository;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,7 +24,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/location-overview")
+@RequestMapping({"/api/location-overview", "/api/locations"})
 @CrossOrigin(origins = "http://localhost:5173")
 public class LocationOverviewController {
 
@@ -42,7 +44,8 @@ public class LocationOverviewController {
     }
 
     @GetMapping
-    public List<LocationOverviewDTO> getOverview() {
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL','CHECKER','HANDLER')")
+    public ResponseEntity<List<LocationOverviewDTO>> getOverview() {
         List<Location> locations = locationRepo.findAll();
         List<Integer> locationIds = locations.stream().map(Location::getId).toList();
 
@@ -70,7 +73,7 @@ public class LocationOverviewController {
             }
         }
 
-        return locations.stream().map(location -> {
+        List<LocationOverviewDTO> dtos = locations.stream().map(location -> {
             BigDecimal onHand = safe(onHandMap.get(location.getId()));
             BigDecimal allocated = safe(allocatedMap.get(location.getId()));
             BigDecimal expected = safe(expectedMap.get(location.getId()));
@@ -96,11 +99,13 @@ public class LocationOverviewController {
             dto.setCapacity(capacity);
             dto.setUtilizationPercent(utilization);
 
-            String[] status = resolveStatus(onHand, allocated, expected, capacity, utilization);
-            dto.setStatusCode(status[0]);
-            dto.setStatusLabel(status[1]);
+            String[] statusArr = resolveStatus(onHand, allocated, expected, capacity, utilization);
+            dto.setStatusCode(statusArr[0]);
+            dto.setStatusLabel(statusArr[1]);
             return dto;
         }).toList();
+
+        return ResponseEntity.ok(dtos);
     }
 
     private BigDecimal safe(BigDecimal value) {

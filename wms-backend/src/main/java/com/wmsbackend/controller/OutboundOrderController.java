@@ -23,16 +23,21 @@ public class OutboundOrderController {
     private OutboundOrderRepository outboundOrderRepository;
 
     @Autowired
-    private OutboundOrderDetailRepository detailRepo;
+    private OutboundOrderDetailRepository outboundOrderDetailRepository;
 
     @Autowired
-    private InventoryRepository inventoryRepo;
+    private com.wmsbackend.repository.InventoryRepository inventoryRepo;
 
     // GET danh sách phiếu xuất
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','OUTBOUND_STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','WAREHOUSE_KEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL')")
     public List<OutboundOrder> getAllOrders() {
         return outboundOrderRepository.findAll();
+    }
+
+    @GetMapping("/{id}/details")
+    public List<OutboundOrderDetail> getDetails(@PathVariable Long id) {
+        return outboundOrderDetailRepository.findByOutboundOrderId(id);
     }
 
     // POST tạo phiếu xuất
@@ -40,30 +45,12 @@ public class OutboundOrderController {
     @PreAuthorize("hasAnyRole('ADMIN','OUTBOUND_STAFF')")
     @Transactional
     public OutboundOrder createOrder(@RequestBody OutboundOrder newOrder) {
-        List<OutboundOrderDetail> items = newOrder.getItems();
-        newOrder.setItems(null); // Tạm thời null để save cha lấy ID
-        
-        OutboundOrder savedOrder = outboundOrderRepository.save(newOrder);
-        
-        if (items != null) {
-            for (OutboundOrderDetail detail : items) {
-                detail.setOutboundOrderId(savedOrder.getId());
-                detailRepo.save(detail);
-            }
-            savedOrder.setItems(items);
-        }
-
-        // Nếu trạng thái là ALLOCATED ngay từ đầu, thực hiện trừ kho (hoặc giữ chỗ)
-        if ("ALLOCATED".equalsIgnoreCase(savedOrder.getStatus())) {
-            applyInventoryDeduction(savedOrder.getId());
-        }
-        
-        return savedOrder;
+        return outboundOrderRepository.save(newOrder);
     }
 
     // PUT cập nhật trạng thái
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','OUTBOUND_STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','OUTBOUND_STAFF','QUALITY_CONTROL')")
     @Transactional
     public String updateStatus(@PathVariable Long id, @RequestBody StatusUpdateRequest request) {
         OutboundOrder order = outboundOrderRepository.findById(id).orElse(null);
@@ -100,7 +87,7 @@ public class OutboundOrderController {
     }
 
     private void adjustAllocation(Long orderId, int direction) {
-        List<OutboundOrderDetail> details = detailRepo.findByOutboundOrderId(orderId);
+        List<OutboundOrderDetail> details = outboundOrderDetailRepository.findByOutboundOrderId(orderId);
         for (OutboundOrderDetail item : details) {
             Inventory stock = inventoryRepo.findByProductIdAndLocationIdAndBatchId(
                     item.getProductId(), item.getLocationId(), item.getBatchId());
@@ -114,7 +101,7 @@ public class OutboundOrderController {
     }
 
     private void adjustOnHand(Long orderId, int direction) {
-        List<OutboundOrderDetail> details = detailRepo.findByOutboundOrderId(orderId);
+        List<OutboundOrderDetail> details = outboundOrderDetailRepository.findByOutboundOrderId(orderId);
         for (OutboundOrderDetail item : details) {
             Inventory stock = inventoryRepo.findByProductIdAndLocationIdAndBatchId(
                     item.getProductId(), item.getLocationId(), item.getBatchId());

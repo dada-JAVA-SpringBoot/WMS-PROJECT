@@ -8,9 +8,13 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface BatchRepository extends JpaRepository<Batch, Integer> {
+
+    List<Batch> findByProductId(Integer productId);
+    Optional<Batch> findByProductIdAndBatchCode(Integer productId, String batchCode);
 
     // ── Lô hàng sắp hết hạn (còn tồn kho) ────────────────────────────────
     // Trả về: [productName, sku, batchCode, expiryDate, totalQty]
