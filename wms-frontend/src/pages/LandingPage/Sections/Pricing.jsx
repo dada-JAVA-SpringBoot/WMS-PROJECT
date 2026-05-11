@@ -93,7 +93,7 @@ const Pricing = ({ onEnter }) => {
                 { text: 'Bán hàng online trên sàn TMĐT, TikTok, Facebook, Instagram, Zalo' },
                 { text: 'Chấm công, tính lương 50 NV/ cửa hàng' },
                 { text: 'Tạo website bán hàng' },
-                { text: 'Phân tích kinh doanh thông minh với AI' },
+                { text: 'Trợ lý ảo hỗ trợ vận hành' },
                 { text: 'Hỗ trợ kết nối API' },
                 { text: 'Miễn phí hóa đơn điện tử ', isNew: true },
                 { text: 'Miễn phí chữ ký số', isNew: true },

@@ -1,5 +1,15 @@
 import React from 'react';
-
+import img5sao from '../../../components/common/icons/a14.png';
+import img15 from "../../../components/common/icons/a15.png";
+import img16 from "../../../components/common/icons/a16.png";
+import img17 from "../../../components/common/icons/a17.png";
+import img18 from "../../../components/common/icons/a18.png";
+import img19 from "../../../components/common/icons/a19.png";
+import img20 from "../../../components/common/icons/a20.png";
+import img21 from "../../../components/common/icons/a21.png";
+import img22 from "../../../components/common/icons/a22.png";
+import img23 from "../../../components/common/icons/a23.png";
+import img24 from "../../../components/common/icons/a24.png";
 const About = () => {
     return (
         <section className="py-24 bg-[#f4f8fb]">
@@ -37,7 +47,13 @@ const About = () => {
                         </div>
                         <div className="flex justify-center">
                             <div className="w-80 h-64 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500">
-                                [ẢNH]
+                                <div className="w-80 h-64 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500">
+                                    <img
+                                        src={img15}
+                                        alt="Màn hình Quản lý Danh mục Sản phẩm"
+                                        className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -45,7 +61,11 @@ const About = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-20">
                         <div className="order-2 md:order-1 flex justify-center">
                             <div className="w-80 h-64 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500">
-                                [ẢNH]
+                                <img
+                                    src={img22}
+                                    alt="Màn hình Quản lý Danh mục Sản phẩm"
+                                    className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                                />
                             </div>
                         </div>
                         <div className="order-1 md:order-2">
@@ -65,7 +85,11 @@ const About = () => {
                         </div>
                         <div className="flex justify-center">
                             <div className="w-80 h-64 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500">
-                                [ẢNH]
+                                <img
+                                    src={img5sao}
+                                    alt="Màn hình Quản lý Danh mục Sản phẩm"
+                                    className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                                />
                             </div>
                         </div>
                     </div>
@@ -73,7 +97,11 @@ const About = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-20">
                         <div className="order-2 md:order-1 flex justify-center">
                             <div className="w-80 h-64 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500">
-                                [ẢNH]
+                                <img
+                                    src={img24}
+                                    alt="Màn hình Quản lý Danh mục Sản phẩm"
+                                    className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                                />
                             </div>
                         </div>
                         <div className="order-1 md:order-2">
@@ -93,7 +121,12 @@ const About = () => {
                         </div>
                         <div className="flex justify-center">
                             <div className="w-80 h-64 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500">
-                                [ẢNH]
+                                <img
+                                    src={img23}
+                                    alt="Màn hình Quản lý Danh mục Sản phẩm"
+                                    // Dùng h-auto để ảnh không bị cắt xén
+                                    className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                                />
                             </div>
                         </div>
                     </div>
@@ -107,7 +140,11 @@ const About = () => {
                     </p>
                     <div className="flex justify-center">
                         <div className="w-[500px] h-[400px] bg-gray-200 rounded-xl flex items-center justify-center text-gray-500">
-                            [ẢNH]
+                            <img
+                                src={img17}
+                                alt="Màn hình Quản lý Danh mục Sản phẩm"
+                                className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                            />
                         </div>
                     </div>
                 </div>
@@ -131,7 +168,11 @@ const About = () => {
                         </div>
                         <div className="flex justify-center">
                             <div className="w-80 h-64 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500">
-                                [ẢNH]
+                                <img
+                                    src={img20}
+                                    alt="Màn hình Quản lý Danh mục Sản phẩm"
+                                    className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                                />
                             </div>
                         </div>
                     </div>
@@ -139,7 +180,11 @@ const About = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-20">
                         <div className="order-2 md:order-1 flex justify-center">
                             <div className="w-80 h-64 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500">
-                                [ẢNH]
+                                <img
+                                    src={img21}
+                                    alt="Màn hình Quản lý Danh mục Sản phẩm"
+                                    className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                                />
                             </div>
                         </div>
                         <div className="order-1 md:order-2">
@@ -159,7 +204,11 @@ const About = () => {
                         </div>
                         <div className="flex justify-center">
                             <div className="w-80 h-64 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500">
-                                [ẢNH]
+                                <img
+                                    src={img18}
+                                    alt="Màn hình Quản lý Danh mục Sản phẩm"
+                                    className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                                />
                             </div>
                         </div>
                     </div>
@@ -167,7 +216,11 @@ const About = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-20">
                         <div className="order-2 md:order-1 flex justify-center">
                             <div className="w-80 h-64 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500">
-                                [ẢNH]
+                                <img
+                                    src={img19}
+                                    alt="Màn hình Quản lý Danh mục Sản phẩm"
+                                    className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                                />
                             </div>
                         </div>
                         <div className="order-1 md:order-2">
@@ -189,7 +242,13 @@ const About = () => {
                         </div>
                         <div className="flex justify-center">
                             <div className="w-80 h-64 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500">
-                                [ẢNH]
+                                <div className="w-80 h-64 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500">
+                                    <img
+                                        src={img16}
+                                        alt="Màn hình Quản lý Danh mục Sản phẩm"
+                                        className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

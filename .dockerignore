@@ -12,7 +12,7 @@ wms-backend/mvnw.cmd
 # Frontend junk
 wms-frontend/node_modules
 wms-frontend/dist
-wms-frontend/.env
+.env
 wms-frontend/.env.local
 
 # Docker junk

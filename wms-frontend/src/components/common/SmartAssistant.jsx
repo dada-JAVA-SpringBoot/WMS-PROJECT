@@ -7,23 +7,28 @@ export default function SmartAssistant({ stats, inboundOrders, outboundOrders, c
 
     const roles = user?.roles || [];
     
-    // AI Analysis Logic (Heuristic-based)
+    // Expert System Analysis Logic (Heuristic-based)
     const analysis = useMemo(() => {
         if (!user) return null;
         
         const tasks = [];
         const recommendations = [];
 
-        // 1. Phân tích cho Quản lý
-        if (roles.includes('ADMIN') || roles.includes('MANAGER')) {
+        // 1. Phân tích cho Quản lý & Kế toán
+        if (roles.includes('ADMIN') || roles.includes('MANAGER') || roles.includes('ACCOUNTANT')) {
             const occupancy = stats?.warehouseOccupancyRate || 0;
             if (occupancy > 85) recommendations.push("Kho đã gần đầy ( >85% ). Cân nhắc tối ưu hóa vị trí hoặc xuất bớt hàng cũ.");
             if (stats?.lowStockCount > 0) recommendations.push(`Có ${stats.lowStockCount} mặt hàng dưới định mức an toàn. Cần lên kế hoạch nhập hàng.`);
-            tasks.push(`Theo dõi ${inboundOrders.length} đơn nhập và ${outboundOrders.length} đơn xuất đang xử lý.`);
+            
+            if (roles.includes('ACCOUNTANT')) {
+                recommendations.push("Kiểm tra báo cáo tồn kho giá trị cao để tối ưu dòng vốn.");
+            } else {
+                tasks.push(`Theo dõi ${inboundOrders.length} đơn nhập và ${outboundOrders.length} đơn xuất đang xử lý.`);
+            }
         }
 
-        // 2. Phân tích cho Thủ kho / Nhân viên kho
-        if (roles.includes('STOREKEEPER') || roles.includes('WAREHOUSE_KEEPER')) {
+        // 2. Phân tích cho Thủ kho / Kiểm kê / Nhân viên kho / Nhân viên điều chuyển
+        if (roles.includes('STOREKEEPER') || roles.includes('WAREHOUSE_KEEPER') || roles.includes('INVENTORY_CHECKER') || roles.includes('CHECKER') || roles.includes('HANDLER')) {
             if (cycleCounts.length > 0) {
                 tasks.push(`Hoàn thành ${cycleCounts.length} đợt kiểm kê được giao.`);
                 recommendations.push("Ưu tiên kiểm kê trước giờ xuất hàng cao điểm để đảm bảo số liệu chính xác.");
@@ -31,15 +36,23 @@ export default function SmartAssistant({ stats, inboundOrders, outboundOrders, c
             if (stats?.nearExpiryProducts?.length > 0) {
                 recommendations.push(`Có ${stats.nearExpiryProducts.length} lô hàng sắp hết hạn. Cần kiểm tra tình trạng thực tế để ưu tiên xuất.`);
             }
+            if (roles.includes('HANDLER')) {
+                recommendations.push("Theo dõi các vị trí trống để tối ưu hóa việc sắp xếp hàng hóa khi điều chuyển.");
+            }
         }
 
-        // 3. Phân tích cho Nhân viên Nhập/Xuất
-        if (roles.includes('INBOUND_STAFF') || roles.includes('OUTBOUND_STAFF')) {
-            const pendingIn = inboundOrders.filter(o => o.status === 'PENDING' || o.status === 'DRAFT').length;
-            const pendingOut = outboundOrders.filter(o => o.status === 'ALLOCATED' || o.status === 'PICKING').length;
+        // 3. Phân tích cho Nhân viên Nhập/Xuất & QC
+        if (roles.includes('INBOUND_STAFF') || roles.includes('OUTBOUND_STAFF') || roles.includes('QUALITY_CONTROL')) {
+            const pendingIn = inboundOrders.filter(o => o.status === 'PENDING' || o.status === 'DRAFT' || o.status === 'ORDERED').length;
+            const pendingOut = outboundOrders.filter(o => o.status === 'ALLOCATED' || o.status === 'PICKING' || o.status === 'DRAFT').length;
             
-            if (pendingIn > 0) tasks.push(`Xử lý ${pendingIn} phiếu nhập kho đang đợi.`);
-            if (pendingOut > 0) tasks.push(`Chuẩn bị hàng cho ${pendingOut} lệnh xuất kho.`);
+            if (roles.includes('QUALITY_CONTROL')) {
+                const needsQC = inboundOrders.filter(o => o.status === 'PENDING' || o.status === 'ORDERED').length;
+                if (needsQC > 0) tasks.push(`Có ${needsQC} lô hàng nhập mới cần kiểm duyệt chất lượng.`);
+            } else {
+                if (pendingIn > 0) tasks.push(`Xử lý ${pendingIn} phiếu nhập kho đang đợi.`);
+                if (pendingOut > 0) tasks.push(`Chuẩn bị hàng cho ${pendingOut} lệnh xuất kho.`);
+            }
             
             if (pendingIn + pendingOut > 10) recommendations.push("Lượng đơn hàng hôm nay khá lớn. Hãy sử dụng Wave Picking để tăng tốc độ lấy hàng.");
         }
@@ -56,7 +69,7 @@ export default function SmartAssistant({ stats, inboundOrders, outboundOrders, c
                 <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 w-80 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
                     <div className="bg-gradient-to-r from-[#1192a8] to-teal-600 p-6 text-white">
                         <div className="flex justify-between items-start mb-2">
-                            <h3 className="font-black uppercase tracking-tight text-sm">Trợ lý Thông minh (AI)</h3>
+                            <h3 className="font-black uppercase tracking-tight text-sm">Hệ thống Chuyên gia (Expert System)</h3>
                             <button onClick={() => setIsOpen(false)} className="opacity-60 hover:opacity-100">×</button>
                         </div>
                         <p className="text-[10px] text-teal-50 opacity-80 uppercase font-bold">Phân tích công việc ngày: {new Date().toLocaleDateString('vi-VN')}</p>
@@ -99,7 +112,7 @@ export default function SmartAssistant({ stats, inboundOrders, outboundOrders, c
                     </div>
 
                     <div className="p-4 bg-gray-50 border-t flex justify-center">
-                        <span className="text-[9px] font-bold text-gray-400 uppercase">Hỗ trợ vận hành bởi WMS AI Engine</span>
+                        <span className="text-[9px] font-bold text-gray-400 uppercase">Hỗ trợ vận hành bởi WMS Expert System Engine</span>
                     </div>
                 </div>
             )}

@@ -165,13 +165,12 @@ export default function Home() {
                 />
             )}
 
-            {/* Smart AI Assistant Mascot */}
-            <SmartAssistant 
+            {/* Expert System Mascot */}
+            <SmartAssistant
                 stats={stats}
                 inboundOrders={inboundOrders}
                 outboundOrders={outboundOrders}
                 cycleCounts={cycleCounts}
-            />
-        </div>
+            />        </div>
     );
 }
