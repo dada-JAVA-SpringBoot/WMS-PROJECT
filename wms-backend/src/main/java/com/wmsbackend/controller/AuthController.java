@@ -61,7 +61,7 @@ public class AuthController {
                 .toList();
 
         return ResponseEntity.ok(new LoginResponse(
-                token, staff.getUsername(), staff.getFullName(), staff.getEmployeeCode(), staff.getAvatar(), roles
+                token, staff.getId(), staff.getUsername(), staff.getFullName(), staff.getEmployeeCode(), staff.getAvatar(), roles
         ));
     }
 
@@ -133,7 +133,7 @@ public class AuthController {
         Staff staff     = staffRepository.findByUsername(username).orElseThrow();
         List<String> roles = jwtUtil.extractRoles(token);
         return ResponseEntity.ok(new LoginResponse(
-                token, staff.getUsername(), staff.getFullName(), staff.getEmployeeCode(), staff.getAvatar(), roles
+                token, staff.getId(), staff.getUsername(), staff.getFullName(), staff.getEmployeeCode(), staff.getAvatar(), roles
         ));
     }
 }

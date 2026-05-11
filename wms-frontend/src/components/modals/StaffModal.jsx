@@ -16,10 +16,19 @@ const WAREHOUSE_ROLES = [
     { value: 'WAREHOUSE_KEEPER',   label: 'Thủ kho (Storekeeper)' },
     { value: 'INBOUND_STAFF',      label: 'Nhân viên nhập kho' },
     { value: 'OUTBOUND_STAFF',     label: 'Nhân viên xuất kho' },
+    { value: 'QUALITY_CONTROL',    label: 'Kiểm duyệt (QC) — Kiểm tra, duyệt phiếu' },
     { value: 'INVENTORY_CHECKER',  label: 'Kiểm kê viên (Checker)' },
     { value: 'HANDLER',            label: 'NV Điều chuyển (Internal)' },
     { value: 'ACCOUNTANT',         label: 'Kế toán kho' },
     { value: 'INTERN',             label: 'Thực tập sinh' },
+];
+
+const PRESET_SHIFTS = [
+    { label: '-- Tùy chỉnh --', start: '', end: '' },
+    { label: 'Ca Sáng (06:00 - 14:00)', start: '06:00', end: '14:00' },
+    { label: 'Ca Chiều (14:00 - 22:00)', start: '14:00', end: '22:00' },
+    { label: 'Ca Đêm (22:00 - 06:00)', start: '22:00', end: '06:00' },
+    { label: 'Giờ Hành Chính (08:00 - 17:00)', start: '08:00', end: '17:00' },
 ];
 
 const emptyForm = {
@@ -27,6 +36,7 @@ const emptyForm = {
     phone: '', email: '', hireDate: '', contractType: 'PERMANENT',
     warehouseRole: 'INBOUND_STAFF', notes: '',
     username: '', password: '',
+    shiftStartTime: '08:00', shiftEndTime: '17:00'
 };
 
 export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
@@ -35,28 +45,44 @@ export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
     const [form, setForm] = useState(emptyForm);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
+    const [selectedPreset, setSelectedPreset] = useState(0);
 
     useEffect(() => {
         if (isOpen) {
-            setForm(editData ? {
-                employeeCode:  editData.employeeCode  || '',
-                fullName:      editData.fullName      || '',
-                gender:        editData.gender        || 'MALE',
-                dateOfBirth:   editData.dateOfBirth   || '',
-                phone:         editData.phone         || '',
-                email:         editData.email         || '',
-                hireDate:      editData.hireDate      || '',
-                contractType:  editData.contractType  || 'PERMANENT',
-                warehouseRole: editData.warehouseRole || 'INBOUND_STAFF',
-                notes:         editData.notes         || '',
-                username:      editData.username      || '',
-                password:      '', // Không load password cũ
-            } : emptyForm);
+            if (editData) {
+                setForm({
+                    employeeCode:  editData.employeeCode  || '',
+                    fullName:      editData.fullName      || '',
+                    gender:        editData.gender        || 'MALE',
+                    dateOfBirth:   editData.dateOfBirth   || '',
+                    phone:         editData.phone         || '',
+                    email:         editData.email         || '',
+                    hireDate:      editData.hireDate      || '',
+                    contractType:  editData.contractType  || 'PERMANENT',
+                    warehouseRole: editData.warehouseRole || 'INBOUND_STAFF',
+                    notes:         editData.notes         || '',
+                    username:      editData.username      || '',
+                    password:      '',
+                    shiftStartTime: editData.shiftStartTime || '08:00',
+                    shiftEndTime:   editData.shiftEndTime   || '17:00'
+                });
+            } else {
+                setForm(emptyForm);
+            }
             setErrors({});
+            setSelectedPreset(0);
         }
     }, [isOpen, editData]);
 
     if (!isOpen) return null;
+
+    const handlePresetChange = (idx) => {
+        const preset = PRESET_SHIFTS[idx];
+        setSelectedPreset(idx);
+        if (preset.start && preset.end) {
+            setForm(prev => ({ ...prev, shiftStartTime: preset.start, shiftEndTime: preset.end }));
+        }
+    };
 
     const validate = () => {
         const e = {};
@@ -99,33 +125,33 @@ export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-2 md:p-4">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[98vh] md:max-h-[90vh]">
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-[#00529c] to-[#1192a8] px-8 py-5 flex items-center justify-between">
-                    <div>
-                        <h2 className="text-white font-bold text-lg">
+                <div className="bg-gradient-to-r from-[#00529c] to-[#1192a8] px-5 md:px-8 py-4 md:py-5 flex items-center justify-between shrink-0">
+                    <div className="min-w-0">
+                        <h2 className="text-white font-bold text-base md:text-lg truncate">
                             {isEdit ? 'Chỉnh sửa nhân sự' : 'Thêm nhân sự & Tài khoản'}
                         </h2>
-                        <p className="text-white/70 text-xs mt-0.5">
+                        <p className="text-white/70 text-[10px] md:text-xs mt-0.5 truncate">
                             {isEdit ? `Đang sửa: ${editData.fullName}` : 'Tạo hồ sơ nhân viên kèm tài khoản đăng nhập'}
                         </p>
                     </div>
-                    <button onClick={onClose} className="text-white/70 hover:text-white text-2xl leading-none transition-colors">×</button>
+                    <button onClick={onClose} className="text-white/70 hover:text-white text-2xl leading-none transition-colors ml-4">&times;</button>
                 </div>
 
                 {/* Body */}
-                <div className="px-8 py-6 space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                <div className="px-5 md:px-8 py-4 md:py-6 space-y-4 md:space-y-5 overflow-y-auto flex-1 custom-scrollbar">
 
                     {/* Section: Tài khoản đăng nhập */}
                     {!isEdit && (
                         <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
-                            <h3 className="text-[#00529c] font-bold text-sm mb-3 flex items-center gap-2">
+                            <h3 className="text-[#00529c] font-black text-[11px] md:text-sm mb-3 flex items-center gap-2 uppercase">
                                 <span className="w-5 h-5 bg-[#00529c] text-white rounded-full flex items-center justify-center text-[10px]">1</span>
                                 THÔNG TIN ĐĂNG NHẬP
                             </h3>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <Field label="Tên đăng nhập" required value={form.username}
                                     onChange={v => handleChange('username', v)}
                                     placeholder="VD: nguyenvan_a" error={errors.username} />
@@ -136,13 +162,13 @@ export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
                         </div>
                     )}
 
-                    <h3 className="text-gray-800 font-bold text-sm mb-1 flex items-center gap-2">
+                    <h3 className="text-gray-800 font-black text-[11px] md:text-sm mb-1 flex items-center gap-2 uppercase tracking-wide">
                         <span className="w-5 h-5 bg-gray-800 text-white rounded-full flex items-center justify-center text-[10px]">{isEdit ? '1' : '2'}</span>
                         HỒ SƠ CÁ NHÂN
                     </h3>
 
                     {/* Hàng 1: Mã NV + Họ tên */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Field label="Mã nhân viên" required value={form.employeeCode}
                             onChange={v => handleChange('employeeCode', v)}
                             placeholder="VD: EMP-001" error={errors.employeeCode} disabled={isEdit} />
@@ -152,7 +178,7 @@ export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
                     </div>
 
                     {/* Hàng 2: Giới tính + Ngày sinh */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <SelectField label="Giới tính" value={form.gender}
                             onChange={v => handleChange('gender', v)}
                             options={[{ value: 'MALE', label: 'Nam' }, { value: 'FEMALE', label: 'Nữ' }]} />
@@ -161,7 +187,7 @@ export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
                     </div>
 
                     {/* Hàng 3: SĐT + Email */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Field label="Số điện thoại" type="tel" value={form.phone}
                             onChange={v => handleChange('phone', v)} placeholder="VD: 0901234567" />
                         <Field label="Email" type="email" value={form.email}
@@ -169,13 +195,13 @@ export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
                             placeholder="VD: nhanvien@wms.vn" error={errors.email} />
                     </div>
 
-                    <h3 className="text-gray-800 font-bold text-sm mb-1 flex items-center gap-2">
+                    <h3 className="text-gray-800 font-black text-[11px] md:text-sm mb-1 flex items-center gap-2 uppercase tracking-wide">
                         <span className="w-5 h-5 bg-gray-800 text-white rounded-full flex items-center justify-center text-[10px]">{isEdit ? '2' : '3'}</span>
                         CÔNG VIỆC & PHÂN QUYỀN
                     </h3>
 
                     {/* Hàng 4: Ngày vào làm + Hợp đồng */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Field label="Ngày vào làm" type="date" value={form.hireDate}
                             onChange={v => handleChange('hireDate', v)} />
                         <SelectField label="Loại hợp đồng" value={form.contractType}
@@ -184,29 +210,64 @@ export default function StaffModal({ isOpen, onClose, onSaved, editData }) {
 
                     {/* Hàng 5: Vai trò */}
                     <div className="grid grid-cols-1">
-                        <SelectField label="Vai trò (Hệ thống sẽ tự động gán quyền tương ứng)" value={form.warehouseRole}
+                        <SelectField label="Vai trò gán quyền" value={form.warehouseRole}
                             onChange={v => handleChange('warehouseRole', v)} options={WAREHOUSE_ROLES} />
+                    </div>
+
+                    <h3 className="text-[#1192a8] font-black text-[11px] md:text-sm mb-1 flex items-center gap-2 uppercase tracking-wide">
+                        <span className="w-5 h-5 bg-[#1192a8] text-white rounded-full flex items-center justify-center text-[10px]">{isEdit ? '3' : '4'}</span>
+                        THIẾT LẬP CA LÀM VIỆC
+                    </h3>
+
+                    <div className="bg-cyan-50/50 p-4 rounded-2xl border border-cyan-100 space-y-4">
+                        <SelectField 
+                            label="Chọn nhanh khung giờ" 
+                            value={selectedPreset}
+                            onChange={v => handlePresetChange(parseInt(v))}
+                            options={PRESET_SHIFTS.map((p, i) => ({ value: i, label: p.label }))} 
+                        />
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Giờ bắt đầu</label>
+                                <input 
+                                    type="time" 
+                                    value={form.shiftStartTime}
+                                    onChange={e => handleChange('shiftStartTime', e.target.value)}
+                                    className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1192a8]/25 focus:border-[#1192a8] bg-white transition-all font-mono font-bold"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Giờ kết thúc</label>
+                                <input 
+                                    type="time" 
+                                    value={form.shiftEndTime}
+                                    onChange={e => handleChange('shiftEndTime', e.target.value)}
+                                    className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1192a8]/25 focus:border-[#1192a8] bg-white transition-all font-mono font-bold"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Ghi chú */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ghi chú / Ca làm việc</label>
+                        <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Ghi chú / Ca làm việc</label>
                         <textarea rows={2} value={form.notes}
                             onChange={e => handleChange('notes', e.target.value)}
                             placeholder="VD: Ca sáng thứ 2-6, phụ trách khu A..."
-                            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1192a8]/25 focus:border-[#1192a8] transition-all resize-none"
+                            className="w-full border border-gray-200 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1192a8]/25 focus:border-[#1192a8] transition-all resize-none"
                         />
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="px-8 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                <div className="px-5 md:px-8 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
                     <button onClick={onClose}
-                        className="px-6 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-100 transition-all">
+                        className="order-2 sm:order-1 px-6 py-2.5 rounded-2xl text-sm font-black text-gray-400 bg-white border border-gray-100 hover:bg-gray-100 transition-all uppercase tracking-widest">
                         Hủy
                     </button>
                     <button onClick={handleSubmit} disabled={loading}
-                        className="px-7 py-2.5 rounded-xl text-sm font-bold text-white bg-[#1192a8] hover:bg-teal-700 hover:shadow-lg hover:shadow-teal-500/30 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
+                        className="order-1 sm:order-2 px-7 py-3 rounded-2xl text-xs font-black text-white bg-[#1192a8] hover:bg-teal-700 hover:shadow-lg shadow-xl shadow-teal-500/20 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-widest">
                         {loading && <span className="animate-spin text-base">↻</span>}
                         {isEdit ? 'Lưu thay đổi' : 'Tạo nhân viên'}
                     </button>

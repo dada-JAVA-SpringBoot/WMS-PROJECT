@@ -1,7 +1,7 @@
 // ================================================================
 // 4. Inventory.jsx — thay fetch → axiosClient
 // ================================================================
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Barcode from 'react-barcode';
 import * as XLSX from 'xlsx';
 import axiosClient from '../api/axiosClient';
@@ -27,6 +27,8 @@ import inboundIcon from '../components/common/icons/inbound.png';
 import outboundIcon from '../components/common/icons/outbound.png';
 import scanIcon from '../components/common/icons/scan.png';
 
+import { useExcelExport } from '../hooks/useExcelExport';
+
 export default function Inventory({ onCreateInbound, onCreateOutbound }) {
     // 1. Quản lý State Modal
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -42,10 +44,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
     const [contextMenu, setContextMenu] = useState(null);
     const [isCopyModalOpen, setIsCopyModalOpen] = useState(false);
     const [copyTargetProducts, setCopyTargetProducts] = useState([]);
-    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [isScannerOpen, setIsScannerOpen] = useState(false);
-    const [exportFileName, setExportFileName] = useState(`inventory_${new Date().toISOString().slice(0, 10)}.xlsx`);
-    const [exportSaveMode, setExportSaveMode] = useState('download');
     const [inventoryViewMode, setInventoryViewMode] = useState('list');
     const [inventoryFilters, setInventoryFilters] = useState({
         status: 'ALL',
@@ -56,6 +55,16 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         storageTemp: 'ALL',
         sortBy: 'DEFAULT'
     });
+
+    const {
+        isExportModalOpen,
+        exportFileName,
+        setExportFileName,
+        openExportModal,
+        closeExportModal,
+        performExport,
+        detectBestExportMode
+    } = useExcelExport(`inventory_${new Date().toISOString().slice(0, 10)}.xlsx`);
 
     // 2. Quản lý State Dữ liệu
     const [products, setProducts] = useState([]);
@@ -411,7 +420,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
             <button
                 type="button"
                 onClick={() => toggleColumnSort(field)}
-                className={`inline-flex items-center gap-1 w-full ${
+                className={`inline-flex items-center gap-1 w-full cursor-pointer hover:text-[#1192a8] transition-colors ${
                     alignClass === 'text-right'
                         ? 'justify-end'
                         : alignClass === 'text-center'
@@ -482,7 +491,20 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         return [product];
     }; */
 
+    const lastClickRef = useRef({ id: null, time: 0 });
+
     const handleRowClick = (product, index, event) => {
+        const now = Date.now();
+        const isDoubleTap = lastClickRef.current.id === product.id && (now - lastClickRef.current.time < 300);
+
+        if (isDoubleTap) {
+            setSingleSelection(product, index);
+            setSelectedProduct(product);
+            lastClickRef.current = { id: null, time: 0 };
+            return;
+        }
+        lastClickRef.current = { id: product.id, time: now };
+
         const isToggle = event.ctrlKey || event.metaKey;
         const isRange = event.shiftKey && selectionAnchorIndex !== null;
 
@@ -606,21 +628,6 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         }
     };
 
-    const normalizeExportFileName = (value) => {
-        const trimmed = (value || '').trim();
-        // eslint-disable-next-line no-control-regex
-        const safeName = trimmed.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_');
-        const baseName = safeName || `inventory_${new Date().toISOString().slice(0, 10)}.xlsx`;
-        return baseName.endsWith('.xlsx') ? baseName : `${baseName}.xlsx`;
-    };
-
-    const detectBestExportMode = () => {
-        const canUseSavePicker = typeof window !== 'undefined'
-            && window.isSecureContext
-            && 'showSaveFilePicker' in window;
-        return canUseSavePicker ? 'save-picker' : 'download';
-    };
-
     const buildExcelWorkbook = (exportSource) => {
         const rows = exportSource.map((item, index) => {
             const stockState = getInventoryStockState(item);
@@ -678,48 +685,12 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
             return;
         }
 
-        const workbook = buildExcelWorkbook(exportSource);
-        const normalizedFileName = normalizeExportFileName(exportFileName);
-        const mode = detectBestExportMode();
-
-        try {
-            if (mode === 'save-picker') {
-                const fileHandle = await window.showSaveFilePicker({
-                    suggestedName: normalizedFileName,
-                    types: [
-                        {
-                            description: 'Excel Workbook',
-                            accept: {
-                                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
-                            }
-                        }
-                    ]
-                });
-
-                const writable = await fileHandle.createWritable();
-                const workbookBuffer = XLSX.write(workbook, {
-                    bookType: 'xlsx',
-                    type: 'array'
-                });
-
-                await writable.write(new Blob([workbookBuffer], {
-                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                }));
-                await writable.close();
-            } else {
-                XLSX.writeFile(workbook, normalizedFileName);
-            }
-
-            setIsExportModalOpen(false);
-            setExportSaveMode(mode);
-            showMessage("Đã xuất Excel", "File đã được lưu theo tên bạn chọn.");
-        } catch (error) {
-            if (error?.name === 'AbortError') {
-                return;
-            }
-
-            console.warn("Không thể xuất Excel", error);
-            showMessage("Không thể xuất Excel", "Trình duyệt không hỗ trợ luồng lưu này.");
+        const { workbook, rows } = buildExcelWorkbook(exportSource);
+        
+        const success = await performExport(workbook, null, rows);
+        if (success) {
+            closeExportModal();
+            showMessage("Đã xuất Excel", "File đã được lưu thành công.");
         }
     };
 
@@ -729,10 +700,9 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         closeContextMenu();
     };
 
-    const openExportModal = () => {
+    const openExportModalLocal = () => {
         setExportFileName(`inventory_${new Date().toISOString().slice(0, 10)}.xlsx`);
-        setExportSaveMode(detectBestExportMode());
-        setIsExportModalOpen(true);
+        openExportModal();
     };
 
     const handleCreateReceiptFlow = (kind) => {
@@ -757,10 +727,6 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         });
     };
 
-    const handleExportFileNameChange = (nextValue) => {
-        setExportFileName(nextValue);
-    };
-
     const handleScanSuccess = (decodedText) => {
         setSearchKeyword(decodedText);
         setSearchType('Tất cả');
@@ -768,13 +734,12 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
     };
 
     return (
-        <div className="p-4 lg:p-6 h-full flex flex-col bg-gray-50">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between bg-white p-4 mb-4 rounded-xl shadow-sm border border-gray-100 gap-4">
-                <div className="flex overflow-x-auto no-scrollbar pb-2 lg:pb-0 gap-6 lg:gap-8 snap-x">
-                    <div className="shrink-0" onClick={() => setIsAddModalOpen(true)}>
-                        <ActionButton iconSrc={addIcon} label="THÊM MỚI" />
-                    </div>
-                    <div className="shrink-0" onClick={() => {
+        <div className="p-6 bg-[#f8f9fa] min-h-full flex flex-col text-left no-scrollbar">
+            {/* ── Toolbar: Action Buttons (Sticky) ── */}
+            <div className="sticky top-0 z-20 flex items-center justify-between bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 mb-4 md:mb-6">
+                <div className="flex gap-4 md:gap-8 overflow-x-auto no-scrollbar pb-1 w-full lg:w-auto">
+                    <div onClick={() => setIsAddModalOpen(true)} className="shrink-0"><ActionButton iconSrc={addIcon} label="THÊM MỚI" /></div>
+                    <div onClick={() => {
                         if (selectedProducts.length === 0) {
                             showMessage("Thiếu lựa chọn", "Vui lòng chọn một sản phẩm trong bảng trước.");
                             return;
@@ -784,93 +749,143 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                             return;
                         }
                         setIsBulkEditModalOpen(true);
-                    }}>
-                        <ActionButton iconSrc={fixIcon} label="SỬA" />
-                    </div>
-                    <div className="shrink-0" onClick={() => {
+                    }} className="shrink-0"><ActionButton iconSrc={fixIcon} label="SỬA" /></div>
+                    <div onClick={() => {
                         if (selectedProducts.length === 0) {
                             showMessage("Thiếu lựa chọn", "Vui lòng chọn ít nhất một sản phẩm trong bảng trước.");
                             return;
                         }
                         handleDeleteProduct(selectedProducts);
-                    }}>
-                        <ActionButton iconSrc={deleteIcon} label="XÓA" />
-                    </div>
-                    <div className="shrink-0" onClick={() => handleOpenDetail(selectedProducts)}>
-                        <ActionButton iconSrc={infoIcon} label="CHI TIẾT" />
-                    </div>
-                    <div className="shrink-0" onClick={() => handleCreateReceiptFlow('inbound')}>
-                        <ActionButton iconSrc={inboundIcon} label="NHẬP KHO" />
-                    </div>
-                    <div className="shrink-0" onClick={() => handleCreateReceiptFlow('outbound')}>
-                        <ActionButton iconSrc={outboundIcon} label="XUẤT KHO" />
-                    </div>
-                    <div className="shrink-0" onClick={openExportModal}>
-                        <ActionButton iconSrc={excelIcon} label="XUẤT EXCEL" />
-                    </div>
-                    <div className="shrink-0" onClick={() => setIsScannerOpen(true)}>
-                        <ActionButton iconSrc={scanIcon} label="QUÉT MÃ" />
-                    </div>
+                    }} className="shrink-0"><ActionButton iconSrc={deleteIcon} label="XÓA" /></div>
+                    <div onClick={() => handleOpenDetail(selectedProducts)} className="shrink-0"><ActionButton iconSrc={infoIcon} label="CHI TIẾT" /></div>
+                    <div onClick={() => handleCreateReceiptFlow('inbound')} className="shrink-0"><ActionButton iconSrc={inboundIcon} label="NHẬP KHO" /></div>
+                    <div onClick={() => handleCreateReceiptFlow('outbound')} className="shrink-0"><ActionButton iconSrc={outboundIcon} label="XUẤT KHO" /></div>
+                    <div onClick={openExportModalLocal} className="shrink-0"><ActionButton iconSrc={excelIcon} label="XUẤT EXCEL" /></div>
+                    <div onClick={() => setIsScannerOpen(true)} className="shrink-0"><ActionButton iconSrc={scanIcon} label="QUÉT MÃ" /></div>
                 </div>
-                
-                <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
-                    <div className="text-xs text-gray-500 font-medium lg:mr-4 hidden lg:block">
-                        {selectedProducts.length > 0 ? `Đã chọn ${selectedProducts.length} sản phẩm` : 'Chưa chọn sản phẩm nào'}
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => setIsFilterModalOpen(true)}
-                        className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded text-sm font-medium hover:bg-gray-50 flex items-center justify-center gap-2 transition"
+                <div className="text-xs font-black text-gray-400 uppercase tracking-widest hidden lg:block">Quản lý kho sản phẩm</div>
+            </div>
+
+            {/* ── Filter Bar: Search & Selects ── */}
+            <div className="bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl border border-gray-100 mb-4 md:mb-6 flex flex-col gap-4 shadow-sm">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4">
+                    <select
+                        value={searchType}
+                        onChange={(e) => setSearchType(e.target.value)}
+                        className="wms-select w-full sm:w-48 !text-sm !py-2.5 md:!py-3"
                     >
-                        Bộ lọc
-                    </button>
-                    <div className="flex gap-2">
-                        <select
-                            value={searchType}
-                            onChange={(e) => setSearchType(e.target.value)}
-                            className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 bg-white flex-1 lg:flex-none"
-                        >
-                            <option>Tất cả</option>
-                            <option>Theo tên SP</option>
-                            <option>Theo SKU</option>
-                            <option>Theo Mã vạch</option>
-                            <option>Theo phân loại</option>
-                            <option>Theo NCC</option>
-                        </select>
+                        <option>Tất cả</option>
+                        <option>Theo tên SP</option>
+                        <option>Theo SKU</option>
+                        <option>Theo Mã vạch</option>
+                        <option>Theo phân loại</option>
+                        <option>Theo NCC</option>
+                    </select>
+                    <div className="flex flex-1 gap-2">
                         <input
                             type="text"
                             value={searchKeyword}
                             onChange={(e) => setSearchKeyword(e.target.value)}
-                            className="border border-gray-300 rounded px-4 py-2 w-full lg:w-48 text-sm focus:outline-none focus:border-blue-500 flex-[2] lg:flex-none"
-                            placeholder="Nhập từ khóa tìm kiếm..."
+                            className="flex-1 border-2 border-gray-100 rounded-xl px-4 md:px-5 py-2.5 md:py-3 text-sm outline-none focus:border-[#1192a8] transition-all bg-white min-w-0"
+                            placeholder="Từ khóa..."
                         />
+                        <button
+                            onClick={fetchProducts}
+                            className="bg-[#1192a8] text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold text-sm hover:bg-teal-700 transition flex items-center gap-2 whitespace-nowrap cursor-pointer"
+                        >
+                            <span className="hidden sm:inline">↻</span> Làm mới
+                        </button>
                     </div>
-                    <button
-                        onClick={fetchProducts}
-                        className="bg-[#1192a8] text-white px-4 py-2 rounded text-sm font-medium hover:bg-teal-700 flex items-center justify-center gap-2 transition"
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-4 border-t border-gray-100">
+                    <div className="flex items-center gap-2">
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">Phân loại:</span>
+                        <select
+                            value={inventoryFilters.categoryId}
+                            onChange={(e) => setInventoryFilters(prev => ({ ...prev, categoryId: e.target.value }))}
+                            className="wms-select !text-[10px] md:!text-[11px] !py-1 md:!py-1.5 !px-2 md:!px-3 min-w-[120px] md:min-w-[140px]"
+                        >
+                            <option value="ALL">Tất cả</option>
+                            {categories.map(cat => <option key={cat.id} value={String(cat.id)}>{cat.name}</option>)}
+                        </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">NCC:</span>
+                        <select
+                            value={inventoryFilters.supplierCode}
+                            onChange={(e) => setInventoryFilters(prev => ({ ...prev, supplierCode: e.target.value }))}
+                            className="wms-select !text-[10px] md:!text-[11px] !py-1 md:!py-1.5 !px-2 md:!px-3 min-w-[100px] md:min-w-[140px]"
+                        >
+                            <option value="ALL">Tất cả</option>
+                            {suppliers.map(sup => <option key={sup.id} value={sup.supplierCode}>{sup.name}</option>)}
+                        </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">TT:</span>
+                        <select
+                            value={inventoryFilters.status}
+                            onChange={(e) => setInventoryFilters(prev => ({ ...prev, status: e.target.value }))}
+                            className="wms-select !text-[10px] md:!text-[11px] !py-1 md:!py-1.5 !px-2 md:!px-3 min-w-[80px] md:min-w-[120px]"
+                        >
+                            <option value="ALL">Tất cả</option>
+                            <option value="ACTIVE">Kinh doanh</option>
+                            <option value="INACTIVE">Ngừng KD</option>
+                        </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">Tồn:</span>
+                        <select
+                            value={inventoryFilters.stock}
+                            onChange={(e) => setInventoryFilters(prev => ({ ...prev, stock: e.target.value }))}
+                            className="wms-select !text-[10px] md:!text-[11px] !py-1 md:!py-1.5 !px-2 md:!px-3 min-w-[80px] md:min-w-[120px]"
+                        >
+                            <option value="ALL">Tất cả</option>
+                            <option value="HAS">Có sẵn</option>
+                            <option value="LOW">Sắp hết</option>
+                            <option value="ZERO">Hết hàng</option>
+                        </select>
+                    </div>
+                    <button 
+                        onClick={() => {
+                            setInventoryFilters({
+                                status: 'ALL',
+                                stock: 'ALL',
+                                categoryId: 'ALL',
+                                supplierCode: 'ALL',
+                                baseUnit: 'ALL',
+                                storageTemp: 'ALL',
+                                sortBy: 'DEFAULT'
+                            });
+                            setSearchKeyword('');
+                            setSearchType('Tất cả');
+                        }}
+                        className="ml-auto text-[9px] md:text-[10px] font-black text-gray-400 hover:text-red-500 uppercase tracking-tighter cursor-pointer"
                     >
-                        <span>↻</span> Làm mới
+                        Xóa bộ lọc ✕
                     </button>
                 </div>
             </div>
-            <div className="bg-white flex-1 overflow-hidden rounded-xl shadow-sm border border-gray-200 flex flex-col">
-                <div className="overflow-x-auto flex-1 no-scrollbar lg:scrollbar-thin">
+
+            {/* ── Content Card (Table or Grid) ── */}
+            <div className="flex-1 bg-white rounded-2xl md:rounded-3xl border border-gray-100 overflow-hidden shadow-sm flex flex-col">
+                <div className="flex-1 overflow-x-auto no-scrollbar lg:scrollbar-thin">
                     {isLoading ? (
                         <div className="flex justify-center items-center h-full text-gray-500 font-medium">
                             <span className="animate-pulse">Đang tải dữ liệu từ máy chủ...</span>
                         </div>
                     ) : (
                         inventoryViewMode === 'list' ? (
-                            <table className="w-full text-center text-sm min-w-[1000px]">
+                            <table className="w-full text-center text-sm min-w-[800px] md:min-w-[1000px]">
                             <thead className="bg-gray-100 sticky top-0 shadow-sm z-10">
-                        <tr className="text-gray-700 uppercase text-xs tracking-wider">
-                            <th className="p-4 font-bold text-left">{renderSortableHeader('Mã SKU', 'SKU')}</th>
-                            <th className="p-4 font-bold text-left">{renderSortableHeader('Tên sản phẩm', 'NAME')}</th>
-                            <th className="p-4 font-bold text-right">{renderSortableHeader('Tồn khả dụng', 'AVAILABLE', 'text-right')}</th>
-                            <th className="p-4 font-bold text-right">{renderSortableHeader('Tồn an toàn', 'SAFETY', 'text-right')}</th>
-                            <th className="p-4 font-bold text-left">{renderSortableHeader('Đơn vị', 'UNIT', 'text-left')}</th>
-                            <th className="p-4 font-bold">Mã vạch</th>
-                            <th className="p-4 font-bold text-center">Trạng thái</th>
+                        <tr className="text-gray-700 uppercase text-[10px] md:text-xs tracking-wider">
+                            <th className="p-3 md:p-4 font-bold text-left">{renderSortableHeader('Mã SKU', 'SKU')}</th>
+                            <th className="p-3 md:p-4 font-bold text-left">{renderSortableHeader('Tên sản phẩm', 'NAME')}</th>
+                            <th className="p-3 md:p-4 font-bold text-right">{renderSortableHeader('Tồn khả dụng', 'AVAILABLE', 'text-right')}</th>
+                            <th className="p-3 md:p-4 font-bold text-right hidden sm:table-cell">{renderSortableHeader('Tồn an toàn', 'SAFETY', 'text-right')}</th>
+                            <th className="p-3 md:p-4 font-bold text-left hidden md:table-cell">{renderSortableHeader('Đơn vị', 'UNIT', 'text-left')}</th>
+                            <th className="p-3 md:p-4 font-bold hidden lg:table-cell">Mã vạch</th>
+                            <th className="p-3 md:p-4 font-bold text-center">Trạng thái</th>
                         </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
@@ -1055,7 +1070,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                                                                     alt={product.name}
                                                                     className="w-full h-full object-contain p-1.5"
                                                                     onError={(e) => {
-                                                                        e.target.src = 'https://via.placeholder.com/160?text=No+Image';
+                                                                        e.target.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22200%22%20height%3D%22200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20200%22%3E%3Crect%20width%3D%22200%22%20height%3D%22200%22%20fill%3D%22%23eee%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20font-size%3D%2218%22%20text-anchor%3D%22middle%22%20alignment-baseline%3D%22middle%22%20font-family%3D%22sans-serif%22%20fill%3D%22%23999%22%3ENo+Image%3C%2Ftext%3E%3C%2Fsvg%3E';
                                                                     }}
                                                                 />
                                                             ) : (
@@ -1167,7 +1182,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                                 alt={hoverPreview.product.name}
                                 className="w-full h-full object-contain p-2"
                                 onError={(e) => {
-                                    e.target.src = 'https://via.placeholder.com/240?text=No+Image';
+                                    e.target.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22200%22%20height%3D%22200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20200%22%3E%3Crect%20width%3D%22200%22%20height%3D%22200%22%20fill%3D%22%23eee%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20font-size%3D%2218%22%20text-anchor%3D%22middle%22%20alignment-baseline%3D%22middle%22%20font-family%3D%22sans-serif%22%20fill%3D%22%23999%22%3ENo+Image%3C%2Ftext%3E%3C%2Fsvg%3E';
                                 }}
                             />
                         ) : (
@@ -1285,10 +1300,10 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
             <ExportExcelModal
                 isOpen={isExportModalOpen}
                 fileName={exportFileName}
-                onFileNameChange={handleExportFileNameChange}
+                onFileNameChange={setExportFileName}
                 onExport={handleExportExcel}
-                onClose={() => setIsExportModalOpen(false)}
-                saveMode={exportSaveMode}
+                onClose={closeExportModal}
+                saveMode={detectBestExportMode()}
             />
 
             <SystemDialog

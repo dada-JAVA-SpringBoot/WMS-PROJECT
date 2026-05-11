@@ -22,8 +22,8 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             "FROM InboundOrderDetail d, InboundOrder o " +
             "WHERE d.inboundOrderId = o.id " +
             "AND d.productId = p.id " +
-            "AND o.status IN ('DRAFT', 'ORDERED', 'IN_TRANSIT', 'RECEIVING', 'PENDING')), " +
-            "(SELECT MIN(b.expiryDate) FROM Inventory i JOIN Batch b ON i.batchId = b.id WHERE i.productId = p.id)) " +
+            "AND o.status IN ('DRAFT', 'ORDERED', 'IN_TRANSIT', 'PENDING')), " +
+            "(SELECT MIN(b.expiryDate) FROM Inventory i, Batch b WHERE i.batchId = b.id AND i.productId = p.id)) " +
             "FROM Product p")
     List<ProductDTO> findAllProductsWithTotalStock();
 

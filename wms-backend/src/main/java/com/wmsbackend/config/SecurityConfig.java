@@ -44,36 +44,50 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/api/debug/**", "/uploads/**").permitAll()
 
                         // ── Phân quyền theo API ─────────────────────────────────────
-                        // Quản lý nhân viên: ADMIN, MANAGER
+                        // Quản lý nhân viên: ADMIN, MANAGER, QC (xem)
+                        .requestMatchers(HttpMethod.GET, "/api/staff/names").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/staff/**").hasAnyRole("ADMIN", "MANAGER", "QUALITY_CONTROL")
                         .requestMatchers("/api/staff/**").hasAnyRole("ADMIN", "MANAGER")
 
-                        // Quản lý nhà cung cấp: ADMIN, MANAGER, STOREKEEPER, INBOUND_STAFF
-                        .requestMatchers("/api/suppliers/**").hasAnyRole("ADMIN", "MANAGER", "STOREKEEPER", "INBOUND_STAFF")
+                        // Quản lý nhà cung cấp: ADMIN, MANAGER, STOREKEEPER, INBOUND_STAFF, QC
+                        .requestMatchers("/api/suppliers/**").hasAnyRole("ADMIN", "MANAGER", "STOREKEEPER", "INBOUND_STAFF", "QUALITY_CONTROL")
 
-                        // Quản lý khách hàng: ADMIN, MANAGER, OUTBOUND_STAFF
-                        .requestMatchers("/api/customers/**").hasAnyRole("ADMIN", "MANAGER", "OUTBOUND_STAFF")
+                        // Quản lý khách hàng: ADMIN, MANAGER, OUTBOUND_STAFF, QC
+                        .requestMatchers("/api/customers/**").hasAnyRole("ADMIN", "MANAGER", "OUTBOUND_STAFF", "QUALITY_CONTROL")
 
                         // Sản phẩm: xem được từ STOREKEEPER trở lên, sửa/xóa cần MANAGER+
                         .requestMatchers(HttpMethod.GET, "/api/products/**")
-                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","INBOUND_STAFF","OUTBOUND_STAFF","CHECKER")
+                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","INBOUND_STAFF","OUTBOUND_STAFF","CHECKER","QUALITY_CONTROL")
                         .requestMatchers(HttpMethod.POST, "/api/products/**").hasAnyRole("ADMIN","MANAGER")
                         .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAnyRole("ADMIN","MANAGER")
                         .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
 
                         // Nhập kho: INBOUND_STAFF trở lên
                         .requestMatchers("/api/inbound/**")
-                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","INBOUND_STAFF")
+                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER","INBOUND_STAFF","QUALITY_CONTROL")
+
+                        // Lịch sử giao dịch: ACCOUNTANT trở lên
+                        .requestMatchers("/api/transactions/**")
+                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER","ACCOUNTANT")
 
                         // Xuất kho: OUTBOUND_STAFF trở lên
-                        .requestMatchers("/api/outbound/**")
-                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","OUTBOUND_STAFF")
+                        .requestMatchers("/api/outbound-orders/**")
+                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER","INBOUND_STAFF","OUTBOUND_STAFF","QUALITY_CONTROL")
+
+                        // Wave Picking: STOREKEEPER trở lên
+                        .requestMatchers("/api/waves/**")
+                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER")
+
+                        // Kiểm kê (Cycle Counting): STOREKEEPER trở lên
+                        .requestMatchers("/api/cycle-counts/**")
+                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER","CHECKER")
 
                         // Tồn kho & kiểm kê: mọi role đều xem được
                         .requestMatchers("/api/inventory/**")
-                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","INBOUND_STAFF","OUTBOUND_STAFF","CHECKER")
+                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER","INBOUND_STAFF","OUTBOUND_STAFF","CHECKER","QUALITY_CONTROL")
 
-                        // Thống kê: ADMIN, MANAGER
-                        .requestMatchers("/api/stats/**").hasAnyRole("ADMIN", "MANAGER")
+                        // Thống kê: ADMIN, MANAGER, QC, STOREKEEPER
+                        .requestMatchers("/api/stats/**").hasAnyRole("ADMIN", "MANAGER", "STOREKEEPER", "WAREHOUSE_KEEPER", "INBOUND_STAFF", "OUTBOUND_STAFF", "QUALITY_CONTROL")
 
                         // Tất cả request còn lại cần đăng nhập
                         .anyRequest().authenticated()

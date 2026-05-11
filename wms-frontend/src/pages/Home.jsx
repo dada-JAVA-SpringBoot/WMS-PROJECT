@@ -1,64 +1,177 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '../context/AuthContext';
+import axiosClient from '../api/axiosClient';
+import ExecutiveDashboard from '../components/dashboard/ExecutiveDashboard';
+import OperationsDashboard from '../components/dashboard/OperationsDashboard';
+import StorageDashboard from '../components/dashboard/StorageDashboard';
+import QualityControlDashboard from '../components/dashboard/QualityControlDashboard';
+import SmartAssistant from '../components/common/SmartAssistant';
+import { getRoleLabel } from '../api/roleUtils';
 
 export default function Home() {
-    return (
-        <div className="min-h-full flex flex-col bg-[#f4f9f9]">
-            {/* Phần Header (Logo & Tiêu đề) */}
-            <div className="flex flex-col items-center justify-center pt-12 pb-8 px-4 bg-white">
-                <h1 className="text-2xl font-extrabold text-[#1192a8] uppercase mb-4 text-center">
-                    Hệ thống quản lý kho điện thoại theo mã imei
-                </h1>
+    const { user } = useAuth();
+    const [stats, setStats] = useState(null);
+    const [inboundOrders, setInboundOrders] = useState([]);
+    const [outboundOrders, setOutboundOrders] = useState([]);
+    const [cycleCounts, setCycleCounts] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-                <p className="text-[#1192a8] font-medium text-center max-w-3xl leading-relaxed">
-                    – "Một câu triết lý nhóm" – <br/>
-                    <span className="font-bold">Tập đoàn dada</span>
-                </p>
-            </div>
+    const roles = user?.roles || [];
 
-            {/* Phần 3 Thẻ Tính năng (Cards) */}
-            <div className="flex-1 flex justify-center items-start pt-12 pb-16 px-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl w-full">
+    // Xác định Dashboard phù hợp nhất cho User
+    const dashboardType = useMemo(() => {
+        if (roles.some(r => ['ADMIN', 'MANAGER'].includes(r))) return 'EXECUTIVE';
+        if (roles.some(r => ['STOREKEEPER', 'INVENTORY_CHECKER', 'HANDLER', 'WAREHOUSE_KEEPER'].includes(r))) return 'STORAGE';
+        if (roles.some(r => ['INBOUND_STAFF', 'OUTBOUND_STAFF'].includes(r))) return 'OPERATIONS';
+        if (roles.some(r => ['QUALITY_CONTROL'].includes(r))) return 'QC';
+        return 'NONE'; // Không có dashboard phù hợp
+    }, [roles]);
 
-                    {/* Card 1: Tính chính xác */}
-                    <FeatureCard
-                        title="TÍNH CHÍNH XÁC"
-                        description="Mã IMEI là một số duy nhất được gán cho từng thiết bị điện thoại, do đó hệ thống quản lý điện thoại theo mã IMEI sẽ đảm bảo tính chính xác và độ tin cậy cao."
-                    />
+    useEffect(() => {
+        fetchData();
+    }, [user, dashboardType]);
 
-                    {/* Card 2: Tính bảo mật */}
-                    <FeatureCard
-                        title="TÍNH BẢO MẬT"
-                        description="Ngăn chặn việc sử dụng các thiết bị điện thoại giả mạo hoặc bị đánh cắp. Điều này giúp tăng tính bảo mật cho các hoạt động quản lý điện thoại."
-                    />
+    const fetchData = async () => {
+        if (dashboardType === 'NONE') {
+            setLoading(false);
+            return;
+        }
 
-                    {/* Card 3: Tính hiệu quả */}
-                    <FeatureCard
-                        title="TÍNH HIỆU QUẢ"
-                        description="Dễ dàng xác định được thông tin về từng thiết bị điện thoại một cách nhanh chóng và chính xác, giúp cho việc quản lý điện thoại được thực hiện một cách hiệu quả hơn."
-                    />
+        setLoading(true);
+        try {
+            // 1. Dashboard Stats
+            try {
+                const statsRes = await axiosClient.get('/api/stats/dashboard');
+                setStats(statsRes.data);
+            } catch (e) {
+                console.warn("Lỗi tải thông số Dashboard:", e.message);
+            }
 
+            // 2. Pending Inbound Orders
+            const canSeeInbound = roles.some(r => ['ADMIN', 'MANAGER', 'STOREKEEPER', 'WAREHOUSE_KEEPER', 'INBOUND_STAFF', 'QUALITY_CONTROL'].includes(r));
+            if (canSeeInbound) {
+                try {
+                    const inRes = await axiosClient.get('/api/inbound');
+                    setInboundOrders(inRes.data || []);
+                } catch (e) {
+                    console.warn("Lỗi tải danh sách phiếu nhập:", e.message);
+                }
+            }
+
+            // 3. Pending Outbound Orders
+            const canSeeOutbound = roles.some(r => ['ADMIN', 'MANAGER', 'STOREKEEPER', 'WAREHOUSE_KEEPER', 'INBOUND_STAFF', 'OUTBOUND_STAFF', 'QUALITY_CONTROL'].includes(r));
+            if (canSeeOutbound) {
+                try {
+                    const outRes = await axiosClient.get('/api/outbound-orders');
+                    setOutboundOrders(outRes.data || []);
+                } catch (e) {
+                    console.warn("Lỗi tải danh sách phiếu xuất:", e.message);
+                }
+            }
+
+            // 4. Assigned Cycle Counts
+            const canSeeCounting = roles.some(r => ['ADMIN', 'MANAGER', 'STOREKEEPER', 'WAREHOUSE_KEEPER', 'CHECKER'].includes(r));
+            if (canSeeCounting && user?.id) {
+                try {
+                    const ccRes = await axiosClient.get('/api/cycle-counts');
+                    const assigned = (ccRes.data || []).filter(p => 
+                        p.status !== 'COMPLETED' && String(p.assignedTo) === String(user.id)
+                    );
+                    setCycleCounts(assigned);
+                } catch (e) {
+                    console.warn("Lỗi tải danh sách kiểm kê:", e.message);
+                }
+            }
+        } catch (error) {
+            console.error("Lỗi tổng quát khi tải dữ liệu dashboard:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1192a8]"></div>
+                    <span className="text-gray-500 font-bold animate-pulse uppercase text-xs tracking-widest">Đang khởi tạo không gian làm việc...</span>
                 </div>
             </div>
-        </div>
-    );
-}
+        );
+    }
 
-// Sub-component cho các Thẻ để tái sử dụng code
-function FeatureCard({ title, description }) {
+    if (dashboardType === 'NONE') {
+        return (
+            <div className="min-h-full flex items-center justify-center bg-[#f8fafc] p-6">
+                <div className="max-w-md text-center">
+                    <div className="text-6xl mb-6">🔒</div>
+                    <h2 className="text-2xl font-black text-gray-800 mb-2">Truy cập hạn chế</h2>
+                    <p className="text-gray-500 mb-8">
+                        Tài khoản của bạn ({getRoleLabel(roles)}) hiện không có bảng điều khiển tùy chỉnh. 
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] p-8 flex flex-col items-center text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
-            {/* Chỗ để bạn chèn icon minh họa */}
-            <div className="w-32 h-32 border-2 border-dashed border-gray-200 rounded-full flex items-center justify-center text-gray-400 mb-6">
-                [Icon]
+        <div className="min-h-full bg-[#f8fafc] p-6 lg:p-8 relative">
+            {/* Header summary */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 border-b border-gray-100 pb-8">
+                <div>
+                    <h1 className="text-3xl font-black text-gray-800 tracking-tight">
+                        Chào <span className="text-[#1192a8]">{user?.fullName || user?.username}</span>!
+                    </h1>
+                    <div className="flex items-center gap-2 mt-2">
+                        <span className="px-3 py-1 bg-white border border-gray-200 rounded-full text-xs font-bold text-gray-500 shadow-sm">
+                            {getRoleLabel(roles)}
+                        </span>
+                        <span className="text-gray-400 text-xs">•</span>
+                        <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">
+                            {new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        </span>
+                    </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                    <div className="text-right hidden md:block">
+                        <div className="text-xs font-bold text-gray-400 uppercase tracking-tighter leading-none mb-1">Mã nhân viên</div>
+                        <div className="text-sm font-black text-gray-700">{user?.employeeCode || '---'}</div>
+                    </div>
+                    <div className="w-12 h-12 bg-[#1192a8] rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-teal-100">
+                        {(user?.fullName || user?.username || 'U').charAt(0).toUpperCase()}
+                    </div>
+                </div>
             </div>
 
-            <h3 className="text-xl font-bold text-[#1192a8] mb-4">
-                {title}
-            </h3>
+            {/* Dashboards */}
+            {dashboardType === 'EXECUTIVE' && <ExecutiveDashboard stats={stats} roles={roles} />}
+            {dashboardType === 'STORAGE' && <StorageDashboard stats={stats} roles={roles} cycleCounts={cycleCounts} />}
+            {dashboardType === 'OPERATIONS' && (
+                <OperationsDashboard 
+                    roles={roles} 
+                    stats={stats} 
+                    inboundOrders={inboundOrders.filter(o => ['DRAFT', 'PENDING', 'ORDERED'].includes(o.status))} 
+                    outboundOrders={outboundOrders.filter(o => ['DRAFT', 'ALLOCATED', 'PICKING'].includes(o.status))}
+                    cycleCounts={cycleCounts}
+                />
+            )}
+            {dashboardType === 'QC' && (
+                <QualityControlDashboard 
+                    roles={roles} 
+                    stats={stats} 
+                    inboundOrders={inboundOrders} 
+                    outboundOrders={outboundOrders} 
+                />
+            )}
 
-            <p className="text-gray-500 text-sm leading-relaxed">
-                {description}
-            </p>
+            {/* Smart AI Assistant Mascot */}
+            <SmartAssistant 
+                stats={stats}
+                inboundOrders={inboundOrders}
+                outboundOrders={outboundOrders}
+                cycleCounts={cycleCounts}
+            />
         </div>
     );
 }

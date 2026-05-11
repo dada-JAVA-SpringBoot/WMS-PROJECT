@@ -14,8 +14,18 @@ import java.util.List;
 public interface InboundOrderRepository extends JpaRepository<InboundOrder, Long> {
 
     // ── Đếm theo status (đã có từ StatisticalController) ─────────────────
+    List<InboundOrder> findByStatus(String status);
     List<InboundOrder> findByStatusIn(List<String> statuses);
     long countByStatus(String status);
+    long countByStatusIn(List<String> statuses);
+
+    /** Lấy chi tiết của một phiếu nhập */
+    @Query("SELECT d FROM InboundOrderDetail d WHERE d.inboundOrderId = :orderId")
+    List<com.wmsbackend.entity.InboundOrderDetail> findDetailsByOrderId(@Param("orderId") Long orderId);
+
+    /** Lấy chi tiết của nhiều phiếu nhập */
+    @Query("SELECT d FROM InboundOrderDetail d WHERE d.inboundOrderId IN :orderIds")
+    List<com.wmsbackend.entity.InboundOrderDetail> findDetailsByOrderIdIn(@Param("orderIds") List<Long> orderIds);
 
     // ════════════════════════════════════════════════════════════════════════
     // FINANCIAL STATISTICS — COST QUERIES

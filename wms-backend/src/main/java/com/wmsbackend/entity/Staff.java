@@ -70,14 +70,16 @@ public class Staff {
 @Column(name = "Enabled")
 private Boolean enabled = true;
 
-@Column(name = "Avatar", columnDefinition = "NVARCHAR(MAX)")
-private String avatar;
+    @Column(name = "Avatar", columnDefinition = "NVARCHAR(MAX)")
+    private String avatar;
 
-@ManyToOne(fetch = FetchType.EAGER)
-@JoinColumn(name = "ShiftId")
-private WorkShift shift;
+    @Column(name = "ShiftStartTime")
+    private java.time.LocalTime shiftStartTime;
 
-// ── Phân quyền (Many-to-Many với Roles) ───────────────
+    @Column(name = "ShiftEndTime")
+    private java.time.LocalTime shiftEndTime;
+
+    // ── Phân quyền (Many-to-Many với Roles) ───────────────
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "Staff_Roles",

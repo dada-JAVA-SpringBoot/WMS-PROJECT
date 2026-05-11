@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  database:
+    build: ./wms-database
+    container_name: wms-db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
+    ports:
+      - "1433:1433"
+    volumes:
+      - wms-db-data:/var/opt/mssql
+    networks:
+      - wms-network
+
+  backend:
+    build: ./wms-backend
+    container_name: wms-be
+    depends_on:
+      - database
+    environment:
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=${MSSQL_SA_PASSWORD}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./wms-backend/uploads:/app/uploads
+    networks:
+      - wms-network
+
+  frontend:
+    build: ./wms-frontend
+    container_name: wms-fe
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT_HTTP:-80}:80"
+      - "${FRONTEND_PORT_HTTPS:-443}:443"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    networks:
+      - wms-network
+
+networks:
+  wms-network:
+    driver: bridge
+
+volumes:
+  wms-db-data:

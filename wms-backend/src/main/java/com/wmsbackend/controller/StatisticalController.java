@@ -5,9 +5,11 @@ import com.wmsbackend.dto.DailyFlowDTO;
 import com.wmsbackend.dto.InventoryStatsDTO;
 import com.wmsbackend.dto.StatisticalSummaryDTO;
 import com.wmsbackend.repository.*;
+import com.wmsbackend.service.FinancialService;
 import com.wmsbackend.service.StatisticalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +21,7 @@ import java.util.*;
 public class StatisticalController {
 
     @Autowired private StatisticalService statisticalService;
+    @Autowired private FinancialService financialService;
 
     // ── Legacy Repositories (giữ lại cho endpoint /summary cũ) ─────────────
     @Autowired private ProductRepository productRepository;
@@ -32,7 +35,7 @@ public class StatisticalController {
     // 1. Dashboard Overview (MỚI)
     // ════════════════════════════════════════════════════════════════════════
     @GetMapping("/dashboard")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL')")
     public DashboardDTO getDashboard() {
         return statisticalService.getDashboard();
     }
@@ -41,24 +44,26 @@ public class StatisticalController {
     // 2. Inventory Stats & ABC (MỚI)
     // ════════════════════════════════════════════════════════════════════════
     @GetMapping("/inventory")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
-    public InventoryStatsDTO getInventoryStats(
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL','HANDLER','CHECKER')")
+    public ResponseEntity<?> getInventoryStats(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
 
-        // Mặc định: tháng hiện tại
-        if (startDate == null) {
-            startDate = LocalDate.now().withDayOfMonth(1);
-        }
-        if (endDate == null) {
-            endDate = LocalDate.now();
-        }
+        try {
+            LocalDate start, end;
+            try {
+                start = (startDate != null && !startDate.isBlank()) ? LocalDate.parse(startDate) : LocalDate.now().withDayOfMonth(1);
+                end   = (endDate != null && !endDate.isBlank())   ? LocalDate.parse(endDate)   : LocalDate.now();
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Định dạng ngày không hợp lệ (YYYY-MM-DD)"));
+            }
 
-        return statisticalService.getInventoryStats(startDate, endDate);
+            return ResponseEntity.ok(statisticalService.getInventoryStats(start, end));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", "Lỗi xử lý thống kê: " + e.getMessage()));
+        }
     }
-
     // ════════════════════════════════════════════════════════════════════════
     // 3. Legacy endpoint (giữ tương thích ngược)
     // ════════════════════════════════════════════════════════════════════════
@@ -93,7 +98,7 @@ public class StatisticalController {
 
     // ── /finance  — summary cards (giữ nguyên) ───────────────────────────
     @GetMapping("/finance")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL','HANDLER')")
     public ResponseEntity<?> getFinancialSummary(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
@@ -107,7 +112,7 @@ public class StatisticalController {
 
     // ── /finance/by-day  — chart theo ngày ───────────────────────────────
     @GetMapping("/finance/by-day")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL','HANDLER')")
     public ResponseEntity<?> getFinanceByDay(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
@@ -121,14 +126,14 @@ public class StatisticalController {
 
     // ── /finance/by-month — chart theo tháng ─────────────────────────────
     @GetMapping("/finance/by-month")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL','HANDLER')")
     public ResponseEntity<?> getFinanceByMonth(@RequestParam int year) {
         return ResponseEntity.ok(financialService.getByMonth(year));
     }
 
     // ── /finance/by-year  — chart theo năm ───────────────────────────────
     @GetMapping("/finance/by-year")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL','HANDLER')")
     public ResponseEntity<?> getFinanceByYear(
             @RequestParam int fromYear,
             @RequestParam int toYear) {

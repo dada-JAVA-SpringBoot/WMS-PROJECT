@@ -1,0 +1,14 @@
+services:
+  sql-server:
+    build: .
+    container_name: wms-sql-server
+    ports:
+      - "${DB_PORT}:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${DB_LOCAL_PASSWORD}"
+    volumes:
+      - wms-data:/var/opt/mssql
+
+volumes:
+  wms-data:

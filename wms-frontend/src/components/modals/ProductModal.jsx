@@ -184,29 +184,29 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product = nul
     const cbm = ((parseFloat(formData.length || 0) * parseFloat(formData.width || 0) * parseFloat(formData.height || 0)) / 1000000).toFixed(6);
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-[70] p-4">
-            <div className="bg-white w-full max-w-6xl rounded-xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden">
-                <div className="bg-[#1192a8] text-white px-6 py-4 flex justify-between items-center shrink-0">
-                    <h2 className="text-xl font-bold uppercase tracking-wide">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-[70] p-2 md:p-4">
+            <div className="bg-white w-full max-w-6xl rounded-2xl md:rounded-xl shadow-2xl flex flex-col max-h-[98vh] md:max-h-[95vh] overflow-hidden">
+                <div className="bg-[#1192a8] text-white px-4 md:px-6 py-3 md:py-4 flex justify-between items-center shrink-0">
+                    <h2 className="text-base md:text-xl font-bold uppercase tracking-wide truncate">
                         {mode === 'edit' ? 'Cập Nhật Hồ Sơ Mặt Hàng' : 'Tạo Mới Hồ Sơ Mặt Hàng'}
                     </h2>
-                    <button onClick={onClose} className="text-white hover:text-red-200 text-3xl leading-none">&times;</button>
+                    <button onClick={onClose} className="text-white hover:text-red-200 text-2xl md:text-3xl leading-none">&times;</button>
                 </div>
 
-                <div className="p-6 overflow-y-auto flex-1 bg-gray-50 flex flex-col gap-6">
-                    <div className="bg-white p-5 border rounded-xl shadow-sm">
-                        <h3 className="text-[#00529c] font-bold border-b pb-2 mb-4 uppercase text-sm">1. Thông tin định danh cơ bản</h3>
-                        <div className="flex gap-6">
-                            <div className="w-1/4 flex flex-col items-center">
-                                <div className="w-full aspect-square border border-gray-200 rounded-lg flex items-center justify-center mb-2 bg-gray-50 overflow-hidden">
-                                    {formData.imageUrl ? <img src={formData.imageUrl} className="w-full h-full object-contain p-2" alt="" /> : <span className="text-xs text-gray-400">Ảnh minh họa</span>}
+                <div className="p-3 md:p-6 overflow-y-auto flex-1 bg-gray-50 flex flex-col gap-4 md:gap-6">
+                    <div className="bg-white p-4 md:p-5 border rounded-xl shadow-sm">
+                        <h3 className="text-[#00529c] font-bold border-b pb-2 mb-4 uppercase text-[11px] md:text-sm">1. Thông tin định danh cơ bản</h3>
+                        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+                            <div className="w-full md:w-1/4 flex flex-col items-center">
+                                <div className="w-32 md:w-full aspect-square border border-gray-200 rounded-lg flex items-center justify-center mb-3 md:mb-2 bg-gray-50 overflow-hidden shrink-0">
+                                    {formData.imageUrl ? <img src={formData.imageUrl} className="w-full h-full object-contain p-2" alt="" /> : <span className="text-[10px] md:text-xs text-gray-400">Ảnh minh họa</span>}
                                 </div>
                                 <FormInput label="Link ảnh (URL)" name="imageUrl" value={formData.imageUrl} onChange={handleInputChange} placeholder="https://..." />
                             </div>
-                            <div className="w-3/4 grid grid-cols-2 gap-4">
+                            <div className="w-full md:w-3/4 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                                 <FormInput label="Mã SKU (*)" name="sku" value={formData.sku} onChange={handleInputChange} placeholder="VD: MILK-1L" />
                                 <FormInput label="Mã vạch (Barcode)" name="barcode" value={formData.barcode} onChange={handleInputChange} placeholder="Quét hoặc nhập mã..." />
-                                <div className="col-span-2"><FormInput label="Tên sản phẩm (*)" name="name" value={formData.name} onChange={handleInputChange} placeholder="Nhập tên sản phẩm..." /></div>
+                                <div className="sm:col-span-2"><FormInput label="Tên sản phẩm (*)" name="name" value={formData.name} onChange={handleInputChange} placeholder="Nhập tên sản phẩm..." /></div>
                                 <FormSelectWithAction 
                                     label="Đơn vị tính cơ sở" name="baseUnit" value={formData.baseUnit} onChange={handleInputChange} 
                                     options={units.map(u => ({ label: `${u.unitCode} - ${u.name}`, value: u.name }))} isObjectOptions btnLabel="+" onBtnClick={openUnitModal} 
@@ -219,66 +219,66 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product = nul
                         </div>
                     </div>
 
-                    <div className="bg-white p-5 border rounded-xl shadow-sm border-blue-100">
-                        <h3 className="text-[#1192a8] font-bold border-b pb-2 mb-4 uppercase text-sm flex justify-between">
-                            2. Thiết lập quy đổi đơn vị (Packaging Hierarchy)
-                            <span className="text-[10px] text-gray-400 font-normal normal-case italic">* Giúp hệ thống tự động gợi ý vị trí kho phù hợp</span>
+                    <div className="bg-white p-4 md:p-5 border rounded-xl shadow-sm border-blue-100">
+                        <h3 className="text-[#1192a8] font-bold border-b pb-2 mb-4 uppercase text-[11px] md:text-sm flex flex-col sm:flex-row sm:justify-between sm:items-baseline gap-1">
+                            2. Quy đổi đơn vị
+                            <span className="text-[9px] md:text-[10px] text-gray-400 font-normal normal-case italic">* Hệ thống tự gợi ý vị trí kho phù hợp</span>
                         </h3>
-                        <div className="grid grid-cols-12 gap-4 items-end bg-blue-50/50 p-4 rounded-lg border border-dashed border-blue-200 mb-4">
-                            <div className="col-span-4">
+                        <div className="flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 items-end bg-blue-50/50 p-4 rounded-lg border border-dashed border-blue-200 mb-4">
+                            <div className="w-full md:col-span-4">
                                 <FormSelect label="Đơn vị quy đổi" value={newConvName} onChange={(e) => setNewConvName(e.target.value)} options={['', ...units.map(u => u.name).filter(n => n !== formData.baseUnit)]} />
                             </div>
-                            <div className="col-span-5">
-                                <label className="text-[11px] font-bold text-gray-500 uppercase mb-1 block">Hệ số: 1 [Mới] = ? [{formData.baseUnit}]</label>
+                            <div className="w-full md:col-span-5">
+                                <label className="text-[10px] md:text-[11px] font-bold text-gray-500 uppercase mb-1 block">Hệ số: 1 [Mới] = ? [{formData.baseUnit}]</label>
                                 <input type="number" value={newConvFactor} onChange={(e) => setNewConvFactor(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none" placeholder="VD: 24" />
                             </div>
-                            <div className="col-span-3">
-                                <button onClick={addConversion} className="w-full bg-[#1192a8] text-white font-bold py-2 rounded shadow hover:bg-teal-700 transition">+ THÊM QUY ĐỔI</button>
+                            <div className="w-full md:col-span-3">
+                                <button onClick={addConversion} className="w-full bg-[#1192a8] text-white font-black py-2 md:py-2 rounded shadow hover:bg-teal-700 transition uppercase text-[10px] md:text-xs tracking-tighter">+ THÊM QUY ĐỔI</button>
                             </div>
                         </div>
-                        <div className="flex flex-wrap gap-3">
+                        <div className="flex flex-wrap gap-2 md:gap-3">
                             {formData.conversions.length > 0 ? formData.conversions.map((c, i) => (
-                                <div key={i} className="flex items-center gap-2 bg-white border-2 border-[#1192a8] rounded-full pl-4 pr-2 py-1 shadow-sm animate-in fade-in zoom-in duration-200">
-                                    <span className="text-sm font-bold text-gray-700">1 {c.unitName}</span>
-                                    <span className="text-xs text-gray-400">=</span>
-                                    <span className="text-sm font-black text-[#1192a8]">{c.conversionFactor} {formData.baseUnit}</span>
-                                    <button onClick={() => removeConversion(i)} className="ml-2 w-5 h-5 flex items-center justify-center bg-gray-100 text-gray-400 rounded-full hover:bg-red-500 hover:text-white transition">&times;</button>
+                                <div key={i} className="flex items-center gap-2 bg-white border-2 border-[#1192a8] rounded-full pl-3 pr-2 py-1 shadow-sm animate-in fade-in zoom-in duration-200">
+                                    <span className="text-xs md:text-sm font-bold text-gray-700">1 {c.unitName}</span>
+                                    <span className="text-[10px] text-gray-400">=</span>
+                                    <span className="text-xs md:text-sm font-black text-[#1192a8]">{c.conversionFactor} {formData.baseUnit}</span>
+                                    <button onClick={() => removeConversion(i)} className="ml-1 md:ml-2 w-5 h-5 flex items-center justify-center bg-gray-100 text-gray-400 rounded-full hover:bg-red-500 hover:text-white transition">&times;</button>
                                 </div>
-                            )) : <p className="w-full text-center text-gray-400 text-xs italic py-2">Hiện sản phẩm này chỉ được quản lý theo đơn vị lẻ.</p>}
+                            )) : <p className="w-full text-center text-gray-400 text-[10px] md:text-xs italic py-2">Chưa có quy đổi đơn vị.</p>}
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-6">
-                        <div className="bg-white p-5 border rounded-xl shadow-sm">
-                            <h3 className="text-[#00529c] font-bold border-b pb-2 mb-4 uppercase text-sm">3. Quy cách Logistics</h3>
-                            <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                        <div className="bg-white p-4 md:p-5 border rounded-xl shadow-sm">
+                            <h3 className="text-[#00529c] font-bold border-b pb-2 mb-4 uppercase text-[11px] md:text-sm">3. Quy cách Logistics</h3>
+                            <div className="grid grid-cols-2 gap-3 md:gap-4">
                                 <FormInput label="Trọng lượng (kg)" name="weight" type="number" value={formData.weight} onChange={handleInputChange} placeholder="0.00" />
                                 <FormInput label="Chiều dài (cm)" name="length" type="number" value={formData.length} onChange={handleInputChange} placeholder="0.00" />
                                 <FormInput label="Chiều rộng (cm)" name="width" type="number" value={formData.width} onChange={handleInputChange} placeholder="0.00" />
                                 <FormInput label="Chiều cao (cm)" name="height" type="number" value={formData.height} onChange={handleInputChange} placeholder="0.00" />
                             </div>
-                            <div className="mt-4 p-3 bg-slate-50 rounded border text-[10px] text-slate-500 flex justify-between">
-                                <span>Thể tích: <strong>{cbm} m³</strong></span>
-                                <span>Diện tích đáy: <strong>{(parseFloat(formData.length || 0) * parseFloat(formData.width || 0)).toLocaleString()} cm²</strong></span>
+                            <div className="mt-3 md:mt-4 p-2 md:p-3 bg-slate-50 rounded border text-[9px] md:text-[10px] text-slate-500 flex justify-between font-bold">
+                                <span>Thể tích: {cbm} m³</span>
+                                <span>Đáy: {(parseFloat(formData.length || 0) * parseFloat(formData.width || 0)).toLocaleString()} cm²</span>
                             </div>
                         </div>
-                        <div className="bg-white p-5 border rounded-xl shadow-sm">
-                            <h3 className="text-[#00529c] font-bold border-b pb-2 mb-4 uppercase text-sm">4. Điều kiện & Cảnh báo</h3>
-                            <div className="space-y-4">
+                        <div className="bg-white p-4 md:p-5 border rounded-xl shadow-sm">
+                            <h3 className="text-[#00529c] font-bold border-b pb-2 mb-4 uppercase text-[11px] md:text-sm">4. Điều kiện lưu kho</h3>
+                            <div className="space-y-3 md:space-y-4">
                                 <FormSelect label="Nhiệt độ lưu kho" name="storageTemp" value={formData.storageTemp} onChange={handleInputChange} options={['Bình thường', 'Kho Mát (2-8°C)', 'Kho Lạnh (Dưới 0°C)']} />
                                 <FormInput label="Tồn kho an toàn" name="safetyStock" type="number" value={formData.safetyStock} onChange={handleInputChange} placeholder="VD: 50" />
-                                <div className="flex items-center gap-3 bg-red-50 p-3 rounded-lg border border-dashed border-red-200 mt-2">
+                                <div className="flex items-center gap-3 bg-red-50 p-2 md:p-3 rounded-lg border border-dashed border-red-200 mt-2">
                                     <input type="checkbox" id="isFragile" name="isFragile" checked={formData.isFragile} onChange={handleInputChange} className="w-5 h-5 text-red-600 rounded" />
-                                    <label htmlFor="isFragile" className="text-xs font-black text-red-700 cursor-pointer uppercase">⚠️ Hàng dễ vỡ (Fragile)</label>
+                                    <label htmlFor="isFragile" className="text-[10px] md:text-xs font-black text-red-700 cursor-pointer uppercase tracking-tighter md:tracking-normal">⚠️ Hàng dễ vỡ (Fragile)</label>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex justify-end gap-4 p-4 border-t bg-white shrink-0">
-                    <button onClick={onClose} className="px-6 py-2 text-gray-500 font-bold hover:underline">HỦY BỎ</button>
-                    <button onClick={handleSubmit} disabled={isSubmitting} className="bg-[#1192a8] text-white px-10 py-2.5 rounded-lg font-black shadow-lg hover:bg-teal-700 transition-all active:scale-95 disabled:opacity-50">
+                <div className="flex flex-col sm:flex-row justify-end gap-3 md:gap-4 p-4 border-t bg-white shrink-0">
+                    <button onClick={onClose} className="order-2 sm:order-1 px-6 py-2 text-gray-500 font-bold hover:underline text-sm md:text-base">HỦY BỎ</button>
+                    <button onClick={handleSubmit} disabled={isSubmitting} className="order-1 sm:order-2 bg-[#1192a8] text-white px-8 md:px-10 py-2.5 rounded-xl md:rounded-lg font-black shadow-lg hover:bg-teal-700 transition-all active:scale-95 disabled:opacity-50 text-xs md:text-base uppercase tracking-wider">
                         {isSubmitting ? 'ĐANG XỬ LÝ...' : 'LƯU HỒ SƠ SẢN PHẨM'}
                     </button>
                 </div>

@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import StaffModal from '../components/modals/StaffModal';
+import ExportExcelModal from '../components/modals/ExportExcelModal';
 import axiosClient from '../api/axiosClient';
 import addIcon    from '../components/common/icons/add.png';
 import fixIcon    from '../components/common/icons/fix.png';
@@ -10,6 +11,9 @@ import outboundIcon from '../components/common/icons/outbound.png';
 import excelIcon  from '../components/common/icons/excel.png';
 import excel1Icon from '../components/common/icons/excel1.png';
 import { getAvatarSrc } from '../components/common/avatarUtils';
+import { useSelection } from '../hooks/useSelection';
+import { useExcelExport } from '../hooks/useExcelExport';
+import * as XLSX from 'xlsx';
 
 const BASE = '/api/staff';
 
@@ -20,6 +24,7 @@ const ROLE_MAP = {
     OUTBOUND_STAFF:     { label: 'Xuất kho',         color: 'bg-orange-100 text-orange-700 border-orange-200' },
     INVENTORY_CHECKER:  { label: 'Kiểm kê',          color: 'bg-slate-100 text-slate-700 border-slate-200' },
     ACCOUNTANT:         { label: 'Kế toán kho',      color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    QUALITY_CONTROL:    { label: 'Kiểm duyệt (QC)',  color: 'bg-rose-100 text-red-700 border-rose-200' },
     HANDLER:            { label: 'Điều chuyển',      color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
     INTERN:             { label: 'Thực tập sinh',    color: 'bg-gray-100 text-gray-500 border-gray-200' },
 };
@@ -119,7 +124,6 @@ export default function Staff({ onCreateInbound, onCreateOutbound }) {
     const { user } = useAuth();
     const [data, setData]             = useState([]);
     const [loading, setLoading]       = useState(true);
-    const [selected, setSelected]     = useState(null);
     const [search, setSearch]         = useState('');
     const [searchBy, setSearchBy]     = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
@@ -158,16 +162,40 @@ export default function Staff({ onCreateInbound, onCreateOutbound }) {
         return now >= startTime && now <= endTime;
     };
 
-    const filtered = data.filter(row => {
-        if (filterStatus !== 'all' && row.workStatus !== filterStatus) return false;
-        if (search && searchBy !== 'all') {
-            const q = search.toLowerCase();
-            if (searchBy === 'name')  return (row.fullName || '').toLowerCase().includes(q);
-            if (searchBy === 'code')  return (row.employeeCode || '').toLowerCase().includes(q);
-            if (searchBy === 'username') return (row.username || '').toLowerCase().includes(q);
+    const filtered = useMemo(() => {
+        return data.filter(row => {
+            if (filterStatus !== 'all' && row.workStatus !== filterStatus) return false;
+            if (search && searchBy !== 'all') {
+                const q = search.toLowerCase();
+                if (searchBy === 'name')  return (row.fullName || '').toLowerCase().includes(q);
+                if (searchBy === 'code')  return (row.employeeCode || '').toLowerCase().includes(q);
+                if (searchBy === 'username') return (row.username || '').toLowerCase().includes(q);
+            }
+            return true;
+        });
+    }, [data, filterStatus, search, searchBy]);
+
+    const {
+        selectedIds,
+        handleRowClick,
+        clearSelection,
+        selectedItems
+    } = useSelection(filtered, (row) => {
+        if(user?.roles?.includes('ADMIN')) {
+            setEditData(row);
+            setModalOpen(true);
         }
-        return true;
     });
+
+    const {
+        isExportModalOpen,
+        exportFileName,
+        setExportFileName,
+        openExportModal,
+        closeExportModal,
+        performExport,
+        detectBestExportMode
+    } = useExcelExport('danh_sach_nhan_su.xlsx');
 
     const stats = {
         total:    data.length,
@@ -179,15 +207,18 @@ export default function Staff({ onCreateInbound, onCreateOutbound }) {
 
     const handleAdd    = () => { setEditData(null); setModalOpen(true); };
     const handleEdit   = () => {
-        if (!selected) return alert('Vui lòng chọn một nhân viên để chỉnh sửa!');
-        setEditData(selected); setModalOpen(true);
+        if (selectedIds.length !== 1) return alert('Vui lòng chọn duy nhất một nhân viên để chỉnh sửa!');
+        setEditData(selectedItems[0]); setModalOpen(true);
     };
     const handleDelete = async () => {
-        if (!selected) return alert('Vui lòng chọn một nhân viên để xóa!');
-        if (!window.confirm(`Xác nhận xóa nhân viên "${selected.fullName}"?`)) return;
+        if (selectedIds.length === 0) return alert('Vui lòng chọn ít nhất một nhân viên để xóa!');
+        const names = selectedItems.map(i => i.fullName).join(', ');
+        if (!window.confirm(`Xác nhận xóa các nhân viên: "${names}"?`)) return;
         try {
-            await axiosClient.delete(`${BASE}/${selected.id}`);
-            setSelected(null); 
+            for (const item of selectedItems) {
+                await axiosClient.delete(`${BASE}/${item.id}`);
+            }
+            clearSelection();
             fetchData(search);
         } catch { 
             alert('Xóa thất bại!'); 
@@ -195,13 +226,37 @@ export default function Staff({ onCreateInbound, onCreateOutbound }) {
     };
 
     const handleCreateInbound = () => {
-        if (!selected) return alert('Vui lòng chọn một nhân viên để lập phiếu nhập!');
-        onCreateInbound?.({ kind: 'inbound', source: 'staff', staff: selected, products: [] });
+        if (selectedIds.length !== 1) return alert('Vui lòng chọn duy nhất một nhân viên để lập phiếu nhập!');
+        onCreateInbound?.({ kind: 'inbound', source: 'staff', staff: selectedItems[0], products: [] });
     };
 
     const handleCreateOutbound = () => {
-        if (!selected) return alert('Vui lòng chọn một nhân viên để lập phiếu xuất!');
-        onCreateOutbound?.({ kind: 'outbound', source: 'staff', staff: selected, products: [] });
+        if (selectedIds.length !== 1) return alert('Vui lòng chọn duy nhất một nhân viên để lập phiếu xuất!');
+        onCreateOutbound?.({ kind: 'outbound', source: 'staff', staff: selectedItems[0], products: [] });
+    };
+
+    const handleExportExcel = async () => {
+        const source = selectedItems.length > 0 ? selectedItems : filtered;
+        if (!source.length) return alert('Không có dữ liệu để xuất!');
+
+        const sheetData = source.map((row, idx) => ({
+            "STT": idx + 1,
+            "Mã nhân viên": row.employeeCode,
+            "Họ tên": row.fullName,
+            "Username": row.username,
+            "Số điện thoại": row.phone,
+            "Email": row.email,
+            "Vai trò": ROLE_MAP[row.warehouseRole]?.label || row.warehouseRole,
+            "Hợp đồng": CONTRACT_MAP[row.contractType]?.label || row.contractType,
+            "Trạng thái": row.enabled ? "Hoạt động" : "Đã khóa"
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(sheetData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "NhanVien");
+        
+        await performExport(wb, null, sheetData);
+        closeExportModal();
     };
 
     const toolbarActions = [
@@ -211,7 +266,7 @@ export default function Staff({ onCreateInbound, onCreateOutbound }) {
         { label: 'Phiếu nhập', iconSrc: inboundIcon,  onClick: handleCreateInbound },
         { label: 'Phiếu xuất', iconSrc: outboundIcon, onClick: handleCreateOutbound },
         { label: 'Nhập Excel', iconSrc: excelIcon,  onClick: () => {} },
-        { label: 'Xuất Excel', iconSrc: excel1Icon, onClick: () => {} },
+        { label: 'Xuất Excel', iconSrc: excel1Icon, onClick: () => openExportModal() },
     ];
 
     return (
@@ -263,7 +318,7 @@ export default function Staff({ onCreateInbound, onCreateOutbound }) {
                         <input type="text" value={search} onChange={e => handleSearchChange(e.target.value)}
                             placeholder="Tìm kiếm nhanh..."
                             className="border-2 border-gray-50 rounded-xl px-4 py-2 w-full lg:w-40 text-xs focus:outline-none focus:border-[#1192a8] transition-all" />
-                        <button onClick={() => { setSearch(''); setFilterStatus('all'); fetchData(''); }}
+                        <button onClick={() => { setSearch(''); setFilterStatus('all'); fetchData(''); clearSelection(); }}
                             className="bg-[#1192a8] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-teal-700 flex items-center gap-2 transition-all active:scale-95">
                             Làm mới
                         </button>
@@ -293,9 +348,9 @@ export default function Staff({ onCreateInbound, onCreateOutbound }) {
                                     <tr><td colSpan={7} className="px-6 py-20 text-center text-gray-300 text-xs font-medium italic">Không có dữ liệu nhân sự phù hợp bộ lọc</td></tr>
                                 ) : filtered.map((row, idx) => (
                                     <tr key={row.id}
-                                        onClick={() => setSelected(selected?.id === row.id ? null : row)}
+                                        onClick={(e) => handleRowClick(row, idx, e)}
                                         onDoubleClick={() => { if(user?.roles?.includes('ADMIN')) { setEditData(row); setModalOpen(true); } }}
-                                        className={`transition-all cursor-pointer group ${row.contractType === 'EXPIRED' ? 'bg-gray-50/30 opacity-60' : ''} ${selected?.id === row.id ? 'bg-teal-50/50' : 'hover:bg-blue-50/30'}`}>
+                                        className={`transition-all cursor-pointer group ${row.contractType === 'EXPIRED' ? 'bg-gray-50/30 opacity-60' : ''} ${selectedIds.includes(row.id) ? 'bg-[#1192a8]/10 border-l-4 border-l-[#1192a8]' : 'hover:bg-blue-50/30 border-l-4 border-l-transparent'}`}>
                                         <td className="px-6 py-4 text-xs text-center text-gray-400 font-bold">{idx + 1}</td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
@@ -313,7 +368,14 @@ export default function Staff({ onCreateInbound, onCreateOutbound }) {
                                             <p className="text-[10px] text-gray-400 italic">@{row.username || 'chưa_tạo'}</p>
                                         </td>
                                         <td className="px-6 py-4"><RoleBadge role={row.warehouseRole} /></td>
-                                        <td className="px-6 py-4"><ContractBadge type={row.contractType} /></td>
+                                        <td className="px-6 py-4">
+                                            <ContractBadge type={row.contractType} />
+                                            {(row.shiftStartTime || row.shiftEndTime) && (
+                                                <p className="text-[10px] text-gray-400 mt-1 font-mono font-bold uppercase">
+                                                    ⏰ {row.shiftStartTime || '??'} - {row.shiftEndTime || '??'}
+                                                </p>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4">
                                             <StatusDot 
                                                 status={row.workStatus} 
@@ -336,12 +398,21 @@ export default function Staff({ onCreateInbound, onCreateOutbound }) {
                     )}
                 </div>
             </div>
-            {selected && user?.roles?.includes('ADMIN') && (
+            {selectedIds.length > 0 && user?.roles?.includes('ADMIN') && (
                 <p className="mt-3 text-[10px] text-gray-400 font-black uppercase tracking-widest text-right">
-                    Đang chọn: <span className="text-[#1192a8]">{selected.fullName}</span> — Nhấn đúp chuột để chỉnh sửa nhanh
+                    Đang chọn: <span className="text-[#1192a8]">{selectedIds.length} nhân sự</span> — Nhấn đúp chuột để chỉnh sửa nhanh
                 </p>
             )}
             <StaffModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSaved={() => fetchData(search)} editData={editData} />
+            <ExportExcelModal 
+                isOpen={isExportModalOpen}
+                fileName={exportFileName}
+                onFileNameChange={setExportFileName}
+                onExport={handleExportExcel}
+                onClose={closeExportModal}
+                saveMode={detectBestExportMode()}
+            />
         </div>
     );
 }
+

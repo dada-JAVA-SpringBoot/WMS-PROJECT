@@ -16,6 +16,23 @@ public class InventoryStatsDTO {
 
     // ── Phân tích ABC ──────────────────────────────────────────────────────
     private List<AbcItem> abcAnalysis;
+    private List<LossDetail> lossDetails; // Danh sách chi tiết các khoản hao hụt
+
+    // ════════════════════════════════════════════════════════════════════════
+    // Inner DTO: Chi tiết hao hụt
+    // ════════════════════════════════════════════════════════════════════════
+    @lombok.Data
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class LossDetail {
+        private String date;
+        private String type; // QC hoặc KIỂM KÊ
+        private String productName;
+        private String sku;
+        private double quantity;
+        private String reason;
+        private String referenceCode;
+    }
 
     // ── Tổng kết ───────────────────────────────────────────────────────────
     private double totalStockValue;
