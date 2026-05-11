@@ -1,9 +1,13 @@
 import React from 'react';
+import imgProduct from '../../../components/common/icons/a11.png';
+import imgQlKho from '../../../components/common/icons/a10.png';
+import imgSPX from '../../../components/common/icons/a8.png';
+import imgSuppiler from '../../../components/common/icons/a7.png';
+import imgStaff from '../../../components/common/icons/a6.png';
 
 const Features = () => {
     return (
         <div className="bg-white">
-
 
             <div className="text-center py-20 bg-gray-50 border-b border-gray-100">
                 <h2 className="text-[#149ca8] font-bold tracking-widest text-sm mb-4 uppercase">Chức năng cốt lõi</h2>
@@ -12,13 +16,20 @@ const Features = () => {
 
             <div className="max-w-[1200px] mx-auto px-6 py-20 space-y-32">
 
+                {/* Section 1: Quản lý Danh mục Hàng hóa */}
                 <div className="grid lg:grid-cols-2 gap-16 items-center">
-                    <div className="relative h-[450px] bg-blue-50/50 rounded-[3rem] flex items-center justify-center p-8 border border-blue-100/50">
+                    {/* Đã xóa h-[450px], giữ lại p-8 để có viền xanh dương bọc ngoài đẹp mắt */}
+                    <div className="relative bg-blue-50/50 rounded-[3rem] flex items-center justify-center p-8 border border-blue-100/50 group overflow-hidden">
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-cyan-400/20 rounded-full blur-3xl -z-10"></div>
                         <div className="absolute top-1/4 right-1/4 w-[200px] h-[200px] bg-purple-400/20 rounded-full blur-3xl -z-10"></div>
 
-                        <div className="w-full h-full bg-white rounded-2xl shadow-xl border border-gray-100 flex items-center justify-center text-gray-400 font-medium">
-                            [Chèn ảnh màn hình Quản lý Sản phẩm]
+
+                        <div className="w-full bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden border-4 border-white/50">
+                            <img
+                                src={imgProduct}
+                                alt="Màn hình Quản lý Danh mục Sản phẩm"
+                                className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                            />
                         </div>
                     </div>
                     <div className="space-y-6">
@@ -49,6 +60,7 @@ const Features = () => {
                     </div>
                 </div>
 
+                {/* Section 2: Khu vực Kho */}
                 <div className="grid lg:grid-cols-2 gap-16 items-center">
                     <div className="space-y-6 order-2 lg:order-1">
                         <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
@@ -78,19 +90,28 @@ const Features = () => {
                             </li>
                         </ul>
                     </div>
-                    <div className="relative h-[450px] bg-purple-50/50 rounded-[3rem] flex items-center justify-center p-8 border border-purple-100/50 order-1 lg:order-2">
+                    <div className="relative bg-purple-50/50 rounded-[3rem] flex items-center justify-center p-8 border border-purple-100/50 order-1 lg:order-2 group overflow-hidden">
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-purple-300/20 rounded-full blur-3xl -z-10"></div>
-                        <div className="w-full h-full bg-white rounded-2xl shadow-xl border border-gray-100 flex items-center justify-center text-gray-400 font-medium">
-                            [Chèn ảnh màn hình Khu vực kho]
+                        <div className="w-full bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden border-4 border-white/50">
+                            <img
+                                src={imgQlKho}
+                                alt="Sơ đồ Khu vực Kho hàng"
+                                className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                            />
                         </div>
                     </div>
                 </div>
 
+                {/* Section 3: Nhập - Xuất */}
                 <div className="grid lg:grid-cols-2 gap-16 items-center">
-                    <div className="relative h-[450px] bg-pink-50/50 rounded-[3rem] flex items-center justify-center p-8 border border-pink-100/50">
+                    <div className="relative bg-pink-50/50 rounded-[3rem] flex items-center justify-center p-8 border border-pink-100/50 group overflow-hidden">
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-pink-400/20 rounded-full blur-3xl -z-10"></div>
-                        <div className="w-full h-full bg-white rounded-2xl shadow-xl border border-gray-100 flex items-center justify-center text-gray-400 font-medium">
-                            [Chèn ảnh màn hình Lập phiếu]
+                        <div className="w-full bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden border-4 border-white/50">
+                            <img
+                                src={imgSPX}
+                                alt="Màn hình Vận hành Nhập Xuất kho"
+                                className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                            />
                         </div>
                     </div>
                     <div className="space-y-6">
@@ -125,7 +146,8 @@ const Features = () => {
                 </div>
             </div>
 
-            <div className="bg-[#f2f8ff] py-24">
+            {/* Section 4: Đối tác & Thống kê */}
+            <div className="bg-[#f2f8ff] py-24 group">
                 <div className="max-w-[1200px] mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
                     <div className="space-y-6 order-2 lg:order-1">
                         <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
@@ -148,19 +170,27 @@ const Features = () => {
                             </li>
                         </ul>
                     </div>
-                    <div className="h-[400px] w-full bg-white rounded-2xl shadow-xl border border-gray-100 flex items-center justify-center text-gray-400 font-medium order-1 lg:order-2">
-                        [Chèn ảnh màn hình Thống kê]
+
+                    <div className="w-full bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden border-4 border-white/50 order-1 lg:order-2 group">
+                        <img
+                            src={imgSuppiler}
+                            alt="Màn hình Báo cáo Thống kê kho hàng"
+                            className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                        />
                     </div>
                 </div>
             </div>
 
-
-            <div className="bg-[#fff7f0] py-24 mb-20">
+            {/* Section 5: Nhân sự & Phân quyền */}
+            <div className="bg-[#fff7f0] py-24 mb-20 group">
                 <div className="max-w-[1200px] mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
-                    <div className="relative h-[450px] bg-white rounded-2xl shadow-xl flex items-center justify-center p-8 border border-gray-100">
-                        <div className="w-full h-full bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center text-gray-400 font-medium">
-                            [Chèn ảnh màn hình Phân quyền]
-                        </div>
+                    {/* Xóa p-8 để ảnh lấp đầy hoàn toàn nếu không muốn có viền */}
+                    <div className="relative w-full bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden border-4 border-white/50 flex items-center justify-center p-0 group">
+                        <img
+                            src={imgStaff}
+                            alt="Màn hình Quản lý và Phân quyền Nhân viên"
+                            className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                        />
                     </div>
                     <div className="space-y-6">
                         <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">

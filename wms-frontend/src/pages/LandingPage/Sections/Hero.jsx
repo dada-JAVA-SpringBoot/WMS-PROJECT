@@ -1,8 +1,11 @@
 import React from 'react';
 
 import imgHelp from '../../../components/common/icons/a1.png';
-import imgQL from '../../../components/common/icons/a2.png';
+import imgQL from '../../../components/common/icons/a13.png';
 import imgCup from '../../../components/common/icons/cup.png';
+import imgLogo from '../../../components/common/icons/a12.png';
+import imgHero from '../../../components/common/icons/a5.png';
+import imgProduct from "../../../components/common/icons/a11.png";
 const Hero = ({ onEnter }) => {
     return (
         <div className="animate-fade-in">
@@ -64,9 +67,13 @@ const Hero = ({ onEnter }) => {
                             <div className="w-3 h-3 rounded-full bg-green-400"></div>
                             <div className="ml-4 bg-white px-4 py-1 rounded text-xs text-gray-400 font-medium shadow-sm">autohomewms.vn/dashboard</div>
                         </div>
-                        <div className="flex-1 bg-gray-50 flex items-center justify-center flex-col text-gray-400 border-2 border-dashed border-gray-200 m-4 rounded-xl">
-                            <span className="text-5xl mb-4 text-[#149ca8] opacity-50">📊</span>
-                            <p className="font-medium">[Chèn ảnh chụp màn hình Trang chủ của nhóm bạn vào đây]</p>
+                        <div className="w-full bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden border-4 border-white/50">
+                            <img
+                                src={imgHero}
+                                alt="Trang chủ"
+
+                                className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
+                            />
                         </div>
                     </div>
                 </div>
@@ -257,89 +264,329 @@ const Hero = ({ onEnter }) => {
 
                         <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
                             <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Dược phẩm</div>
-                            <div className="p-4 grid grid-cols-2 gap-4 h-40">
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 1]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 2]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 3]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 4]</div>
+
+                            <div className="p-4 grid grid-cols-2 gap-4">
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 1"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 2"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 3"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 4"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
                             </div>
                         </div>
 
 
                         <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Thực phẩm</div>
-                            <div className="p-4 grid grid-cols-2 gap-4 h-40">
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 1]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 2]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 3]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 4]</div>
+                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Dược phẩm</div>
+
+                            <div className="p-4 grid grid-cols-2 gap-4">
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 1"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 2"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 3"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 4"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
                             </div>
                         </div>
 
 
                         <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Tổng hợp</div>
-                            <div className="p-4 grid grid-cols-2 gap-4 h-40">
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 1]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 2]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 3]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 4]</div>
+                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Dược phẩm</div>
+
+                           <div className="p-4 grid grid-cols-2 gap-4">
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 1"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 2"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 3"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 4"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
                             </div>
                         </div>
 
 
                         <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Hóa mỹ phẩm</div>
-                            <div className="p-4 grid grid-cols-2 gap-4 h-40">
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 1]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 2]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 3]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 4]</div>
+                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Dược phẩm</div>
+
+                            <div className="p-4 grid grid-cols-2 gap-4">
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 1"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 2"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 3"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 4"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
                             </div>
                         </div>
 
 
 
                         <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Bao bì</div>
-                            <div className="p-4 grid grid-cols-2 gap-4 h-40">
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 1]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 2]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 3]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 4]</div>
+                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Dược phẩm</div>
+
+                            <div className="p-4 grid grid-cols-2 gap-4">
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 1"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 2"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 3"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 4"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
                             </div>
                         </div>
 
 
                         <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Nội thất</div>
-                            <div className="p-4 grid grid-cols-2 gap-4 h-40">
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 1]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 2]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 3]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 4]</div>
+                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Dược phẩm</div>
+
+                            <div className="p-4 grid grid-cols-2 gap-4">
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 1"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 2"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 3"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 4"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
                             </div>
                         </div>
 
 
                         <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Vật liệu xây dựng</div>
-                            <div className="p-4 grid grid-cols-2 gap-4 h-40">
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 1]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 2]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 3]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 4]</div>
+                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Dược phẩm</div>
+
+                            <div className="p-4 grid grid-cols-2 gap-4">
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 1"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 2"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 3"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 4"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
                             </div>
                         </div>
 
 
                         <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Máy móc thiết bị</div>
-                            <div className="p-4 grid grid-cols-2 gap-4 h-40">
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 1]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 2]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 3]</div>
-                                <div className="bg-gray-50 rounded flex justify-center items-center text-xs text-gray-400">[Logo 4]</div>
+                            <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">Dược phẩm</div>
+
+                            <div className="p-4 grid grid-cols-2 gap-4">
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 1"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 2"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 3"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                <div className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">
+                                    <img
+                                        src={imgLogo}
+                                        alt="Logo 4"
+                                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700"
+                                    />
+                                </div>
+
                             </div>
                         </div>
 
