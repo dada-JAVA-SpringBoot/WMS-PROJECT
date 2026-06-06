@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axiosClient from '../../../api/axiosClient';
-import FilterBar, { FilterButton, FilterDateInput } from '../../../components/statistical/FilterBar';
+import FilterBar, { FilterButton, FilterDateInput, FilterSelect } from '../../../components/statistical/FilterBar';
 import FinancialCards from '../../../components/statistical/FinancialCards';
 import GroupedBarChart from '../../../components/statistical/charts/GroupedBarChart';
 import LineAreaChart   from '../../../components/statistical/charts/LineAreaChart';
@@ -15,6 +15,7 @@ export default function RevenueByDateRange() {
     const [detail,  setDetail]  = useState(null);
     const [loading, setLoading] = useState(false);
     const [error,   setError]   = useState(null);
+    const [profitType, setProfitType] = useState('cashflow');
 
     const fetchAll = useCallback(async (f, t) => {
         setLoading(true); setError(null);
@@ -40,6 +41,8 @@ export default function RevenueByDateRange() {
     };
     const handleReset = () => { setFrom(sevenAgo); setTo(today); fetchAll(sevenAgo, today); };
 
+    const isActual = profitType === 'actual';
+
     return (
         <div className="space-y-5 p-5">
             <FilterBar>
@@ -49,9 +52,15 @@ export default function RevenueByDateRange() {
                 <FilterDateInput value={to}   onChange={e => setTo(e.target.value)}   className="w-[170px]" />
                 <FilterButton variant="primary" onClick={handleFilter}>Thống kê</FilterButton>
                 <FilterButton onClick={handleReset}>Làm mới</FilterButton>
+
+                <span className="text-[16px] text-slate-800 ml-auto font-medium">Loại lợi nhuận</span>
+                <FilterSelect value={profitType} onChange={e => setProfitType(e.target.value)} className="w-[200px]">
+                    <option value="cashflow">Theo dòng tiền (Chi/Thu)</option>
+                    <option value="actual">Lợi nhuận thực tế (COGS)</option>
+                </FilterSelect>
             </FilterBar>
 
-            <FinancialCards data={summary} loading={loading} error={error} />
+            <FinancialCards data={summary} loading={loading} error={error} profitType={profitType} />
 
             {detail && !loading && (
                 <>
@@ -59,7 +68,7 @@ export default function RevenueByDateRange() {
                         title="Chi phí, Doanh thu & Hao hụt"
                         labels={detail.labels}
                         series={[
-                            { label: 'Chi phí (Nhập)', color: '#e6b06e', data: detail.costData    },
+                            { label: isActual ? 'Giá vốn hàng bán (COGS)' : 'Chi phí (Nhập)', color: '#e6b06e', data: isActual ? detail.cogsData : detail.costData },
                             { label: 'Doanh thu (Xuất)', color: '#74b9f5', data: detail.revenueData },
                             { label: 'Hao hụt (Thất thoát)', color: '#ef4444', data: detail.lossData },
                         ]}
@@ -68,7 +77,7 @@ export default function RevenueByDateRange() {
                         title="Xu hướng lợi nhuận"
                         labels={detail.labels}
                         series={[
-                            { label: 'Lợi nhuận', color: '#b68cf0', fill: '#b68cf0', data: detail.profitData },
+                            { label: isActual ? 'Lợi nhuận thực tế' : 'Lợi nhuận dòng', color: '#b68cf0', fill: '#b68cf0', data: isActual ? detail.actualProfitData : detail.profitData },
                         ]}
                     />
                 </>

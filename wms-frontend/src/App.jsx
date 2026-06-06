@@ -3,9 +3,9 @@ import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import axiosClient from './api/axiosClient';
 
-import Sidebar            from './components/layout/sidebar';
+import Sidebar            from './components/layout/sidebar.jsx';
 import Login              from './pages/LoginPage.jsx';
-import Inventory          from './pages/Inventory';
+import Inventory          from './pages/Inventory.jsx';
 import Home               from './pages/Home.jsx';
 import Staff              from './pages/Staff.jsx';
 import Statistical        from './pages/Statistical.jsx';
@@ -22,9 +22,9 @@ import TransactionHistory from './pages/TransactionHistory.jsx';
 import WavePicking        from './pages/WavePicking.jsx';
 import CycleCounting      from './pages/CycleCounting.jsx';
 import LandingPage        from './pages/LandingPage/LandingPage.jsx';
-import PrivateRoute       from './components/PrivateRoute';
+import PrivateRoute       from './components/PrivateRoute.jsx';
 import UnauthorizedPage   from './pages/UnauthorizedPage.jsx';
-import AttendanceModal    from './components/modals/AttendanceModal';
+import AttendanceModal    from './components/modals/AttendanceModal.jsx';
 import { getAvatarSrc }    from './components/common/avatarUtils';
 
 import { ContextMenuProvider } from './context/ContextMenuContext';

@@ -16,6 +16,9 @@ public class InboundOrder {
     @Column(name = "SupplierId")
     private Integer supplierId;
 
+    @org.hibernate.annotations.Formula("(SELECT s.Name FROM Suppliers s WHERE s.Id = SupplierId)")
+    private String supplierName;
+
     @Column(name = "ReferenceNumber", length = 100)
     private String referenceNumber;
 
@@ -31,10 +34,28 @@ public class InboundOrder {
     @Column(name = "CreatedBy")
     private Integer createdBy;
 
-    @Column(name = "CreatedAt", insertable = false, updatable = false)
+    @Column(name = "CreatedAt", updatable = false)
     private LocalDateTime createdAt;
 
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
+
+    @Column(name = "Notes", length = 500)
+    private String notes;
+
     // Getter Setter
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
 
     public Long getId() {
         return id;
@@ -106,5 +127,13 @@ public class InboundOrder {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getSupplierName() {
+        return supplierName;
+    }
+
+    public void setSupplierName(String supplierName) {
+        this.supplierName = supplierName;
     }
 }

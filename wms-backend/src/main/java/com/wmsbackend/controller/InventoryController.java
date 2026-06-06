@@ -59,7 +59,9 @@ public class InventoryController {
             if (remaining.compareTo(BigDecimal.ZERO) <= 0) break;
 
             // Tính số lượng khả dụng (OnHand - Allocated)
-            BigDecimal available = stock.getOnHand().subtract(stock.getAllocated());
+            BigDecimal onHand = stock.getOnHand() != null ? stock.getOnHand() : BigDecimal.ZERO;
+            BigDecimal allocated = stock.getAllocated() != null ? stock.getAllocated() : BigDecimal.ZERO;
+            BigDecimal available = onHand.subtract(allocated);
             if (available.compareTo(BigDecimal.ZERO) <= 0) continue;
 
             // Lấy lượng nhỏ nhất giữa lượng cần và lượng có

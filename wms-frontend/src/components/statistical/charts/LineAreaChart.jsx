@@ -1,13 +1,15 @@
 import React from 'react';
 import { formatCurrencyShort } from './chartUtils';
 
-function getPoints(values, width, height, padding, maxValue) {
-    const safeMax = maxValue || Math.max(...values, 1);
+function getPoints(values, width, height, padding, minValue, maxValue) {
+    const range = maxValue - minValue || 1;
     const stepX = values.length > 1 ? (width - padding.left - padding.right) / (values.length - 1) : 0;
+    const chartHeight = height - padding.top - padding.bottom;
 
     return values.map((value, index) => {
         const x = padding.left + index * stepX;
-        const y = height - padding.bottom - (value / safeMax) * (height - padding.top - padding.bottom);
+        const ratio = (value - minValue) / range;
+        const y = padding.top + chartHeight - ratio * chartHeight;
         return { x, y, value };
     });
 }
@@ -17,11 +19,11 @@ function createLinePath(points) {
     return `M ${points.map((point) => `${point.x},${point.y}`).join(' L ')}`;
 }
 
-function createAreaPath(points, height, padding) {
+function createAreaPath(points, yZero) {
     if (!points.length) return '';
     const start = points[0];
     const end = points[points.length - 1];
-    return `${createLinePath(points)} L ${end.x},${height - padding.bottom} L ${start.x},${height - padding.bottom} Z`;
+    return `${createLinePath(points)} L ${end.x},${yZero} L ${start.x},${yZero} Z`;
 }
 
 export default function LineAreaChart({
@@ -29,23 +31,37 @@ export default function LineAreaChart({
     series = [],
     title,
     height = 380,
-    yTicks = 5,
+    yTicks = 4, // Sử dụng số tick chẵn để chia đều âm dương đẹp hơn
 }) {
     const width = 1180;
     const padding = { top: 40, right: 30, bottom: 55, left: 82 };
     
-    // Safety check for empty or undefined series
     if (!series || series.length === 0 || !series[0].data) {
         return <div className="h-full flex items-center justify-center text-gray-400 italic">Không có dữ liệu biểu đồ</div>;
     }
 
-    const maxValue = Math.max(...series.flatMap((item) => item.data || [0]), 1);
+    const rawMin = Math.min(...series.flatMap((item) => item.data || [0]), 0);
+    const rawMax = Math.max(...series.flatMap((item) => item.data || [0]), 1);
     
-    // Adaptive rounding based on magnitude
-    const magnitude = Math.pow(10, Math.floor(Math.log10(maxValue / yTicks)) || 0);
-    const roundedMax = Math.ceil(maxValue / yTicks / magnitude) * yTicks * magnitude;
-    
-    const ticks = Array.from({ length: yTicks + 1 }, (_, index) => (roundedMax / yTicks) * index).reverse();
+    let roundedMin = 0;
+    let roundedMax = 1;
+    let ticks = [];
+
+    if (rawMin < 0) {
+        const absMax = Math.max(Math.abs(rawMax), Math.abs(rawMin));
+        const magnitude = Math.pow(10, Math.floor(Math.log10(absMax / yTicks)) || 0);
+        roundedMax = Math.ceil(absMax / yTicks / magnitude) * yTicks * magnitude;
+        roundedMin = -roundedMax;
+        ticks = Array.from({ length: yTicks + 1 }, (_, index) => roundedMax - ((roundedMax - roundedMin) / yTicks) * index);
+    } else {
+        const magnitude = Math.pow(10, Math.floor(Math.log10(rawMax / yTicks)) || 0);
+        roundedMax = Math.ceil(rawMax / yTicks / magnitude) * yTicks * magnitude;
+        roundedMin = 0;
+        ticks = Array.from({ length: yTicks + 1 }, (_, index) => roundedMax - (roundedMax / yTicks) * index);
+    }
+
+    const chartHeight = height - padding.top - padding.bottom;
+    const yZero = padding.top + chartHeight - ((0 - roundedMin) / (roundedMax - roundedMin)) * chartHeight;
 
     return (
         <div className="bg-white p-2 h-full">
@@ -53,7 +69,7 @@ export default function LineAreaChart({
             <div className="w-full h-full overflow-hidden">
                 <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
                     {ticks.map((tick, index) => {
-                        const y = padding.top + (index * (height - padding.top - padding.bottom)) / yTicks;
+                        const y = padding.top + (index * chartHeight) / yTicks;
                         return (
                             <g key={tick}>
                                 <line
@@ -71,6 +87,18 @@ export default function LineAreaChart({
                         );
                     })}
 
+                    {rawMin < 0 && (
+                        <line
+                            x1={padding.left}
+                            y1={yZero}
+                            x2={width - padding.right}
+                            y2={yZero}
+                            stroke="#64748b"
+                            strokeWidth="1.5"
+                            strokeDasharray="4 4"
+                        />
+                    )}
+
                     {labels.map((label, index) => {
                         const x =
                             labels.length > 1
@@ -84,12 +112,12 @@ export default function LineAreaChart({
                     })}
 
                     {series.map((item) => {
-                        const points = getPoints(item.data, width, height, padding, roundedMax);
+                        const points = getPoints(item.data, width, height, padding, roundedMin, roundedMax);
                         return (
                             <g key={item.label}>
                                 {item.fill && (
                                     <path
-                                        d={createAreaPath(points, height, padding)}
+                                        d={createAreaPath(points, yZero)}
                                         fill={item.fill}
                                         fillOpacity="0.28"
                                     />

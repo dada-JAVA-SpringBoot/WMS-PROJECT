@@ -43,7 +43,7 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
     const [contextMenu, setContextMenu] = useState(null);
 
     const [isScannerOpen, setIsScannerOpen] = useState(false);
-    const [activeScanTarget, setActiveScanTarget] = useState('SEARCH'); // 'SEARCH' or 'ITEM'
+    const [activeScanTarget, setActiveScanTarget] = useState('SEARCH'); 
     const [activeItemIndex, setActiveItemIndex] = useState(null);
 
     const [dialog, setDialog] = useState({ isOpen: false, title: '', message: '', variant: 'info' });
@@ -98,7 +98,7 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
                     setNewItems(updated);
                     fetchBatches(prod.id);
                 }
-            } catch (e) { console.error("Lỗi quét mã:", e); }
+            } catch (error) { console.error("Lỗi quét mã:", error); }
         }
     };
 
@@ -163,7 +163,7 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
         try {
             const res = await axiosClient.get(`/api/inbound/batches/${productId}`);
             setProductBatches(prev => ({ ...prev, [productId]: res.data }));
-        } catch (e) { console.error("Lỗi lấy lô hàng:", e); }
+        } catch (error) { console.error("Lỗi lấy lô hàng:", error); }
     };
 
     useEffect(() => {
@@ -174,7 +174,8 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
             if (workflow.products && workflow.products.length > 0) {
                 items = workflow.products.map(p => { fetchBatches(p.id); return { ...createEmptyLineItem(), productId: p.id, price: p.price || 0, locationId: workflow.targetLocation?.id || "" }; });
             } else if (workflow.targetLocation) { items = [{ ...createEmptyLineItem(), locationId: workflow.targetLocation.id }]; }
-            setNewItems(items); clearWorkflow();
+            setNewItems(items); 
+            setTimeout(() => clearWorkflow(), 0);
         }
     }, [workflow, clearWorkflow, canCreate]);
 
@@ -186,32 +187,27 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
 
     const handleUpdateStatus = async (id, nextStatus) => {
         const receipt = receipts.find(r => r.id === id);
-        
-        // Nếu người dùng chọn chuyển sang "Đã nhập" (COMPLETED)
         if (nextStatus === 'COMPLETED') {
-            // Kiểm tra quyền (chỉ ADMIN, MANAGER, STOREKEEPER, QC có thể duyệt)
             const canApprove = roles.some(r => ['ADMIN', 'MANAGER', 'STOREKEEPER', 'QUALITY_CONTROL'].includes(r));
             if (!canApprove) {
                 showMsg("Từ chối", "Bạn không có quyền chuyển trạng thái sang 'Đã nhập'.", "info");
                 return;
             }
-
             try {
                 const res = await axiosClient.get(`/api/inbound/${id}/details`);
                 setPendingQCReceipt(receipt);
                 setQCItems(res.data);
                 setIsQCModalOpen(true);
                 return;
-            } catch (err) {
+            } catch (error) {
                 showMsg("Lỗi", "Không thể tải chi tiết phiếu để kiểm định", "info");
                 return;
             }
         }
-
         try {
             await axiosClient.put(`/api/inbound/${id}/status`, { status: nextStatus });
             fetchData();
-        } catch {
+        } catch (error) {
             showMsg("Lỗi", 'Lỗi cập nhật trạng thái', "info");
         }
     };
@@ -221,7 +217,7 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
             await axiosClient.put(`/api/inbound/${pendingQCReceipt.id}/status`, { status: 'COMPLETED', details: inspectionData });
             setIsQCModalOpen(false); setPendingQCReceipt(null); fetchData();
             showMsg("Thành công", "Đã kiểm định và nhập kho thành công!", "info");
-        } catch (err) { showMsg("Lỗi", "Lỗi gửi QC: " + (err.response?.data?.message || err.message), "info"); }
+        } catch (error) { showMsg("Lỗi", "Lỗi gửi QC: " + (error.response?.data?.message || error.message), "info"); }
     };
 
     const handleSaveReceipt = async () => {
@@ -246,8 +242,8 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
         } catch (error) { showMsg("Lỗi", "Lỗi lưu: " + (error.response?.data?.message || error.message), "info"); }
     };
 
-    const handleExportExcel = async () => {
-        const source = selectedItems.length > 0 ? selectedItems : filteredReceipts;
+    const handleExportExcel = async (mode) => {
+        const source = mode === 'selected' ? selectedItems : filteredReceipts;
         if (!source.length) return showMsg("Lỗi", 'Không có dữ liệu!', "info");
         const sheetData = source.map((row, idx) => ({
             "STT": idx + 1, "Mã phiếu": row.receiptCode, "Ngày tạo": row.createdAt ? new Date(row.createdAt).toLocaleString('vi-VN') : '---',
@@ -267,7 +263,10 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
             const r = selectedItems[0]; setSelectedReceipt(r); 
             axiosClient.get(`/api/inbound/${r.id}/details`).then(res => { setDetailItems(res.data); setIsDetailModalOpen(true); });
         }},
-        { label: 'XUẤT EXCEL', iconSrc: excelIcon, onClick: () => openExportModal() },
+        { label: 'XUẤT EXCEL', iconSrc: excelIcon, onClick: () => {
+            const bestMode = detectBestExportMode(selectedIds.length, filteredReceipts.length);
+            openExportModal(bestMode);
+        }},
         { label: 'LÀM MỚI', iconSrc: excel1Icon, onClick: () => { fetchData(); clearSelection(); } }
     ];
 
@@ -276,11 +275,55 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
         return <span className="ml-1 text-[#1192a8] font-black">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>;
     };
 
+    const handleContextMenu = (e, item) => {
+        e.preventDefault();
+        setContextMenu({
+            x: e.clientX,
+            y: e.clientY,
+            item: item
+        });
+    };
+
+    const contextActions = useMemo(() => {
+        if (!contextMenu?.item) return [];
+        const item = contextMenu.item;
+        return [
+            { label: 'Xem chi tiết', onClick: () => {
+                setSelectedReceipt(item);
+                axiosClient.get(`/api/inbound/${item.id}/details`).then(res => {
+                    setDetailItems(res.data);
+                    setIsDetailModalOpen(true);
+                });
+            }},
+            { label: 'Xuất Excel phiếu này', onClick: () => {
+                const sheetData = [{ "Mã phiếu": item.receiptCode, "Ngày tạo": new Date(item.createdAt).toLocaleString(), "Nhà cung cấp": suppliers.find(s => s.id === item.supplierId)?.name, "Tổng tiền": item.totalAmount, "Trạng thái": item.status }];
+                const ws = XLSX.utils.json_to_sheet(sheetData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Detail");
+                XLSX.writeFile(wb, `PhieuNhap_${item.receiptCode}.xlsx`);
+            }},
+            ...(item.status === 'PENDING' ? [{ label: 'DUYỆT QC & NHẬP KHO', onClick: () => handleUpdateStatus(item.id, 'COMPLETED'), danger: true }] : [])
+        ];
+    }, [contextMenu, suppliers]);
+
     return (
-        <div className="p-6 bg-[#f8f9fa] min-h-full flex flex-col text-left font-sans">
+        <div className="p-6 bg-[#f8f9fa] min-h-full flex flex-col text-left font-sans" onContextMenu={e => e.preventDefault()}>
             <SystemDialog isOpen={dialog.isOpen} title={dialog.title} message={dialog.message} variant={dialog.variant} onClose={() => setDialog({ ...dialog, isOpen: false })} />
             <ScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanSuccess={handleScanSuccess} />
-            
+            <ExportExcelModal 
+                isOpen={isExportModalOpen} 
+                onClose={closeExportModal} 
+                onConfirm={handleExportExcel} 
+                fileName={exportFileName} 
+                setFileName={setExportFileName} 
+            />
+            <VoucherContextMenu 
+                isOpen={!!contextMenu} 
+                x={contextMenu?.x} 
+                y={contextMenu?.y} 
+                title="Thao tác nhanh"
+                subtitle={contextMenu?.item?.receiptCode}
+                actions={contextActions}
+                onClose={() => setContextMenu(null)}
+            />
             <div className="sticky top-0 z-20 flex items-center justify-between bg-white/95 backdrop-blur-sm p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 mb-4 md:mb-6">
                 <div className="flex gap-4 overflow-x-auto no-scrollbar pb-1 w-full lg:w-auto">
                     {toolbarActions.map((a, i) => <ActionButton key={i} {...a} />)}
@@ -323,7 +366,11 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
                         </thead>
                         <tbody className="text-sm">
                             {loading ? <tr><td colSpan="6" className="py-20 text-center animate-pulse">ĐANG TẢI...</td></tr> : filteredReceipts.map((item, idx) => (
-                                <tr key={item.id} onClick={(e) => handleRowClick(item, idx, e)} onDoubleClick={() => { setSelectedReceipt(item); axiosClient.get(`/api/inbound/${item.id}/details`).then(res => { setDetailItems(res.data); setIsDetailModalOpen(true); }); }} className={`border-b border-gray-50 cursor-pointer ${selectedIds.includes(item.id) ? 'bg-[#1192a8]/5' : 'hover:bg-gray-50'}`}>
+                                <tr key={item.id} 
+                                    onClick={(e) => handleRowClick(item, idx, e)} 
+                                    onDoubleClick={() => { setSelectedReceipt(item); axiosClient.get(`/api/inbound/${item.id}/details`).then(res => { setDetailItems(res.data); setIsDetailModalOpen(true); }); }} 
+                                    onContextMenu={(e) => handleContextMenu(e, item)}
+                                    className={`border-b border-gray-50 cursor-pointer ${selectedIds.includes(item.id) ? 'bg-[#1192a8]/5' : 'hover:bg-gray-50'}`}>
                                     <td className="p-4 md:p-5 text-gray-300 font-bold">{idx + 1}</td>
                                     <td className="p-4 md:p-5 font-black text-[#1192a8] uppercase">{item.receiptCode}</td>
                                     <td className="p-4 md:p-5 text-gray-500 font-bold">{item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : '---'}</td>

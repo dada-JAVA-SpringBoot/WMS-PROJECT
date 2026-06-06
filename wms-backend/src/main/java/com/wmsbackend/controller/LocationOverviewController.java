@@ -9,12 +9,12 @@ import com.wmsbackend.repository.InboundOrderDetailRepository;
 import com.wmsbackend.repository.InboundOrderRepository;
 import com.wmsbackend.repository.InventoryRepository;
 import com.wmsbackend.repository.LocationRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.annotation.PostConstruct;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -25,36 +25,62 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping({"/api/location-overview", "/api/locations"})
-@CrossOrigin(origins = "http://localhost:5173")
 public class LocationOverviewController {
 
     private final LocationRepository locationRepo;
     private final InventoryRepository inventoryRepo;
     private final InboundOrderRepository inboundOrderRepo;
     private final InboundOrderDetailRepository inboundDetailRepo;
+    private final com.wmsbackend.repository.WarehouseRepository warehouseRepo;
 
     public LocationOverviewController(LocationRepository locationRepo,
                                       InventoryRepository inventoryRepo,
                                       InboundOrderRepository inboundOrderRepo,
-                                      InboundOrderDetailRepository inboundDetailRepo) {
+                                      InboundOrderDetailRepository inboundDetailRepo,
+                                      com.wmsbackend.repository.WarehouseRepository warehouseRepo) {
         this.locationRepo = locationRepo;
         this.inventoryRepo = inventoryRepo;
         this.inboundOrderRepo = inboundOrderRepo;
         this.inboundDetailRepo = inboundDetailRepo;
+        this.warehouseRepo = warehouseRepo;
+    }
+
+    @PostConstruct
+    public void initDefaultWarehouse() {
+        try {
+            if (warehouseRepo.count() == 0) {
+                com.wmsbackend.entity.Warehouse wh = new com.wmsbackend.entity.Warehouse();
+                wh.setWarehouseCode("WH-001");
+                wh.setName("Kho mặc định");
+                wh.setAddress("Hệ thống");
+                warehouseRepo.save(wh);
+                System.out.println(">>> Đã tạo kho mặc định WH-001 thành công.");
+            }
+        } catch (Exception e) {
+            System.err.println(">>> CẢNH BÁO: Không thể khởi tạo kho mặc định: " + e.getMessage());
+            // Không ném ngoại lệ để ứng dụng vẫn có thể khởi động
+        }
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL','CHECKER','HANDLER')")
     public ResponseEntity<List<LocationOverviewDTO>> getOverview() {
         List<Location> locations = locationRepo.findAll();
+        if (locations.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
         List<Integer> locationIds = locations.stream().map(Location::getId).toList();
 
         Map<Integer, BigDecimal> onHandMap = new HashMap<>();
         Map<Integer, BigDecimal> allocatedMap = new HashMap<>();
 
-        for (Inventory stock : inventoryRepo.findByLocationIdIn(locationIds)) {
-            onHandMap.merge(stock.getLocationId(), safe(stock.getQuantityOnHand()), BigDecimal::add);
-            allocatedMap.merge(stock.getLocationId(), safe(stock.getQuantityAllocated()), BigDecimal::add);
+        try {
+            for (Inventory stock : inventoryRepo.findByLocationIdIn(locationIds)) {
+                onHandMap.merge(stock.getLocationId(), safe(stock.getQuantityOnHand()), BigDecimal::add);
+                allocatedMap.merge(stock.getLocationId(), safe(stock.getQuantityAllocated()), BigDecimal::add);
+            }
+        } catch (Exception e) {
+            System.err.println(">>> Lỗi khi truy vấn tồn kho theo vị trí: " + e.getMessage());
         }
 
         Set<Long> pendingOrderIds = inboundOrderRepo.findByStatusIn(List.of("ORDERED", "IN_TRANSIT"))
@@ -106,6 +132,51 @@ public class LocationOverviewController {
         }).toList();
 
         return ResponseEntity.ok(dtos);
+    }
+
+    @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public ResponseEntity<Location> createLocation(@RequestBody Location location) {
+        if (location.getWarehouseId() == null) {
+            // Gán kho mặc định nếu không có
+            warehouseRepo.findAll().stream().findFirst().ifPresent(wh -> location.setWarehouseId(wh.getId()));
+        }
+        return ResponseEntity.ok(locationRepo.save(location));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public ResponseEntity<Location> updateLocation(@PathVariable Integer id, @RequestBody Location updated) {
+        return locationRepo.findById(id).map(existing -> {
+            existing.setWarehouseId(updated.getWarehouseId());
+            existing.setZone(updated.getZone());
+            existing.setAisle(updated.getAisle());
+            existing.setRack(updated.getRack());
+            existing.setLevel(updated.getLevel());
+            existing.setBinCode(updated.getBinCode());
+            existing.setCapacity(updated.getCapacity());
+            existing.setStorageType(updated.getStorageType());
+            existing.setContainerType(updated.getContainerType());
+            return ResponseEntity.ok(locationRepo.save(existing));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteLocation(@PathVariable Integer id) {
+        if (!locationRepo.existsById(id)) return ResponseEntity.notFound().build();
+        try {
+            locationRepo.deleteById(id);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+    }
+
+    @GetMapping("/overview")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER')")
+    public ResponseEntity<List<LocationOverviewDTO>> getOverviewAlias() {
+        return getOverview();
     }
 
     private BigDecimal safe(BigDecimal value) {

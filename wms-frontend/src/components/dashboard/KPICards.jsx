@@ -11,7 +11,7 @@ export default function KPICards({ data, roles }) {
     const isAdminOrManager = roles.includes('ADMIN') || roles.includes('MANAGER');
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
             <StatMetricCard
                 icon={<img src={productIcon} className="w-10 h-10 object-contain" alt="Products" />}
                 value={data.totalSkus || 0}

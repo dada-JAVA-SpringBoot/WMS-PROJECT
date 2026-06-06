@@ -2,8 +2,11 @@ package com.wmsbackend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.boot.CommandLineRunner;
 import jakarta.annotation.PostConstruct;
 import java.util.TimeZone;
+import java.util.Map;
 
 @SpringBootApplication
 public class WmsBackendApplication {
@@ -18,4 +21,23 @@ public class WmsBackendApplication {
         SpringApplication.run(WmsBackendApplication.class, args);
     }
 
+    @Bean
+    public CommandLineRunner autoSeedRunner(
+            com.wmsbackend.repository.ProductRepository productRepo,
+            com.wmsbackend.service.MockDataService mockDataService) {
+        return args -> {
+            if (productRepo.count() == 0) {
+                System.out.println(">>> DATABASE IS EMPTY! STARTING AUTOMATIC MOCK DATA SEEDING...");
+                try {
+                    Map<String, Object> result = mockDataService.generateMockData();
+                    System.out.println(">>> AUTOMATIC SEEDING COMPLETED SUCCESSFULY: " + result);
+                } catch (Exception e) {
+                    System.err.println(">>> ERROR DURING AUTOMATIC SEEDING: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            } else {
+                System.out.println(">>> DATABASE ALREADY CONTAINS DATA. SKIPPING AUTO-SEED.");
+            }
+        };
+    }
 }

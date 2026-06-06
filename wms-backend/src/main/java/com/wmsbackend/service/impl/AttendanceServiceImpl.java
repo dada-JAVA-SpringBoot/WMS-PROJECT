@@ -7,13 +7,13 @@ import com.wmsbackend.repository.AttendanceRepository;
 import com.wmsbackend.repository.StaffRepository;
 import com.wmsbackend.repository.WorkShiftRepository;
 import com.wmsbackend.service.AttendanceService;
+import com.wmsbackend.util.TimeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
@@ -32,12 +32,11 @@ public class AttendanceServiceImpl implements AttendanceService {
         Staff staff = staffRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        // Cấp cao không cần chấm công (Ví dụ ADMIN)
         if (staff.getRoles().stream().anyMatch(r -> "ADMIN".equals(r.getRoleName()))) {
             return null;
         }
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = TimeUtils.now().toLocalDate();
         if (attendanceRepository.findByStaffAndWorkDate(staff, today).isPresent()) {
             throw new RuntimeException("Bạn đã check-in hôm nay rồi!");
         }
@@ -45,21 +44,21 @@ public class AttendanceServiceImpl implements AttendanceService {
         Attendance attendance = new Attendance();
         attendance.setStaff(staff);
         attendance.setWorkDate(today);
-        attendance.setCheckInTime(LocalDateTime.now());
+        attendance.setCheckInTime(TimeUtils.now());
         attendance.setLateReason(reason);
         
         WorkShift shift = workShiftRepository.findAll().stream().findFirst().orElse(null);
         
         if (shift != null) {
-            LocalTime nowTime = LocalTime.now();
+            LocalTime nowTime = TimeUtils.now().toLocalTime();
             if (nowTime.isAfter(shift.getStartTime().plusMinutes(shift.getGracePeriodMinutes()))) {
                 long late = Duration.between(shift.getStartTime(), nowTime).toMinutes();
                 attendance.setLateMinutes((int) late);
                 attendance.setStatus("LATE");
-                attendance.setApprovalStatus("PENDING"); // Đang chờ duyệt lý do đi trễ
+                attendance.setApprovalStatus("PENDING");
             } else {
                 attendance.setStatus("PRESENT");
-                attendance.setApprovalStatus("APPROVED"); // Đi đúng giờ tự động duyệt
+                attendance.setApprovalStatus("APPROVED");
             }
         } else {
             attendance.setStatus("PRESENT");
@@ -81,12 +80,10 @@ public class AttendanceServiceImpl implements AttendanceService {
         Staff approver = staffRepository.findByUsername(approverUsername)
                 .orElseThrow(() -> new RuntimeException("Người duyệt không tồn tại"));
 
-        // 1. Không thể tự duyệt cho chính mình
         if (attendance.getStaff().getUsername().equals(approverUsername)) {
             throw new RuntimeException("Bạn không thể tự duyệt chấm công của chính mình!");
         }
 
-        // 2. Kiểm tra cấp bậc
         boolean recordIsManager = attendance.getStaff().getRoles().stream()
                 .anyMatch(r -> "MANAGER".equals(r.getRoleName()));
         boolean approverIsAdmin = approver.getRoles().stream()
@@ -107,19 +104,18 @@ public class AttendanceServiceImpl implements AttendanceService {
         Staff staff = staffRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        Attendance attendance = attendanceRepository.findByStaffAndWorkDate(staff, LocalDate.now())
+        Attendance attendance = attendanceRepository.findByStaffAndWorkDate(staff, TimeUtils.now().toLocalDate())
                 .orElseThrow(() -> new RuntimeException("Bạn chưa check-in!"));
 
         if (attendance.getCheckOutTime() != null) {
             throw new RuntimeException("Bạn đã check-out rồi!");
         }
 
-        attendance.setCheckOutTime(LocalDateTime.now());
+        attendance.setCheckOutTime(TimeUtils.now());
         
-        // Tính Overtime
         WorkShift shift = workShiftRepository.findAll().stream().findFirst().orElse(null);
         if (shift != null) {
-            LocalTime nowTime = LocalTime.now();
+            LocalTime nowTime = TimeUtils.now().toLocalTime();
             if (nowTime.isAfter(shift.getEndTime())) {
                 long ot = Duration.between(shift.getEndTime(), nowTime).toMinutes();
                 attendance.setOvertimeMinutes((int) ot);
@@ -135,12 +131,12 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     public Attendance getTodayAttendance(String username) {
         Staff staff = staffRepository.findByUsername(username).orElseThrow();
-        return attendanceRepository.findByStaffAndWorkDate(staff, LocalDate.now()).orElse(null);
+        return attendanceRepository.findByStaffAndWorkDate(staff, TimeUtils.now().toLocalDate()).orElse(null);
     }
 
     @Override
     public List<Attendance> getAllToday() {
-        return attendanceRepository.findByWorkDate(LocalDate.now());
+        return attendanceRepository.findByWorkDate(TimeUtils.now().toLocalDate());
     }
 
     @Override

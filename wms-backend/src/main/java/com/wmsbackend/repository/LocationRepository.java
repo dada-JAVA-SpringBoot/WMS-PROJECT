@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface LocationRepository extends JpaRepository<Location, Integer> {
+    @org.springframework.data.jpa.repository.Query("SELECT SUM(l.capacity) FROM Location l")
+    Long sumTotalCapacity();
 }

@@ -4,14 +4,13 @@ import com.wmsbackend.dto.CycleCountCreateRequest;
 import com.wmsbackend.dto.CycleCountDetailDTO;
 import com.wmsbackend.entity.*;
 import com.wmsbackend.repository.*;
+import com.wmsbackend.util.TimeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,21 +39,16 @@ public class CycleCountController {
         plan.setPlanCode("CC-" + System.currentTimeMillis());
         plan.setNote(request.getNote());
         plan.setStatus("CREATED");
-        plan.setCreatedAt(LocalDateTime.now());
-        plan.setAssignedTo(request.getAssignedTo()); // New field
+        plan.setCreatedAt(TimeUtils.now());
+        plan.setAssignedTo(request.getAssignedTo()); 
         
         final CycleCountPlan savedPlan = planRepository.save(plan);
 
-        // ... rest of inventory fetching ...
-        List<Inventory> allInventory = inventoryRepository.findAll();
         List<Inventory> targets;
         if (request.getZone() != null && !request.getZone().isEmpty() && !request.getZone().equalsIgnoreCase("ALL")) {
-            List<Integer> validLocationIds = locationRepository.findAll().stream()
-                    .filter(l -> l.getZone() != null && l.getZone().equalsIgnoreCase(request.getZone()))
-                    .map(Location::getId).collect(Collectors.toList());
-            targets = allInventory.stream().filter(inv -> validLocationIds.contains(inv.getLocationId())).collect(Collectors.toList());
+            targets = inventoryRepository.findByLocationZone(request.getZone());
         } else {
-            targets = allInventory;
+            targets = inventoryRepository.findAll();
         }
 
         for (Inventory inv : targets) {
@@ -106,7 +100,6 @@ public class CycleCountController {
         detail.setNote(note);
         detailRepository.save(detail);
         
-        // Update plan status to IN_PROGRESS if it was CREATED
         CycleCountPlan plan = planRepository.findById(detail.getPlanId()).orElse(null);
         if (plan != null && plan.getStatus().equals("CREATED")) {
             plan.setStatus("IN_PROGRESS");
@@ -124,13 +117,11 @@ public class CycleCountController {
         List<CycleCountDetail> details = detailRepository.findByPlanId(id);
         for (CycleCountDetail d : details) {
             if (d.getVariance().compareTo(BigDecimal.ZERO) != 0) {
-                // Adjust Inventory
                 Inventory inv = inventoryRepository.findByProductIdAndLocationIdAndBatchId(d.getProductId(), d.getLocationId(), d.getBatchId());
                 if (inv != null) {
                     inv.setQuantityOnHand(d.getCountedQty());
                     inventoryRepository.save(inv);
 
-                    // Record Transaction
                     InventoryTransaction tx = new InventoryTransaction();
                     tx.setProductId(d.getProductId());
                     tx.setLocationId(d.getLocationId());
@@ -139,13 +130,14 @@ public class CycleCountController {
                     tx.setQuantityChange(d.getVariance());
                     tx.setReferenceId(plan.getId());
                     tx.setCreatedBy(plan.getCreatedBy());
+                    tx.setCreatedAt(TimeUtils.now());
                     transactionRepository.save(tx);
                 }
             }
         }
 
         plan.setStatus("COMPLETED");
-        plan.setCompletedAt(LocalDateTime.now());
+        plan.setCompletedAt(TimeUtils.now());
         planRepository.save(plan);
     }
 }

@@ -215,7 +215,8 @@ CREATE TABLE InboundOrders (
     ReceiptDate DATETIME2,
     TotalAmount DECIMAL(18, 2) DEFAULT 0,
     CreatedBy INT,
-    CreatedAt DATETIME2 DEFAULT GETDATE()
+    CreatedAt DATETIME2 DEFAULT GETDATE(),
+    Notes NVARCHAR(500)
 );
 
 CREATE TABLE InboundOrderDetails (
@@ -231,7 +232,8 @@ CREATE TABLE InboundOrderDetails (
     QuantityIntact DECIMAL(18,2) NULL,
     QuantityDamaged DECIMAL(18,2) NULL,
     QualityRating NVARCHAR(50) NULL,
-    QcNotes NVARCHAR(500) NULL
+    QcNotes NVARCHAR(500) NULL,
+    ExpiryDate DATE
 );
 
 CREATE TABLE Waves (

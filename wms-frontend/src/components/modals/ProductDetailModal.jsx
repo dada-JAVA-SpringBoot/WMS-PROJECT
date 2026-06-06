@@ -98,17 +98,17 @@ export default function ProductDetailModal({ product, onClose }) {
         fetchInventoryDetails();
     };
 
-    const categoryName = categories.find(item => String(item.id) === String(product.categoryId))?.name || 'Chưa gán';
-    const categoryCode = categories.find(item => String(item.id) === String(product.categoryId))?.categoryCode || '';
+    const categoryName = product.categoryName || categories.find(item => String(item.id) === String(product.categoryId))?.name || 'Chưa gán';
+    const categoryCode = product.categoryCode || categories.find(item => String(item.id) === String(product.categoryId))?.categoryCode || '';
     const unitName = units.find(item => item.name === normalizeUnitName(product.baseUnit))?.name
         || normalizeUnitName(product.baseUnit)
         || 'N/A';
     const totalStock = Number(product.totalStock || 0);
-    const allocatedStock = Number(product.allocatedStock ?? product.quantityAllocated ?? product.allocated ?? 0);
+    const allocatedStock = Number(product.allocatedStock ?? 0);
     const availableStock = product.availableStock !== undefined && product.availableStock !== null
         ? Number(product.availableStock)
         : totalStock - allocatedStock;
-    const incomingStock = Number(product.incomingStock ?? product.inboundStock ?? product.onOrderStock ?? 0);
+    const incomingStock = Number(product.incomingStock ?? 0);
     const safetyStock = product.safetyStock !== undefined && product.safetyStock !== null
         ? Number(product.safetyStock)
         : null;

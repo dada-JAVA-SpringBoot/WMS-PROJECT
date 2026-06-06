@@ -32,8 +32,15 @@ public class InventoryTransaction {
     @Column(name = "CreatedBy")
     private Integer createdBy;
 
-    @Column(name = "CreatedAt", insertable = false, updatable = false)
+    @Column(name = "CreatedAt", updatable = false)
     private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 
     // Getter Setter
 

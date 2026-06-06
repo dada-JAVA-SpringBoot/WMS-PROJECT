@@ -74,16 +74,17 @@ public class StatisticalController {
         dto.setTotalSkus(productRepository.count());
 
         // 2. Total Stock Quantity
-        Double totalQty = inventoryRepository.findAll().stream()
-                .mapToDouble(i -> i.getQuantityOnHand().doubleValue()).sum();
-        dto.setTotalStockQuantity(totalQty != null ? totalQty : 0.0);
+        Double totalQty = inventoryRepository.sumTotalQuantityOnHand().doubleValue();
+        dto.setTotalStockQuantity(totalQty);
 
         dto.setPendingInbound(inboundOrderRepository.countByStatus("PENDING"));
         dto.setPendingOutbound(outboundOrderRepository.countByStatus("PENDING"));
 
-        long total    = locationRepository.count();
-        long occupied = inventoryRepository.countDistinctLocationId();
-        dto.setWarehouseOccupancyRate(total > 0 ? (double) occupied / total * 100 : 0);
+        Long totalCapacity = locationRepository.sumTotalCapacity();
+        dto.setWarehouseOccupancyRate(
+                (totalCapacity != null && totalCapacity > 0) 
+                ? (totalQty / totalCapacity * 100) 
+                : 0);
 
         List<Map<String, Object>> stores = new ArrayList<>();
         customerRepository.findAll().stream().limit(5).forEach(c -> {

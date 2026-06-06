@@ -1,11 +1,13 @@
 // ================================================================
-// 4. InboundOrderController.java
+// 4. InboundOrderController.java - CLEAN VERSION
 // ================================================================
 package com.wmsbackend.controller;
 
-import com.wmsbackend.dto.StatusUpdateRequest;
+import com.wmsbackend.dto.InboundCreateRequest;
+import com.wmsbackend.dto.QCStatusUpdateRequest;
 import com.wmsbackend.entity.*;
 import com.wmsbackend.repository.*;
+import com.wmsbackend.util.TimeUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/inbound")
@@ -23,144 +26,104 @@ public class InboundOrderController {
     private final InventoryRepository          inventoryRepo;
     private final BatchRepository              batchRepo;
     private final InventoryTransactionRepository transactionRepo;
+    private final SupplierRepository           supplierRepo;
 
     public InboundOrderController(InboundOrderRepository orderRepo,
                                   InboundOrderDetailRepository detailRepo,
                                   InventoryRepository inventoryRepo,
                                   BatchRepository batchRepo,
-                                  InventoryTransactionRepository transactionRepo) {
+                                  InventoryTransactionRepository transactionRepo,
+                                  SupplierRepository supplierRepo) {
         this.orderRepo     = orderRepo;
         this.detailRepo    = detailRepo;
         this.inventoryRepo = inventoryRepo;
         this.batchRepo     = batchRepo;
         this.transactionRepo = transactionRepo;
+        this.supplierRepo = supplierRepo;
     }
 
-    // GET danh sách phiếu nhập — ADMIN, MANAGER xem báo cáo
-    //                            STOREKEEPER, INBOUND_STAFF thao tác
+    // 1. GET ALL
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','QUALITY_CONTROL')")
-    public List<InboundOrder> getAllOrders() {
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','WAREHOUSE_KEEPER','INBOUND_STAFF','QUALITY_CONTROL')")
+    public List<InboundOrder> getAll() {
         return orderRepo.findAll();
     }
 
-    // GET chi tiết phiếu nhập
+    // 2. GET DETAILS
     @GetMapping("/{id}/details")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL','HANDLER')")
-    public List<InboundOrderDetail> getOrderDetails(@PathVariable Long id) {
+    public List<InboundOrderDetail> getDetails(@PathVariable Long id) {
         return detailRepo.findByInboundOrderId(id);
     }
 
+    // 3. GET BATCHES
     @GetMapping("/batches/{productId}")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL','HANDLER')")
-    public List<Batch> getBatchesByProduct(@PathVariable Integer productId) {
+    public List<Batch> getBatches(@PathVariable Integer productId) {
         return batchRepo.findByProductId(productId);
     }
 
-    // POST xác nhận nhập kho — chỉ INBOUND_STAFF thực hiện (ADMIN luôn có quyền)
-    @PostMapping("/confirm")
-    @PreAuthorize("hasAnyRole('ADMIN','INBOUND_STAFF')")
+    // 4. CREATE ORDER
+    @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF')")
     @Transactional
-    public String confirmInbound(@RequestBody InboundRequest request) {
-        InboundOrder order = request.getOrder();
-        List<InboundOrderDetail> details = request.getDetails() != null ? request.getDetails() : List.of();
-        List<Batch> newBatches = request.getNewBatches() != null ? request.getNewBatches() : List.of();
-
-        // 0. Lưu các lô hàng mới nếu có (De-duplicate để tránh lỗi)
-        java.util.Set<String> processedBatches = new java.util.HashSet<>();
-        for (Batch b : newBatches) {
-            if (b.getBatchCode() != null && !b.getBatchCode().isBlank()) {
-                String key = b.getProductId() + "_" + b.getBatchCode();
-                if (processedBatches.contains(key)) continue;
-                processedBatches.add(key);
-
-                // Kiểm tra xem lô hàng này đã tồn tại trong DB chưa
-                if (batchRepo.findByProductIdAndBatchCode(b.getProductId(), b.getBatchCode()).isEmpty()) {
-                    batchRepo.save(b);
-                }
-            }
+    public InboundOrder create(@RequestBody InboundCreateRequest req) {
+        InboundOrder order = new InboundOrder();
+        order.setSupplierId(req.getSupplierId());
+        order.setCreatedBy(req.getCreatedBy());
+        order.setReferenceNumber(req.getReferenceNumber());
+        order.setStatus(req.getStatus() != null ? req.getStatus() : "DRAFT");
+        order.setNotes(req.getNotes());
+        order.setTotalAmount(req.getTotalAmount());
+        
+        if (order.getReceiptCode() == null || order.getReceiptCode().isBlank()) {
+            order.setReceiptCode("PN-" + System.currentTimeMillis());
         }
-
-        // 1. Xử lý thông tin thời gian (Kết hợp từ nhánh main và UX)
-        order.setCreatedAt(LocalDateTime.now());
-        if (order.getReceiptDate() == null) {
-            order.setReceiptDate(LocalDateTime.now());
+        
+        order.setCreatedAt(TimeUtils.now());
+        if ("COMPLETED".equalsIgnoreCase(order.getStatus())) {
+            order.setReceiptDate(TimeUtils.now());
         }
-
-        // Mặc định DRAFT nếu không có trạng thái gửi lên
-        if (order.getStatus() == null || order.getStatus().isBlank()) {
-            order.setStatus("DRAFT");
-        }
-        order.setTotalAmount(calculateTotalAmount(details));
-
-        // Lưu thông tin phiếu nhập
+        
         InboundOrder savedOrder = orderRepo.save(order);
 
-        for (InboundOrderDetail item : details) {
-            item.setInboundOrderId(savedOrder.getId());
-            
-            // Tìm BatchId từ BatchCode nếu BatchId chưa có hoặc bằng 0
-            if ((item.getBatchId() == null || item.getBatchId() == 0) && item.getBatchCode() != null) {
-                batchRepo.findByProductIdAndBatchCode(item.getProductId(), item.getBatchCode())
-                        .ifPresent(b -> item.setBatchId(b.getId()));
+        if (req.getItems() != null) {
+            for (InboundCreateRequest.ItemRequest itemReq : req.getItems()) {
+                InboundOrderDetail detail = new InboundOrderDetail();
+                detail.setInboundOrderId(savedOrder.getId());
+                detail.setProductId(itemReq.getProductId());
+                detail.setQuantityExpected(itemReq.getQuantityExpected());
+                detail.setQuantityReceived(itemReq.getQuantityReceived());
+                detail.setUnitPrice(itemReq.getUnitPrice());
+                detail.setItemCondition(itemReq.getItemCondition());
+                detail.setLocationId(itemReq.getLocationId());
+
+                Batch batch = batchRepo.findByProductIdAndBatchCode(itemReq.getProductId(), itemReq.getBatchCode())
+                        .orElse(null);
+                if (batch == null) {
+                    batch = new Batch();
+                    batch.setProductId(itemReq.getProductId());
+                    batch.setBatchCode(itemReq.getBatchCode());
+                    batch.setExpiryDate(itemReq.getExpiryDate() != null ? itemReq.getExpiryDate() : java.time.LocalDate.now().plusYears(1));
+                    batch.setCreatedAt(TimeUtils.now());
+                    batch = batchRepo.save(batch);
+                }
+                detail.setBatchId(batch.getId());
+                detailRepo.save(detail);
             }
-
-            // Mặc định BatchId = 1 (Lô mặc định) nếu vẫn không tìm thấy
-            if (item.getBatchId() == null) {
-                item.setBatchId(1);
-            }
-
-            detailRepo.save(item);
-
-            // Chỉ cộng tồn kho thực tế nếu trạng thái đã hoàn thành (COMPLETED)
-            if (!"COMPLETED".equalsIgnoreCase(savedOrder.getStatus())) {
-                continue;
-            }
-
-            // Cập nhật hàng tồn
-            Inventory stock = inventoryRepo.findByProductIdAndLocationIdAndBatchId(
-                    item.getProductId(), item.getLocationId(), item.getBatchId());
-
-            if (stock == null) {
-                stock = new Inventory();
-                stock.setProductId(item.getProductId());
-                stock.setLocationId(item.getLocationId());
-                stock.setBatchId(item.getBatchId());
-                stock.setQuantityOnHand(item.getQuantityReceived());
-            } else {
-                BigDecimal currentQty = (stock.getQuantityOnHand() != null)
-                        ? stock.getQuantityOnHand() : BigDecimal.ZERO;
-                stock.setQuantityOnHand(currentQty.add(item.getQuantityReceived()));
-            }
-            
-            inventoryRepo.save(stock);
+        }
+        
+        if ("COMPLETED".equalsIgnoreCase(savedOrder.getStatus())) {
+            applyInventoryDelta(savedOrder, 1);
+            updateSupplierStats(savedOrder, 1);
         }
 
-        return "Nhập kho thành công: " + savedOrder.getReceiptCode();
+        return savedOrder;
     }
 
-    // DELETE hủy phiếu nhập — chỉ ADMIN (hủy cần phê duyệt cấp cao nhất)
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Transactional
-    public String cancelOrder(@PathVariable Long id) {
-        InboundOrder order = orderRepo.findById(id).orElse(null);
-        if (order != null) {
-            // Trừ lại kho nếu hủy phiếu đã hoàn thành
-            if ("COMPLETED".equalsIgnoreCase(order.getStatus())) {
-                applyInventoryDelta(order.getId(), -1);
-            }
-            order.setStatus("CANCELED");
-            orderRepo.save(order);
-            return "Đã hủy phiếu " + order.getReceiptCode();
-        }
-        return "Không tìm thấy";
-    }
-
-    // Cập nhật trạng thái linh hoạt
+    // 5. UPDATE STATUS / QC
     @PutMapping("/{id}/status")
-    @Transactional
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','QUALITY_CONTROL')")
+    @Transactional
     public String updateStatus(@PathVariable Long id, @RequestBody QCStatusUpdateRequest request) {
         InboundOrder order = orderRepo.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu nhập"));
 
@@ -169,7 +132,6 @@ public class InboundOrderController {
         
         if (nextStatus.isBlank()) return "Trạng thái không hợp lệ";
 
-        // Nếu có thông tin QC đi kèm, cập nhật chi tiết phiếu
         if (request.getDetails() != null && !request.getDetails().isEmpty()) {
             for (InboundOrderDetail qcItem : request.getDetails()) {
                 detailRepo.findById(qcItem.getId()).ifPresent(dbItem -> {
@@ -180,15 +142,15 @@ public class InboundOrderController {
                     detailRepo.save(dbItem);
                 });
             }
-            detailRepo.flush(); // Bắt buộc flush để applyInventoryDelta thấy dữ liệu mới
         }
 
-        // Logic cộng/trừ hàng tồn tự động khi trạng thái thay đổi sang COMPLETED
         if (!currentStatus.equalsIgnoreCase("COMPLETED") && nextStatus.equals("COMPLETED")) {
-            if (order.getReceiptDate() == null) order.setReceiptDate(LocalDateTime.now());
-            applyInventoryDelta(order.getId(), 1); 
+            if (order.getReceiptDate() == null) order.setReceiptDate(TimeUtils.now());
+            applyInventoryDelta(order, 1); 
+            updateSupplierStats(order, 1);
         } else if (currentStatus.equalsIgnoreCase("COMPLETED") && !nextStatus.equals("COMPLETED")) {
-            applyInventoryDelta(order.getId(), -1); 
+            applyInventoryDelta(order, -1); 
+            updateSupplierStats(order, -1);
         }
 
         order.setStatus(nextStatus);
@@ -196,18 +158,75 @@ public class InboundOrderController {
         return "Đã cập nhật trạng thái phiếu " + order.getReceiptCode();
     }
 
-    private void applyInventoryDelta(Long inboundOrderId, int direction) {
-        List<InboundOrderDetail> details = detailRepo.findByInboundOrderId(inboundOrderId);
+    // 6. QUICK QC CONFIRM
+    @PostMapping("/{id}/qc")
+    @Transactional
+    @PreAuthorize("hasAnyRole('ADMIN','QUALITY_CONTROL','MANAGER')")
+    public String confirmQC(@PathVariable Long id, @RequestBody List<InboundOrderDetail> inspectedItems) {
+        InboundOrder order = orderRepo.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu nhập"));
+        
+        if (inspectedItems != null) {
+            for (InboundOrderDetail item : inspectedItems) {
+                detailRepo.findById(item.getId()).ifPresent(dbItem -> {
+                    dbItem.setQuantityIntact(item.getQuantityIntact());
+                    dbItem.setQuantityDamaged(item.getQuantityDamaged());
+                    dbItem.setQualityRating(item.getQualityRating());
+                    dbItem.setQcNotes(item.getQcNotes());
+                    detailRepo.save(dbItem);
+                });
+            }
+        }
+
+        if (order.getReceiptDate() == null) order.setReceiptDate(TimeUtils.now());
+        applyInventoryDelta(order, 1);
+        updateSupplierStats(order, 1);
+        order.setStatus("COMPLETED");
+        orderRepo.save(order);
+        
+        return "Kiểm duyệt thành công phiếu " + order.getReceiptCode();
+    }
+
+    // 7. CANCEL / DELETE
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public String cancelOrder(@PathVariable Long id) {
+        InboundOrder order = orderRepo.findById(id).orElse(null);
+        if (order != null) {
+            if ("COMPLETED".equalsIgnoreCase(order.getStatus())) {
+                applyInventoryDelta(order, -1);
+                updateSupplierStats(order, -1);
+            }
+            order.setStatus("CANCELED");
+            orderRepo.save(order);
+            return "Đã hủy phiếu " + order.getReceiptCode();
+        }
+        return "Không tìm thấy";
+    }
+
+    private void updateSupplierStats(InboundOrder order, int direction) {
+        if (order.getSupplierId() == null) return;
+        supplierRepo.findById(order.getSupplierId()).ifPresent(s -> {
+            List<InboundOrderDetail> details = detailRepo.findByInboundOrderId(order.getId());
+            double totalQty = details.stream()
+                    .mapToDouble(d -> (d.getQuantityIntact() != null ? d.getQuantityIntact() : 
+                                      (d.getQuantityReceived() != null ? d.getQuantityReceived() : BigDecimal.ZERO)).doubleValue())
+                    .sum();
+            int current = s.getTotalImportQuantity() != null ? s.getTotalImportQuantity() : 0;
+            s.setTotalImportQuantity(current + (int)(totalQty * direction));
+            supplierRepo.save(s);
+        });
+    }
+
+    private void applyInventoryDelta(InboundOrder order, int direction) {
+        List<InboundOrderDetail> details = detailRepo.findByInboundOrderId(order.getId());
         for (InboundOrderDetail item : details) {
-            // Khi cộng kho, ưu tiên dùng số lượng nguyên vẹn (QuantityIntact) nếu có, 
-            // nếu không thì dùng số lượng nhận thực tế (QuantityReceived)
             BigDecimal delta = item.getQuantityIntact() != null ? item.getQuantityIntact() : 
                               (item.getQuantityReceived() != null ? item.getQuantityReceived() : BigDecimal.ZERO);
-            
             if (delta.compareTo(BigDecimal.ZERO) <= 0) continue;
 
-            Inventory stock = inventoryRepo.findByProductIdAndLocationIdAndBatchId(
-                    item.getProductId(), item.getLocationId(), item.getBatchId());
+            Inventory stock = inventoryRepo.findAndLockByProductIdAndLocationIdAndBatchId(
+                    item.getProductId(), item.getLocationId(), item.getBatchId()).orElse(null);
 
             if (stock == null) {
                 if (direction < 0) continue; 
@@ -223,93 +242,16 @@ public class InboundOrderController {
             }
             inventoryRepo.save(stock);
 
-            // GHI LỊCH SỬ KHO (Inventory Transaction)
             InventoryTransaction tx = new InventoryTransaction();
             tx.setProductId(item.getProductId());
             tx.setLocationId(item.getLocationId());
             tx.setBatchId(item.getBatchId());
             tx.setTransactionType(direction > 0 ? "INBOUND" : "ADJUSTMENT");
             tx.setQuantityChange(delta.multiply(BigDecimal.valueOf(direction)));
-            tx.setReferenceId(inboundOrderId);
+            tx.setReferenceId(order.getId());
+            tx.setCreatedBy(order.getCreatedBy());
+            tx.setCreatedAt(TimeUtils.now());
             transactionRepo.save(tx);
         }
     }
-
-    private BigDecimal calculateTotalAmount(List<InboundOrderDetail> details) {
-        BigDecimal total = BigDecimal.ZERO;
-        for (InboundOrderDetail item : details) {
-            BigDecimal quantity = item.getQuantityReceived() != null ? item.getQuantityReceived() : BigDecimal.ZERO;
-            BigDecimal unitPrice = item.getUnitPrice() != null ? item.getUnitPrice() : BigDecimal.ZERO;
-            total = total.add(quantity.multiply(unitPrice));
-        }
-        return total;
-    }
-
-    @PostMapping("/{id}/qc")
-    @Transactional
-    @PreAuthorize("hasAnyRole('ADMIN','QUALITY_CONTROL','MANAGER')")
-    public String confirmQC(@PathVariable Long id, @RequestBody List<InboundOrderDetail> inspectedItems) {
-        InboundOrder order = orderRepo.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu nhập"));
-        
-        for (InboundOrderDetail item : inspectedItems) {
-            detailRepo.findById(item.getId()).ifPresent(dbItem -> {
-                dbItem.setQuantityIntact(item.getQuantityIntact());
-                dbItem.setQuantityDamaged(item.getQuantityDamaged());
-                dbItem.setQualityRating(item.getQualityRating());
-                dbItem.setQcNotes(item.getQcNotes());
-                detailRepo.save(dbItem);
-            });
-        }
-        detailRepo.flush();
-
-        // Đảm bảo có ngày nhập phiếu để thống kê thấy dữ liệu
-        if (order.getReceiptDate() == null) {
-            order.setReceiptDate(LocalDateTime.now());
-        }
-
-        // Chuyển sang COMPLETED để cộng kho
-        applyInventoryDelta(order.getId(), 1);
-
-        order.setStatus("COMPLETED");
-        orderRepo.save(order);
-        
-        return "Kiểm duyệt thành công phiếu " + order.getReceiptCode();
-    }
-
-    // GET xuất Excel — ADMIN, MANAGER, STOREKEEPER
-    @GetMapping("/export")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER')")
-    public void exportToExcel() {
-        System.out.println("Đang xuất Excel...");
-    }
-}
-
-// Model hỗ trợ mở rộng cho QC
-class QCStatusUpdateRequest {
-    private String status;
-    private List<InboundOrderDetail> details;
-
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-
-    public List<InboundOrderDetail> getDetails() { return details; }
-    public void setDetails(List<InboundOrderDetail> details) { this.details = details; }
-}
-
-// Model hỗ trợ
-class InboundRequest {
-    private InboundOrder order;
-    private List<InboundOrderDetail> details;
-    private List<Batch> newBatches;
-
-    public InboundRequest() {}
-
-    public InboundOrder getOrder() { return order; }
-    public void setOrder(InboundOrder order) { this.order = order; }
-
-    public List<InboundOrderDetail> getDetails() { return details; }
-    public void setDetails(List<InboundOrderDetail> details) { this.details = details; }
-
-    public List<Batch> getNewBatches() { return newBatches; }
-    public void setNewBatches(List<Batch> newBatches) { this.newBatches = newBatches; }
 }

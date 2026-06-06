@@ -30,17 +30,26 @@ public class ProductDTO {
     private BigDecimal incomingStock;
     private LocalDate nearestBatchExpiryDate;
     
+    // Thêm thông tin phân loại để hiển thị nhanh
+    private String categoryName;
+    private String categoryCode;
+    private LocalDateTime lastImportDate;
+    
     // Thêm danh sách quy đổi đơn vị
     private List<ProductUnitConversion> conversions;
+
+    // Default constructor
+    public ProductDTO() {}
 
     // CONSTRUCTOR QUAN TRỌNG (Dùng cho JPQL)
     public ProductDTO(Integer id, String sku, String barcode, String name, String baseUnit,
                       Integer categoryId, String imageUrl, String status, String supplierCodes,
                       LocalDateTime createdAt, BigDecimal weight, BigDecimal length,
                       BigDecimal width, BigDecimal height, String storageTemp,
-                      Integer safetyStock, Boolean isFragile, BigDecimal totalStock,
-                      BigDecimal allocatedStock, BigDecimal availableStock, BigDecimal incomingStock,
-                      LocalDate nearestBatchExpiryDate) {
+                      Integer safetyStock, Boolean isFragile, Object totalStock,
+                      Object allocatedStock, Object availableStock, Object incomingStock,
+                      LocalDate nearestBatchExpiryDate, String categoryName, String categoryCode,
+                      LocalDateTime lastImportDate) {
         this.id = id;
         this.sku = sku;
         this.barcode = barcode;
@@ -58,11 +67,21 @@ public class ProductDTO {
         this.storageTemp = storageTemp;
         this.safetyStock = safetyStock;
         this.isFragile = isFragile;
-        this.totalStock = totalStock;
-        this.allocatedStock = allocatedStock;
-        this.availableStock = availableStock;
-        this.incomingStock = incomingStock;
+        this.totalStock = toBigDecimal(totalStock);
+        this.allocatedStock = toBigDecimal(allocatedStock);
+        this.availableStock = toBigDecimal(availableStock);
+        this.incomingStock = toBigDecimal(incomingStock);
         this.nearestBatchExpiryDate = nearestBatchExpiryDate;
+        this.categoryName = categoryName;
+        this.categoryCode = categoryCode;
+        this.lastImportDate = lastImportDate;
+    }
+
+    private BigDecimal toBigDecimal(Object obj) {
+        if (obj == null) return BigDecimal.ZERO;
+        if (obj instanceof BigDecimal) return (BigDecimal) obj;
+        if (obj instanceof Number) return BigDecimal.valueOf(((Number) obj).doubleValue());
+        return BigDecimal.ZERO;
     }
 
     // Getters and Setters
@@ -132,6 +151,15 @@ public class ProductDTO {
 
     public LocalDate getNearestBatchExpiryDate() { return nearestBatchExpiryDate; }
     public void setNearestBatchExpiryDate(LocalDate nearestBatchExpiryDate) { this.nearestBatchExpiryDate = nearestBatchExpiryDate; }
+
+    public String getCategoryName() { return categoryName; }
+    public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
+
+    public String getCategoryCode() { return categoryCode; }
+    public void setCategoryCode(String categoryCode) { this.categoryCode = categoryCode; }
+
+    public LocalDateTime getLastImportDate() { return lastImportDate; }
+    public void setLastImportDate(LocalDateTime lastImportDate) { this.lastImportDate = lastImportDate; }
 
     public List<ProductUnitConversion> getConversions() { return conversions; }
     public void setConversions(List<ProductUnitConversion> conversions) { this.conversions = conversions; }

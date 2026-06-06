@@ -27,7 +27,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity   // Cho phép dùng @PreAuthorize trên từng method
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Autowired private JwtAuthFilter jwtAuthFilter;
@@ -40,56 +40,34 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public — chỉ cho phép login/register/debug/uploads
-                        .requestMatchers("/api/auth/**", "/api/debug/**", "/uploads/**").permitAll()
+                        // Cho phép tất cả các request OPTIONS (Preflight) cho mọi URL
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        
+                        // Public endpoints
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
 
-                        // ── Phân quyền theo API ─────────────────────────────────────
-                        // Quản lý nhân viên: ADMIN, MANAGER, QC (xem)
+                        // Phân quyền chi tiết
                         .requestMatchers(HttpMethod.GET, "/api/staff/names").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/staff/**").hasAnyRole("ADMIN", "MANAGER", "QUALITY_CONTROL")
                         .requestMatchers("/api/staff/**").hasAnyRole("ADMIN", "MANAGER")
 
-                        // Quản lý nhà cung cấp: ADMIN, MANAGER, STOREKEEPER, INBOUND_STAFF, QC
                         .requestMatchers("/api/suppliers/**").hasAnyRole("ADMIN", "MANAGER", "STOREKEEPER", "INBOUND_STAFF", "QUALITY_CONTROL")
-
-                        // Quản lý khách hàng: ADMIN, MANAGER, OUTBOUND_STAFF, QC
                         .requestMatchers("/api/customers/**").hasAnyRole("ADMIN", "MANAGER", "OUTBOUND_STAFF", "QUALITY_CONTROL")
 
-                        // Sản phẩm: xem được từ STOREKEEPER trở lên, sửa/xóa cần MANAGER+
-                        .requestMatchers(HttpMethod.GET, "/api/products/**")
-                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","INBOUND_STAFF","OUTBOUND_STAFF","CHECKER","QUALITY_CONTROL")
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").hasAnyRole("ADMIN","MANAGER","STOREKEEPER","INBOUND_STAFF","OUTBOUND_STAFF","CHECKER","QUALITY_CONTROL")
                         .requestMatchers(HttpMethod.POST, "/api/products/**").hasAnyRole("ADMIN","MANAGER")
                         .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAnyRole("ADMIN","MANAGER")
                         .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
 
-                        // Nhập kho: INBOUND_STAFF trở lên
-                        .requestMatchers("/api/inbound/**")
-                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER","INBOUND_STAFF","QUALITY_CONTROL")
-
-                        // Lịch sử giao dịch: ACCOUNTANT trở lên
-                        .requestMatchers("/api/transactions/**")
-                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER","ACCOUNTANT")
-
-                        // Xuất kho: OUTBOUND_STAFF trở lên
-                        .requestMatchers("/api/outbound-orders/**")
-                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER","INBOUND_STAFF","OUTBOUND_STAFF","QUALITY_CONTROL")
-
-                        // Wave Picking: STOREKEEPER trở lên
-                        .requestMatchers("/api/waves/**")
-                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER")
-
-                        // Kiểm kê (Cycle Counting): STOREKEEPER trở lên
-                        .requestMatchers("/api/cycle-counts/**")
-                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER","CHECKER")
-
-                        // Tồn kho & kiểm kê: mọi role đều xem được
-                        .requestMatchers("/api/inventory/**")
-                        .hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER","INBOUND_STAFF","OUTBOUND_STAFF","CHECKER","QUALITY_CONTROL")
-
-                        // Thống kê: ADMIN, MANAGER, QC, STOREKEEPER
+                        .requestMatchers("/api/inbound/**").hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER","INBOUND_STAFF","QUALITY_CONTROL")
+                        .requestMatchers("/api/transactions/**").hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER","ACCOUNTANT")
+                        .requestMatchers("/api/outbound-orders/**").hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER","INBOUND_STAFF","OUTBOUND_STAFF","QUALITY_CONTROL")
+                        .requestMatchers("/api/waves/**").hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER")
+                        .requestMatchers("/api/cycle-counts/**").hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER","CHECKER")
+                        .requestMatchers("/api/inventory/**").hasAnyRole("ADMIN","MANAGER","STOREKEEPER","WAREHOUSE_KEEPER","INBOUND_STAFF","OUTBOUND_STAFF","CHECKER","QUALITY_CONTROL")
                         .requestMatchers("/api/stats/**").hasAnyRole("ADMIN", "MANAGER", "STOREKEEPER", "WAREHOUSE_KEEPER", "INBOUND_STAFF", "OUTBOUND_STAFF", "QUALITY_CONTROL")
-
-                        // Tất cả request còn lại cần đăng nhập
+                        
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
@@ -101,7 +79,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedOrigins(List.of("http://localhost:5173", "https://lib.id.vn", "http://lib.id.vn"));
         config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

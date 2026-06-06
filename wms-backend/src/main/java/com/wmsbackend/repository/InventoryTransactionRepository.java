@@ -91,6 +91,31 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
             @Param("fromYear") int fromYear,
             @Param("toYear") int toYear);
 
+    @Query("SELECT YEAR(t.createdAt), t.productId, SUM(t.quantityChange) " +
+            "FROM InventoryTransaction t " +
+            "WHERE t.transactionType = 'OUTBOUND' " +
+            "AND YEAR(t.createdAt) >= :fromYear AND YEAR(t.createdAt) <= :toYear " +
+            "GROUP BY YEAR(t.createdAt), t.productId")
+    List<Object[]> sumOutboundQtyGroupByYear(
+            @Param("fromYear") int fromYear,
+            @Param("toYear") int toYear);
+
+    @Query("SELECT CAST(t.createdAt AS date), t.productId, SUM(t.quantityChange) " +
+            "FROM InventoryTransaction t " +
+            "WHERE t.transactionType = 'OUTBOUND' " +
+            "AND t.createdAt >= :startDate AND t.createdAt < :endDate " +
+            "GROUP BY CAST(t.createdAt AS date), t.productId")
+    List<Object[]> sumOutboundQtyGroupByDay(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT MONTH(t.createdAt), t.productId, SUM(t.quantityChange) " +
+            "FROM InventoryTransaction t " +
+            "WHERE t.transactionType = 'OUTBOUND' " +
+            "AND YEAR(t.createdAt) = :year " +
+            "GROUP BY MONTH(t.createdAt), t.productId")
+    List<Object[]> sumOutboundQtyGroupByMonthInYear(@Param("year") int year);
+
     // ── Lịch sử giao dịch chi tiết ─────────────────────────────────────────
     @Query("SELECT new com.wmsbackend.dto.InventoryTransactionDTO(" +
             "t.id, t.productId, p.name, p.sku, " +

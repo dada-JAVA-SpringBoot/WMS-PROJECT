@@ -16,6 +16,9 @@ public class OutboundOrder {
     @Column(name = "CustomerId")
     private Integer customerId;
 
+    @org.hibernate.annotations.Formula("(SELECT c.Name FROM Customers c WHERE c.Id = CustomerId)")
+    private String customerName;
+
     @Column(name = "Status", length = 20)
     private String status;
 
@@ -25,8 +28,15 @@ public class OutboundOrder {
     @Column(name = "CreatedBy")
     private Integer createdBy;
 
-    @Column(name = "CreatedAt", insertable = false, updatable = false)
+    @Column(name = "CreatedAt", updatable = false)
     private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 
     @Column(name = "TotalAmount")
     private java.math.BigDecimal totalAmount;
@@ -117,5 +127,13 @@ public class OutboundOrder {
 
     public void setWaveId(Long waveId) {
         this.waveId = waveId;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
     }
 }

@@ -1,33 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../../api/axiosClient';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-
-const fmt = (n) => (n || 0).toLocaleString('vi-VN');
-
-function KpiCard({ label, value, icon, color }) {
-    return (
-        <div className="bg-white rounded-2xl border p-5 flex flex-col gap-1 shadow-sm">
-            <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</span>
-                <span className="text-xl">{icon}</span>
-            </div>
-            <div className={`text-2xl font-black ${color}`}>{value}</div>
+const KpiCard = ({ label, value, icon, color }) => (
+    <div className="bg-white rounded-2xl border p-5 flex flex-col gap-1 shadow-sm">
+        <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</span>
+            <span className="text-xl">{icon}</span>
         </div>
-    );
-}
+        <div className={`text-2xl font-black ${color}`}>{value}</div>
+    </div>
+);
 
-function Spinner() {
-    return (
-        <div className="flex items-center justify-center h-64 text-gray-400 text-sm gap-2">
-            <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-            </svg>
-            Đang tải dữ liệu...
-        </div>
-    );
-}
+const Spinner = () => (
+    <div className="flex items-center justify-center h-64 text-gray-400 text-sm gap-2">
+        <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+        </svg>
+        Đang tải dữ liệu...
+    </div>
+);
 
 export default function StatisticalSuppliers() {
     const [suppliers, setSuppliers] = useState([]);
@@ -36,12 +28,9 @@ export default function StatisticalSuppliers() {
     const [error, setError]         = useState(null);
 
     const fetchSuppliers = (kw = '') => {
-        const token = localStorage.getItem('wms_token');
         const params = kw.trim() ? { keyword: kw.trim() } : {};
-        setLoading(true);
-        axios
-            .get(`${API_BASE}/api/suppliers`, {
-                headers: { Authorization: `Bearer ${token}` },
+        axiosClient
+            .get(`/api/suppliers`, {
                 params,
             })
             .then(r => setSuppliers(r.data))
@@ -49,10 +38,13 @@ export default function StatisticalSuppliers() {
             .finally(() => setLoading(false));
     };
 
-    useEffect(() => { fetchSuppliers(); }, []);
+    useEffect(() => { 
+        fetchSuppliers(); 
+    }, []);
 
     const handleSearch = (e) => {
         e.preventDefault();
+        setLoading(true);
         fetchSuppliers(keyword);
     };
 
@@ -61,9 +53,10 @@ export default function StatisticalSuppliers() {
         ? [...suppliers].sort((a, b) => (b.totalImportQuantity || 0) - (a.totalImportQuantity || 0))[0]
         : null;
 
+    const fmt = (n) => (n || 0).toLocaleString('vi-VN');
+
     return (
         <div className="p-6 space-y-6">
-            {/* KPI */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <KpiCard
                     label="Tổng nhà cung cấp"
@@ -85,7 +78,6 @@ export default function StatisticalSuppliers() {
                 />
             </div>
 
-            {/* Search */}
             <form onSubmit={handleSearch} className="flex gap-2">
                 <input
                     type="text"
@@ -111,7 +103,6 @@ export default function StatisticalSuppliers() {
                 )}
             </form>
 
-            {/* Table */}
             <div className="bg-white rounded-2xl border shadow-sm p-5">
                 <div className="flex items-center gap-2 mb-4">
                     <span className="w-1 h-5 rounded bg-indigo-500 inline-block" />

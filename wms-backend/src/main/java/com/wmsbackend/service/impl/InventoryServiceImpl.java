@@ -10,6 +10,7 @@ import com.wmsbackend.repository.InventoryTransactionRepository;
 import com.wmsbackend.repository.ProductRepository;
 import com.wmsbackend.repository.LocationRepository;
 import com.wmsbackend.service.InventoryService;
+import com.wmsbackend.util.TimeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -97,6 +98,7 @@ public class InventoryServiceImpl implements InventoryService {
         outTransaction.setTransactionType("TRANSFER_OUT");
         outTransaction.setQuantityChange(request.getQuantity().negate());
         outTransaction.setCreatedBy(request.getUserId());
+        outTransaction.setCreatedAt(TimeUtils.now());
         transactionRepository.save(outTransaction);
 
         InventoryTransaction inTransaction = new InventoryTransaction();
@@ -106,6 +108,7 @@ public class InventoryServiceImpl implements InventoryService {
         inTransaction.setTransactionType("TRANSFER_IN");
         inTransaction.setQuantityChange(request.getQuantity());
         inTransaction.setCreatedBy(request.getUserId());
+        inTransaction.setCreatedAt(TimeUtils.now());
         transactionRepository.save(inTransaction);
     }
 

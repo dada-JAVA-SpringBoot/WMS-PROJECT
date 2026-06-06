@@ -14,18 +14,27 @@ import java.util.Map;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAccessDeniedException(org.springframework.security.access.AccessDeniedException ex) {
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("message", "Bạn không có quyền thực hiện hành động này (Access Denied)");
+        errorResponse.put("status", "error");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
+        ex.printStackTrace(); // Log lỗi ra console để debug trên VPS
         Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("message", ex.getMessage());
+        errorResponse.put("message", "Lỗi hệ thống (RuntimeException): " + ex.getMessage());
         errorResponse.put("status", "error");
-        
-        // Trả về mã lỗi 400 (Bad Request) để Frontend dễ xử lý
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        // Chuyển về 500 thay vì 400 để phân biệt với lỗi Client
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGeneralException(Exception ex) {
+        ex.printStackTrace(); // Log lỗi ra console để debug trên VPS
         Map<String, String> errorResponse = new HashMap<>();
         errorResponse.put("message", "Lỗi hệ thống không xác định: " + ex.getMessage());
         errorResponse.put("status", "error");

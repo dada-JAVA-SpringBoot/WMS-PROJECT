@@ -9,6 +9,9 @@ const axiosClient = axios.create({
 // ── Request interceptor: tự động gắn JWT vào mọi request ──────────────────
 axiosClient.interceptors.request.use(
     (config) => {
+        // Debug URL (có thể xóa sau)
+        console.log(`[Axios Request] ${config.method.toUpperCase()} ${config.url}`);
+        
         const token = localStorage.getItem('wms_token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;

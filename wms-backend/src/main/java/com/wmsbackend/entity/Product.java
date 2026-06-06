@@ -36,7 +36,7 @@ public class Product {
     private String status = "ACTIVE";
 
     // SỬ DỤNG @Formula ĐỂ TỰ ĐỘNG GỘP NHÀ CUNG CẤP (KHÔNG CẦN CỘT VẬT LÝ)
-    @org.hibernate.annotations.Formula("(SELECT STRING_AGG(CAST(s.SupplierCode AS VARCHAR(MAX)), ', ') FROM ProductSuppliers ps JOIN Suppliers s ON ps.SupplierId = s.Id WHERE ps.ProductId = Id)")
+    @org.hibernate.annotations.Formula("(SELECT STRING_AGG(CAST(s.Name AS VARCHAR(MAX)), ', ') FROM ProductSuppliers ps JOIN Suppliers s ON ps.SupplierId = s.Id WHERE ps.ProductId = Id)")
     private String supplierCodes;
 
     // Logistics
@@ -135,10 +135,6 @@ public class Product {
         this.status = status;
     }
 
-    public String getSupplierCodes() {
-        return supplierCodes;
-    }
-
     public BigDecimal getWeight() {
         return weight;
     }
@@ -193,6 +189,14 @@ public class Product {
 
     public void setFragile(Boolean fragile) {
         isFragile = fragile;
+    }
+
+    public Boolean getIsFragile() {
+        return isFragile;
+    }
+
+    public void setIsFragile(Boolean fragile) {
+        this.isFragile = fragile;
     }
 
     public LocalDateTime getCreatedAt() {

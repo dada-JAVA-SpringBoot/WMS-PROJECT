@@ -9,6 +9,7 @@ import com.wmsbackend.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -20,11 +21,14 @@ public class ProductController {
 
     private final ProductRepository productRepository;
     private final com.wmsbackend.repository.ProductUnitConversionRepository conversionRepository;
+    private final com.wmsbackend.repository.ProductSupplierRepository productSupplierRepository;
 
     public ProductController(ProductRepository productRepository, 
-                             com.wmsbackend.repository.ProductUnitConversionRepository conversionRepository) {
+                             com.wmsbackend.repository.ProductUnitConversionRepository conversionRepository,
+                             com.wmsbackend.repository.ProductSupplierRepository productSupplierRepository) {
         this.productRepository = productRepository;
         this.conversionRepository = conversionRepository;
+        this.productSupplierRepository = productSupplierRepository;
     }
 
     // GET - Trả về danh sách sản phẩm đầy đủ thông tin tồn kho cho các vai trò vận hành
@@ -34,6 +38,15 @@ public class ProductController {
         List<ProductDTO> products = productRepository.findAllProductsWithTotalStock();
         for (ProductDTO p : products) {
             p.setConversions(conversionRepository.findByProductId(p.getId()));
+            
+            // Lấy danh sách nhà cung cấp từ bảng ProductSuppliers
+            List<com.wmsbackend.entity.ProductSupplier> psList = productSupplierRepository.findByProductId(p.getId());
+            if (!psList.isEmpty()) {
+                String names = psList.stream()
+                        .map(ps -> ps.getSupplier().getName())
+                        .collect(java.util.stream.Collectors.joining(", "));
+                p.setSupplierCodes(names); // Tận dụng field này để hiển thị tên NCC
+            }
         }
         return ResponseEntity.ok(products);
     }
@@ -52,6 +65,28 @@ public class ProductController {
         return conversionRepository.findByProductId(id);
     }
 
+    // 1c. Lấy danh sách nhà cung cấp của sản phẩm
+    @GetMapping("/{id}/suppliers")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL','HANDLER')")
+    public List<com.wmsbackend.entity.ProductSupplier> getProductSuppliers(@PathVariable Integer id) {
+        return productSupplierRepository.findByProductId(id);
+    }
+
+    // 1d. Lưu/Cập nhật danh sách nhà cung cấp cho sản phẩm
+    @PostMapping("/{id}/suppliers")
+    @Transactional
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public void saveProductSuppliers(@PathVariable Integer id, @RequestBody List<Integer> supplierIds) {
+        productSupplierRepository.deleteByProductId(id);
+        if (supplierIds != null) {
+            for (Integer sId : supplierIds) {
+                com.wmsbackend.entity.ProductSupplier ps = new com.wmsbackend.entity.ProductSupplier();
+                ps.setId(new com.wmsbackend.entity.ProductSupplier.ProductSupplierId(id, sId));
+                productSupplierRepository.save(ps);
+            }
+        }
+    }
+
     // GET — thống kê: ADMIN, MANAGER, STOREKEEPER, CHECKER
     @GetMapping("/stats")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','CHECKER')")
@@ -59,21 +94,41 @@ public class ProductController {
         return productRepository.count();
     }
 
-    // POST — chỉ ADMIN
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public Product createProduct(@RequestBody Product product) {
-        if (product.getConversions() != null) {
-            for (com.wmsbackend.entity.ProductUnitConversion conv : product.getConversions()) {
-                // ProductId sẽ được Hibernate tự động gắn khi save nhờ @JoinColumn
-            }
-        }
-        return productRepository.save(product);
+    // GET — tìm kiếm theo barcode/sku cho quét mã
+    @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL','HANDLER')")
+    public List<Product> searchProducts(@RequestParam String keyword) {
+        return productRepository.searchProducts(keyword);
     }
 
-    // 3. Cập nhật sản phẩm — chỉ ADMIN
+    // POST — ADMIN & MANAGER
+    @PostMapping
+    @Transactional
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public Product createProduct(@RequestBody Product product) {
+        // Tách conversions ra để lưu sau khi đã có Product ID
+        List<com.wmsbackend.entity.ProductUnitConversion> conversions = product.getConversions();
+        product.setConversions(new java.util.ArrayList<>());
+        
+        // Bước 1: Lưu Product trước để lấy ID (IDENTITY)
+        Product savedProduct = productRepository.save(product);
+        
+        // Bước 2: Gắn ID vào các dòng quy đổi (vì ProductId NOT NULL trong DB)
+        if (conversions != null && !conversions.isEmpty()) {
+            for (com.wmsbackend.entity.ProductUnitConversion conv : conversions) {
+                conv.setProductId(savedProduct.getId());
+                savedProduct.getConversions().add(conv);
+            }
+            // Lưu lại lần nữa để Hibernate cập nhật OneToMany Cascade ALL
+            return productRepository.save(savedProduct);
+        }
+        return savedProduct;
+    }
+
+    // 3. Cập nhật sản phẩm — ADMIN & MANAGER
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ResponseEntity<Product> updateProduct(@PathVariable Integer id, @RequestBody Product updatedProduct) {
         Optional<Product> existingOpt = productRepository.findById(id);
         if (existingOpt.isEmpty()) {

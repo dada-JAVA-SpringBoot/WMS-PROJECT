@@ -1,34 +1,72 @@
-import React, { useEffect } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import React, { useEffect, useRef, useState } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
 
 export default function ScannerModal({ isOpen, onClose, onScanSuccess }) {
+    const scannerRef = useRef(null);
+    const [isCameraStarted, setIsCameraStarted] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
+
     useEffect(() => {
         if (!isOpen) return;
 
-        // Cấu hình scanner
-        const scanner = new Html5QrcodeScanner("wms-scanner-reader", {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0,
-            showTorchButtonIfSupported: true,
-            rememberLastUsedCamera: true
-        });
+        const html5QrCode = new Html5Qrcode("wms-scanner-reader");
+        scannerRef.current = html5QrCode;
 
-        const handleSuccess = (decodedText) => {
-            onScanSuccess(decodedText);
-            scanner.clear().catch(error => console.error("Failed to clear scanner", error));
+        const stopCamera = async () => {
+            if (scannerRef.current && scannerRef.current.isScanning) {
+                try {
+                    await scannerRef.current.stop();
+                    setIsCameraStarted(false);
+                } catch (err) {
+                    console.error("Failed to stop camera", err);
+                }
+            }
         };
 
-        const handleError = (err) => {
-            // Lỗi quét (thường là do không thấy mã, ignore để tiếp tục quét)
+        const startCamera = async () => {
+            try {
+                await html5QrCode.start(
+                    { facingMode: "environment" }, 
+                    {
+                        fps: 10,
+                        qrbox: { width: 250, height: 250 },
+                    },
+                    (decodedText) => {
+                        onScanSuccess(decodedText);
+                        stopCamera();
+                    },
+                    () => {
+                        // Ignore scan errors
+                    }
+                );
+                setIsCameraStarted(true);
+                setErrorMsg('');
+            } catch (err) {
+                console.error("Unable to start camera", err);
+                setErrorMsg("Không thể truy cập camera. Vui lòng cấp quyền hoặc kiểm tra thiết bị.");
+                setIsCameraStarted(false);
+            }
         };
 
-        scanner.render(handleSuccess, handleError);
+        // Delay một chút để đảm bảo DOM đã render
+        const timer = setTimeout(startCamera, 300);
 
         return () => {
-            scanner.clear().catch(error => console.error("Failed to clear scanner on cleanup", error));
+            clearTimeout(timer);
+            stopCamera();
         };
     }, [isOpen, onScanSuccess]);
+
+    const stopCameraOutside = async () => {
+        if (scannerRef.current && scannerRef.current.isScanning) {
+            try {
+                await scannerRef.current.stop();
+                setIsCameraStarted(false);
+            } catch (err) {
+                console.error("Failed to stop camera", err);
+            }
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -47,29 +85,65 @@ export default function ScannerModal({ isOpen, onClose, onScanSuccess }) {
                 </div>
 
                 {/* Camera View Area */}
-                <div className="p-4">
+                <div className="p-4 relative">
+                    {!isCameraStarted && !errorMsg && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 z-10 p-6 text-center">
+                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1192a8] mb-4"></div>
+                            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Đang khởi tạo camera...</p>
+                        </div>
+                    )}
+
+                    {errorMsg && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-50 z-10 p-8 text-center">
+                            <span className="text-4xl mb-4">🚫</span>
+                            <p className="text-sm text-red-600 font-bold mb-4">{errorMsg}</p>
+                            <button 
+                                onClick={() => window.location.reload()}
+                                className="px-6 py-2 bg-red-600 text-white rounded-xl text-xs font-black uppercase"
+                            >
+                                Thử lại
+                            </button>
+                        </div>
+                    )}
+
                     <div 
                         id="wms-scanner-reader" 
-                        className="w-full rounded-2xl overflow-hidden border-2 border-dashed border-gray-200"
+                        className="w-full aspect-square rounded-2xl overflow-hidden bg-black border-2 border-[#1192a8]/20"
                     ></div>
+                    
+                    {/* Scanner Overlay UI */}
+                    {isCameraStarted && (
+                        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                            <div className="w-[250px] h-[250px] border-2 border-teal-400 rounded-3xl relative shadow-[0_0_0_999px_rgba(0,0,0,0.5)]">
+                                {/* Góc quét */}
+                                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-teal-400 rounded-tl-xl"></div>
+                                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-teal-400 rounded-tr-xl"></div>
+                                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-teal-400 rounded-bl-xl"></div>
+                                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-teal-400 rounded-br-xl"></div>
+                                
+                                {/* Tia quét hiệu ứng */}
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-teal-400 to-transparent animate-scan-line"></div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer / Instructions */}
                 <div className="p-6 bg-gray-50 text-center">
-                    <p className="text-xs text-gray-500 font-medium">
-                        Hướng camera về phía mã vạch hoặc mã QR của sản phẩm để tự động nhận diện
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">
+                        {isCameraStarted ? "Hướng camera về phía mã vạch hoặc mã QR" : "Vui lòng cho phép quyền truy cập camera"}
                     </p>
                     <button 
                         onClick={onClose}
-                        className="mt-4 w-full py-3 bg-[#1192a8] text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-teal-500/20 active:scale-95 transition-all"
+                        className="mt-4 w-full py-4 bg-gray-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all"
                     >
-                        Hủy bỏ
+                        Đóng trình quét
                     </button>
                 </div>
             </div>
             
             {/* Safe Area for Mobile */}
-            <div className="h-8 lg:hidden"></div>
+            <div className="h-20 lg:hidden"></div>
         </div>
     );
 }
