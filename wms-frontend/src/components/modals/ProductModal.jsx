@@ -17,13 +17,15 @@ const emptyFormData = {
     isFragile: false,
     imageUrl: '',
     status: 'ACTIVE',
-    conversions: [] 
+    conversions: [],
+    supplierIds: [] // Mới: Danh sách ID nhà cung cấp
 };
 
 export default function ProductModal({ isOpen, onClose, onSuccess, product = null, mode = 'create' }) {
     const [formData, setFormData] = useState(emptyFormData);
     const [categories, setCategories] = useState([]);
     const [units, setUnits] = useState([]);
+    const [suppliers, setSuppliers] = useState([]); // Danh sách NCC để chọn
     
     const [newConvName, setNewConvName] = useState('');
     const [newConvFactor, setNewConvFactor] = useState('');
@@ -52,16 +54,26 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product = nul
 
         const fetchData = async () => {
             try {
-                const [resCat, resUnit] = await Promise.all([
+                const [resCat, resUnit, resSup] = await Promise.all([
                     axiosClient.get("/api/categories"),
-                    axiosClient.get("/api/units")
+                    axiosClient.get("/api/units"),
+                    axiosClient.get("/api/suppliers")
                 ]);
                 const cats = resCat.data || [];
                 const uns = resUnit.data || [];
+                const sups = resSup.data || [];
                 setCategories(cats);
                 setUnits(uns);
+                setSuppliers(sups);
 
                 if (mode === 'edit' && product) {
+                    // Lấy chi tiết nhà cung cấp của SP nếu đang sửa
+                    let productSupIds = [];
+                    try {
+                        const resPS = await axiosClient.get(`/api/products/${product.id}/suppliers`);
+                        productSupIds = resPS.data.map(ps => ps.supplierId);
+                    } catch { /* SP mới chưa có link */ }
+
                     setFormData({
                         sku: product.sku || '',
                         barcode: product.barcode || '',
@@ -77,13 +89,15 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product = nul
                         isFragile: product.isFragile ?? product.fragile ?? false,
                         imageUrl: product.imageUrl || '',
                         status: product.status || 'ACTIVE',
-                        conversions: product.conversions || []
+                        conversions: product.conversions || [],
+                        supplierIds: productSupIds
                     });
                 } else {
                     setFormData({
                         ...emptyFormData,
                         categoryId: cats[0]?.id ? String(cats[0].id) : '',
-                        baseUnit: uns[0]?.name ? normalizeUnitName(uns[0].name) : 'Hộp'
+                        baseUnit: uns[0]?.name ? normalizeUnitName(uns[0].name) : 'Hộp',
+                        supplierIds: []
                     });
                 }
             } catch (error) {
@@ -120,6 +134,14 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product = nul
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }));
+    };
+
+    const handleSupplierToggle = (id) => {
+        setFormData(prev => {
+            const current = prev.supplierIds || [];
+            if (current.includes(id)) return { ...prev, supplierIds: current.filter(x => x !== id) };
+            return { ...prev, supplierIds: [...current, id] };
+        });
     };
 
     const handleCategoryInputChange = (e) => setCategoryForm(p => ({ ...p, [e.target.name]: e.target.value }));
@@ -169,16 +191,38 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product = nul
         if (!formData.sku || !formData.name) return showMessage("Thiếu dữ liệu", "Mã SKU và Tên là bắt buộc!");
         setIsSubmitting(true);
         try {
-            const payload = { ...formData, categoryId: formData.categoryId ? Number(formData.categoryId) : null };
+            // Chuẩn hóa dữ liệu trước khi gửi: Chuyển chuỗi trống thành null cho các trường số
+            const payload = { 
+                ...formData, 
+                categoryId: formData.categoryId ? Number(formData.categoryId) : null,
+                weight:      formData.weight      === '' ? null : Number(formData.weight),
+                length:      formData.length      === '' ? null : Number(formData.length),
+                width:       formData.width       === '' ? null : Number(formData.width),
+                height:      formData.height      === '' ? null : Number(formData.height),
+                safetyStock: formData.safetyStock === '' ? null : Number(formData.safetyStock)
+            };
+
             const url = mode === 'edit' ? `/api/products/${product.id}` : "/api/products";
+            let savedProduct;
             if (mode === 'edit') {
-                await axiosClient.put(url, payload);
+                const res = await axiosClient.put(url, payload);
+                savedProduct = res.data;
             } else {
-                await axiosClient.post(url, payload);
+                const res = await axiosClient.post(url, payload);
+                savedProduct = res.data;
             }
+
+            // Lưu liên kết nhà cung cấp
+            await axiosClient.post(`/api/products/${savedProduct.id}/suppliers`, formData.supplierIds);
+
             onSuccess(); 
             onClose();
-        } catch { showMessage("Lỗi", "Không thể lưu hồ sơ sản phẩm."); } finally { setIsSubmitting(false); }
+        } catch (err) { 
+            console.error("Lỗi lưu sản phẩm:", err);
+            showMessage("Lỗi", err.response?.data?.message || "Không thể lưu hồ sơ sản phẩm."); 
+        } finally { 
+            setIsSubmitting(false); 
+        }
     };
 
     const cbm = ((parseFloat(formData.length || 0) * parseFloat(formData.width || 0) * parseFloat(formData.height || 0)) / 1000000).toFixed(6);
@@ -274,6 +318,22 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product = nul
                             </div>
                         </div>
                     </div>
+
+                    <div className="bg-white p-4 md:p-5 border rounded-xl shadow-sm border-blue-100">
+                        <h3 className="text-[#00529c] font-bold border-b pb-2 mb-4 uppercase text-[11px] md:text-sm">5. Nhà cung cấp</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                            {suppliers.map(s => (
+                                <label key={s.id} className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer ${formData.supplierIds.includes(s.id) ? 'border-[#1192a8] bg-teal-50/30' : 'border-gray-100 hover:border-gray-200'}`}>
+                                    <input type="checkbox" checked={formData.supplierIds.includes(s.id)} onChange={() => handleSupplierToggle(s.id)} className="w-4 h-4 text-[#1192a8]" />
+                                    <div className="flex flex-col text-left">
+                                        <span className="text-[10px] md:text-xs font-bold text-gray-700">{s.name}</span>
+                                        <span className="text-[8px] md:text-[9px] text-gray-400 font-mono uppercase">{s.supplierCode}</span>
+                                    </div>
+                                </label>
+                            ))}
+                            {suppliers.length === 0 && <p className="col-span-full text-center text-gray-400 italic py-4">Chưa có dữ liệu nhà cung cấp.</p>}
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row justify-end gap-3 md:gap-4 p-4 border-t bg-white shrink-0">
@@ -311,7 +371,7 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product = nul
                         loading={isUnitSubmitting} 
                     />
                 )}
-                <SystemDialog isOpen={!!systemDialog} {...systemDialog} onClose={() => setSystemDialog(null)} />
+                <SystemDialog isOpen={!!systemDialog} {...systemDialog} onClose={() => setDialog ? setDialog({ ...dialog, isOpen: false }) : setSystemDialog(null)} />
             </div>
         </div>
     );

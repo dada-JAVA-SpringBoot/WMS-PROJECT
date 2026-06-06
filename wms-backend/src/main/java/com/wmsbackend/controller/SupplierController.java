@@ -33,16 +33,16 @@ public class SupplierController {
         return ResponseEntity.ok(supplierService.getAllSuppliers());
     }
 
-    // POST — chỉ ADMIN
+    // POST — ADMIN & MANAGER
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public Supplier createSupplier(@RequestBody Supplier supplier) {
         return supplierService.createSupplier(supplier);
     }
 
-    // PUT — chỉ ADMIN
+    // PUT — ADMIN & MANAGER
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public Supplier updateSupplier(@PathVariable Integer id, @RequestBody Supplier supplier) {
         return supplierService.updateSupplier(id, supplier);
     }

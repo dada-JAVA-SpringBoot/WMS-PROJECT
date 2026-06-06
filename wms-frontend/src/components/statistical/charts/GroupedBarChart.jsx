@@ -10,17 +10,32 @@ export default function GroupedBarChart({ labels = [], series = [], title, maxVa
         return <div className="h-full flex items-center justify-center text-gray-400 italic">Không có dữ liệu biểu đồ</div>;
     }
 
-    const seriesMax = Math.max(...series.flatMap((item) => item.data || [0]), 1);
-    
-    // Adaptive rounding based on magnitude
-    const magnitude = Math.pow(10, Math.floor(Math.log10(seriesMax / yTicks)) || 0);
-    const computedMax = maxValue || Math.ceil(seriesMax / yTicks / magnitude) * yTicks * magnitude;
-    
-    const ticks = Array.from({ length: yTicks + 1 }, (_, index) => (computedMax / yTicks) * index).reverse();
+    const rawMin = Math.min(...series.flatMap((item) => item.data || [0]), 0);
+    const rawMax = Math.max(...series.flatMap((item) => item.data || [0]), 1);
+
+    let roundedMin = 0;
+    let roundedMax = 1;
+    let ticks = [];
+
+    if (rawMin < 0) {
+        const absMax = Math.max(Math.abs(rawMax), Math.abs(rawMin));
+        const magnitude = Math.pow(10, Math.floor(Math.log10(absMax / yTicks)) || 0);
+        roundedMax = Math.ceil(absMax / yTicks / magnitude) * yTicks * magnitude;
+        roundedMin = -roundedMax;
+        ticks = Array.from({ length: yTicks + 1 }, (_, index) => roundedMax - ((roundedMax - roundedMin) / yTicks) * index);
+    } else {
+        const magnitude = Math.pow(10, Math.floor(Math.log10(rawMax / yTicks)) || 0);
+        roundedMax = Math.ceil(rawMax / yTicks / magnitude) * yTicks * magnitude;
+        roundedMin = 0;
+        ticks = Array.from({ length: yTicks + 1 }, (_, index) => roundedMax - (roundedMax / yTicks) * index);
+    }
+
     const chartHeight = height - padding.top - padding.bottom;
     const categoryWidth = (width - padding.left - padding.right) / labels.length;
     const groupWidth = Math.min(110, categoryWidth * 0.76);
     const barWidth = groupWidth / series.length;
+
+    const yZero = padding.top + chartHeight - ((0 - roundedMin) / (roundedMax - roundedMin)) * chartHeight;
 
     return (
         <div className="bg-white p-2 h-full flex flex-col">
@@ -46,15 +61,30 @@ export default function GroupedBarChart({ labels = [], series = [], title, maxVa
                         );
                     })}
 
+                    {rawMin < 0 && (
+                        <line
+                            x1={padding.left}
+                            y1={yZero}
+                            x2={width - padding.right}
+                            y2={yZero}
+                            stroke="#64748b"
+                            strokeWidth="1.5"
+                            strokeDasharray="4 4"
+                        />
+                    )}
+
                     {labels.map((label, labelIndex) => {
                         const startX = padding.left + labelIndex * categoryWidth + (categoryWidth - groupWidth) / 2;
                         return (
                             <g key={label}>
                                 {series.map((item, seriesIndex) => {
                                     const value = (item.data && item.data[labelIndex]) || 0;
-                                    const barHeight = (value / computedMax) * chartHeight;
+                                    const ratioVal = (value - roundedMin) / (roundedMax - roundedMin);
+                                    const yVal = padding.top + chartHeight - ratioVal * chartHeight;
+                                    
                                     const x = startX + seriesIndex * barWidth;
-                                    const y = padding.top + chartHeight - barHeight;
+                                    const y = Math.min(yZero, yVal);
+                                    const barHeight = Math.abs(yVal - yZero);
                                     return (
                                         <rect
                                             key={`${label}-${item.label}`}

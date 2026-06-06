@@ -1,31 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../../api/axiosClient';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-
-function KpiCard({ label, value, icon, color }) {
-    return (
-        <div className="bg-white rounded-2xl border p-5 flex flex-col gap-1 shadow-sm">
-            <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</span>
-                <span className="text-xl">{icon}</span>
-            </div>
-            <div className={`text-2xl font-black ${color}`}>{value}</div>
+const KpiCard = ({ label, value, icon, color }) => (
+    <div className="bg-white rounded-2xl border p-5 flex flex-col gap-1 shadow-sm">
+        <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{label}</span>
+            <span className="text-xl">{icon}</span>
         </div>
-    );
-}
+        <div className={`text-2xl font-black ${color}`}>{value}</div>
+    </div>
+);
 
-function Spinner() {
-    return (
-        <div className="flex items-center justify-center h-64 text-gray-400 text-sm gap-2">
-            <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-            </svg>
-            Đang tải dữ liệu...
-        </div>
-    );
-}
+const Spinner = () => (
+    <div className="flex items-center justify-center h-64 text-gray-400 text-sm gap-2">
+        <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+        </svg>
+        Đang tải dữ liệu...
+    </div>
+);
 
 export default function StatisticalCustomers() {
     const [customers, setCustomers] = useState([]);
@@ -34,12 +28,9 @@ export default function StatisticalCustomers() {
     const [error, setError]         = useState(null);
 
     const fetchCustomers = (kw = '') => {
-        const token = localStorage.getItem('token');
         const params = kw.trim() ? { keyword: kw.trim() } : {};
-        setLoading(true);
-        axios
-            .get(`${API_BASE}/api/customers`, {
-                headers: { Authorization: `Bearer ${token}` },
+        axiosClient
+            .get(`/api/customers`, {
                 params,
             })
             .then(r => setCustomers(r.data))
@@ -47,21 +38,13 @@ export default function StatisticalCustomers() {
             .finally(() => setLoading(false));
     };
 
-    // ✅ Mới - không warning
     useEffect(() => {
-        const token = localStorage.getItem('wms_token');
-        setLoading(true);
-        axios
-            .get(`${API_BASE}/api/customers`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
-            .then(r => setCustomers(r.data))
-            .catch(() => setError('Không thể tải danh sách khách hàng.'))
-            .finally(() => setLoading(false));
+        fetchCustomers();
     }, []);
 
     const handleSearch = (e) => {
         e.preventDefault();
+        setLoading(true);
         fetchCustomers(keyword);
     };
 
@@ -96,7 +79,9 @@ export default function StatisticalCustomers() {
                     <span className="w-1 h-5 rounded bg-blue-500 inline-block" />
                     <h3 className="text-sm font-bold text-gray-600">
                         Danh sách khách hàng
-                        <span className="ml-2 text-xs font-normal text-gray-400">({customers.length} kết quả)</span>
+                        <span className="ml-2 text-xs font-normal text-gray-400">
+                            ({customers.length} kết quả)
+                        </span>
                     </h3>
                 </div>
 

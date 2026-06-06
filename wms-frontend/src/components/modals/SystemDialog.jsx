@@ -19,7 +19,7 @@ export default function SystemDialog({
     const isConfirm = variant === 'confirm';
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-[80] p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-[9999] p-4">
             <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden">
                 <div className="bg-[#1192a8] text-white px-5 py-3">
                     <h3 className="text-base font-bold uppercase tracking-wide">{title}</h3>

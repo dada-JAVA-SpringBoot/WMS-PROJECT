@@ -3,12 +3,15 @@ package com.wmsbackend.repository;
 import com.wmsbackend.entity.Inventory;
 import com.wmsbackend.dto.InventoryDetailDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import jakarta.persistence.LockModeType;
 
 import java.util.List;
 import java.util.Collection;
+import java.util.Optional;
 
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
@@ -17,6 +20,17 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     // SELECT loc.BinCode, b.BatchCode, b.ExpiryDate, i.QuantityOnHand, i.QuantityAllocated
     // FROM Inventory i JOIN Locations loc JOIN Batches b WHERE i.ProductId = ?
     Inventory findByProductIdAndLocationIdAndBatchId(Integer productId, Integer locationId, Integer batchId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT i FROM Inventory i WHERE i.productId = :productId AND i.locationId = :locationId AND i.batchId = :batchId")
+    Optional<Inventory> findAndLockByProductIdAndLocationIdAndBatchId(
+            @Param("productId") Integer productId, 
+            @Param("locationId") Integer locationId, 
+            @Param("batchId") Integer batchId
+    );
+
+    @Query("SELECT i FROM Inventory i JOIN Location l ON i.locationId = l.id WHERE l.zone = :zone")
+    List<Inventory> findByLocationZone(@Param("zone") String zone);
 
     List<Inventory> findByLocationIdIn(Collection<Integer> locationIds);
 
@@ -43,7 +57,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     // ── Dashboard queries ──────────────────────────────────────────────────
 
     @Query("SELECT COALESCE(SUM(i.quantityOnHand), 0) FROM Inventory i")
-    Double sumTotalQuantityOnHand();
+    java.math.BigDecimal sumTotalQuantityOnHand();
 
     @Query("SELECT pc.name, COALESCE(SUM(i.quantityOnHand), 0) " +
             "FROM Inventory i " +

@@ -11,18 +11,18 @@ export default function StatisticalOverview() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchData = async () => {
+        const getDashboardData = async () => {
             try {
                 const res = await axiosClient.get('/api/stats/dashboard');
                 setData(res.data);
-            } catch (err) {
-                console.error('Không tải được dữ liệu dashboard:', err);
+            } catch (error) {
+                console.error('Không tải được dữ liệu dashboard:', error);
                 setError('Không thể tải dữ liệu. Vui lòng thử lại.');
             } finally {
                 setLoading(false);
             }
         };
-        fetchData();
+        getDashboardData();
     }, []);
 
     if (loading) return <div className="p-5">Đang tải dữ liệu vận hành...</div>;
@@ -80,18 +80,18 @@ export default function StatisticalOverview() {
 
     return (
         <div className="space-y-5 p-5">
-            {/* KPI Cards Row 1: Inventory Health */}
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-4">
+            {/* KPI Cards Row 1: Inventory Health & Operations */}
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 <StatMetricCard 
                     icon="📦" 
                     value={data?.totalSkus || 0} 
-                    label="Tổng số mã hàng (SKU)" 
+                    label="Tổng mã hàng (SKU)" 
                     circleClass="bg-blue-500 text-white" 
                 />
                 <StatMetricCard 
                     icon="📊" 
                     value={Number(data?.totalStockQuantity || 0).toLocaleString('vi-VN')} 
-                    label="Tổng sản phẩm tồn kho" 
+                    label="Tổng tồn kho (sp)" 
                     circleClass="bg-green-500 text-white" 
                 />
                 <StatMetricCard 
@@ -103,30 +103,32 @@ export default function StatisticalOverview() {
                 <StatMetricCard 
                     icon="⚠️" 
                     value={data?.lowStockCount || 0} 
-                    label="Mặt hàng dưới định mức" 
+                    label="Hàng dưới định mức" 
                     circleClass="bg-red-500 text-white" 
+                />
+                <StatMetricCard 
+                    icon="📥" 
+                    value={data?.pendingInbound || 0} 
+                    label="Đơn nhập chờ duyệt" 
+                    circleClass="bg-orange-400 text-white" 
+                />
+                <StatMetricCard 
+                    icon="📤" 
+                    value={data?.pendingOutbound || 0} 
+                    label="Đơn xuất chờ duyệt" 
+                    circleClass="bg-indigo-400 text-white" 
                 />
             </div>
 
-            {/* KPI Cards Row 2: Operational Flow */}
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-                <div className="grid grid-cols-2 gap-5">
-                    <StatMetricCard 
-                        icon="📥" 
-                        value={data?.pendingInbound || 0} 
-                        label="Đơn nhập chờ xử lý" 
-                        circleClass="bg-orange-400 text-white" 
-                    />
-                    <StatMetricCard 
-                        icon="📤" 
-                        value={data?.pendingOutbound || 0} 
-                        label="Đơn xuất chờ xử lý" 
-                        circleClass="bg-indigo-400 text-white" 
-                    />
-                </div>
-                <PanelCard className="flex items-center justify-center bg-white p-5 italic text-gray-500">
-                    Gợi ý: "Tỉ lệ lấp đầy kho đạt {data?.warehouseOccupancyRate?.toFixed(1)}%. Hãy xem xét tối ưu hóa vị trí sắp xếp hàng."
-                </PanelCard>
+            {/* Smart Suggestion Alert Bar */}
+            <div className="bg-cyan-50/50 border border-cyan-100 rounded-2xl p-4 flex items-center gap-3 text-cyan-800 text-sm font-semibold shadow-sm">
+                <span className="text-xl">💡</span>
+                <p>
+                    Gợi ý tối ưu: Tỉ lệ lấp đầy kho hiện đạt <span className="font-extrabold text-cyan-600">{data?.warehouseOccupancyRate?.toFixed(1)}%</span>. 
+                    {data?.warehouseOccupancyRate > 75 
+                        ? " Sức chứa kho đang ở mức cao. Hãy xem xét sắp xếp lại vị trí lưu kho hoặc lên kế hoạch giải phóng các mặt hàng tồn lâu ngày để tối ưu không gian." 
+                        : " Diện tích lưu trữ còn trống khá rộng rãi, kho sẵn sàng tiếp nhận thêm lượng hàng nhập mới lớn."}
+                </p>
             </div>
 
             {/* Chart: Dòng chảy hàng hóa 7 ngày (dữ liệu thực từ API) */}

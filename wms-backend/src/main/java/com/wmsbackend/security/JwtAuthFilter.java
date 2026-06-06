@@ -1,6 +1,7 @@
 // ===== JwtAuthFilter.java =====
 package com.wmsbackend.security;
 
+import com.wmsbackend.util.TimeUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,7 +52,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     try {
                         com.wmsbackend.repository.StaffRepository repo = com.wmsbackend.config.ApplicationContextHolder.getContext().getBean(com.wmsbackend.repository.StaffRepository.class);
                         repo.findByUsername(username).ifPresent(staff -> {
-                            staff.setLastActiveAt(java.time.LocalDateTime.now());
+                            staff.setLastActiveAt(TimeUtils.now());
                             repo.save(staff);
                         });
                     } catch (Exception e) {
@@ -66,4 +67,3 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 }
- 

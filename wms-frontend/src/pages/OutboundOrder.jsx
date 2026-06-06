@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import { ActionButton } from '../components/common/SharedUI';
 import VoucherContextMenu from '../components/modals/VoucherContextMenu';
 import ExportExcelModal from '../components/modals/ExportExcelModal';
+import QCInspectionModal from '../components/modals/QCInspectionModal';
 import SystemDialog from '../components/modals/SystemDialog';
 import ScannerModal from '../components/modals/ScannerModal';
 import axiosClient from '../api/axiosClient';
@@ -32,8 +33,8 @@ const createEmptyDetail = () => ({
 
 const outboundStatusOptions = [
     { value: 'DRAFT', label: 'Bản nháp', color: 'bg-gray-100 text-gray-500 border-gray-200' },
-    { value: 'PENDING', label: 'Đang duyệt', color: 'bg-rose-50 text-rose-600 border-rose-100' },
     { value: 'ALLOCATED', label: 'Đã phân bổ', color: 'bg-blue-50 text-blue-700 border-blue-100' },
+    { value: 'PENDING', label: 'Đang duyệt', color: 'bg-rose-50 text-rose-600 border-rose-100' },
     { value: 'COMPLETED', label: 'Đã xuất kho', color: 'bg-green-50 text-green-700 border-green-100' },
     { value: 'CANCELED', label: 'Đã hủy', color: 'bg-red-50 text-red-600 border-red-100' }
 ];
@@ -56,6 +57,11 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isViewDetailOpen, setIsViewDetailOpen] = useState(false);
     const [viewingVoucher, setViewingVoucher] = useState(null);
+
+    const [isQCModalOpen, setIsQCModalOpen] = useState(false);
+    const [pendingQCOrder, setPendingQCOrder] = useState(null);
+    const [qcItems, setQCItems] = useState([]);
+
     const [details, setDetails] = useState([createEmptyDetail()]);
     const [formData, setFormData] = useState({
         voucherCode: '', voucherDate: '', customerId: '', staffId: '', note: ''
@@ -94,7 +100,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                     updated[activeItemIndex] = { ...updated[activeItemIndex], productId: prod.id, productName: prod.name, unit: prod.baseUnit || '-', price: prod.price || 0, total: Number(updated[activeItemIndex].quantity) * Number(prod.price || 0) };
                     setDetails(updated);
                 }
-            } catch (e) { console.error("Lỗi quét mã:", e); }
+            } catch (error) { console.error("Lỗi quét mã:", error); }
         }
     };
 
@@ -105,7 +111,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
         try {
             const res = await axiosClient.get("/api/outbound-orders");
             setExportData(Array.isArray(res.data) ? res.data : []);
-        } catch (e) { console.error("Lỗi API Phiếu xuất:", e); setExportData([]); }
+        } catch (error) { console.error("Lỗi API Phiếu xuất:", error); setExportData([]); }
         axiosClient.get("/api/products/details").then(r => setProducts(r.data)).catch(() => {});
         axiosClient.get("/api/customers").then(r => setCustomers(r.data)).catch(() => {});
         axiosClient.get("/api/staff/names").then(r => setStaffs(r.data)).catch(() => {});
@@ -154,13 +160,49 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                 const seed = workflow.products.map(p => ({ id: Math.random(), productId: p.id, productName: p.name, unit: p.baseUnit || '-', quantity: 1, price: p.price || 0, total: p.price || 0, batchId: '', batchCode: '', locationId: '', binCode: '' }));
                 setDetails(seed);
             } else { setDetails([createEmptyDetail()]); }
-            setIsCreateOpen(true); clearWorkflow();
+            setIsCreateOpen(true); 
+            setTimeout(() => clearWorkflow(), 0);
         }
     }, [workflow, clearWorkflow, products, canCreate]); 
 
     const handleUpdateStatus = async (id, nextStatus) => {
+        const order = exportData.find(o => o.id === id);
+        
+        // Nếu chọn chuyển sang "Đã xuất kho" (COMPLETED)
+        if (nextStatus === 'COMPLETED') {
+            // Kiểm tra quyền QC/ADMIN
+            const canApprove = roles.some(r => ['ADMIN', 'MANAGER', 'QUALITY_CONTROL'].includes(r));
+            if (!canApprove) {
+                showMsg("Từ chối", "Bạn không có quyền chuyển trạng thái sang 'Đã xuất kho'.", "info");
+                return;
+            }
+
+            try {
+                const res = await axiosClient.get(`/api/outbound-orders/${id}/details`);
+                setPendingQCOrder(order);
+                // Map chi tiết sang định dạng QC (giả lập quantityReceived là số lượng nhặt được)
+                setQCItems(res.data.map(it => ({ ...it, quantityReceived: it.quantity })));
+                setIsQCModalOpen(true);
+                return;
+            } catch (error) {
+                showMsg("Lỗi", "Không thể tải chi tiết phiếu để kiểm định", "info");
+                return;
+            }
+        }
+
         try { await axiosClient.put(`/api/outbound-orders/${id}/status`, { status: nextStatus }); fetchData(); }
-        catch (e) { showMsg("Lỗi", "Lỗi cập nhật: " + (e.response?.data?.message || e.message), "info"); }
+        catch (error) { showMsg("Lỗi", "Lỗi cập nhật: " + (error.response?.data?.message || error.message), "info"); }
+    };
+
+    const handleConfirmQCResult = async (inspectionData) => {
+        try {
+            // Gọi endpoint QC backend đã viết trước đó
+            await axiosClient.post(`/api/outbound-orders/${pendingQCOrder.id}/qc`);
+            setIsQCModalOpen(false); setPendingQCOrder(null); fetchData();
+            showMsg("Thành công", "Đã phê duyệt QC và xuất kho thành công!", "info");
+        } catch (error) {
+            showMsg("Lỗi", "Lỗi phê duyệt: " + (error.response?.data || error.message), "info");
+        }
     };
 
     const handleOpenCreate = (seed = []) => {
@@ -180,7 +222,18 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
             const suggestedRows = suggestions.map(s => ({ id: Math.random(), productId: baseItem.productId, productName: baseItem.productName, unit: baseItem.unit, price: baseItem.price, batchId: s.batchId, batchCode: s.batchCode, locationId: s.locationId, binCode: s.binCode, quantity: s.suggestedQuantity, total: Number(s.suggestedQuantity) * Number(baseItem.price) }));
             newDetails.splice(index, 1, ...suggestedRows); setDetails(newDetails);
             if (suggestions.reduce((sum, s) => sum + s.suggestedQuantity, 0) < item.quantity) { showMsg("Cảnh báo", "Lượng tồn kho thấp hơn yêu cầu!", "info"); }
-        } catch (e) { showMsg("Lỗi", "Lỗi FEFO: " + e.message, "info"); }
+        } catch (error) { showMsg("Lỗi", "Lỗi FEFO: " + error.message, "info"); }
+    };
+
+    const handleConfirmQC = async (id) => {
+        try {
+            await axiosClient.post(`/api/outbound-orders/${id}/qc`);
+            setIsViewDetailOpen(false);
+            fetchData();
+            showMsg("Thành công", "Đã phê duyệt QC và xuất kho thành công!", "info");
+        } catch (error) {
+            showMsg("Lỗi", "Lỗi phê duyệt: " + (error.response?.data || error.message), "info");
+        }
     };
 
     const handleSave = async () => {
@@ -192,11 +245,11 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
             items: valid.map(d => ({ productId: parseInt(d.productId), quantity: parseFloat(d.quantity), unitPrice: parseFloat(d.price), batchId: parseInt(d.batchId), locationId: parseInt(d.locationId) }))
         };
         try { await axiosClient.post("/api/outbound-orders", payload); setIsCreateOpen(false); fetchData(); showMsg("Thành công", "Lưu phiếu xuất thành công!", "info"); }
-        catch (e) { showMsg("Lỗi", "Lỗi lưu: " + e.message, "info"); }
+        catch (error) { showMsg("Lỗi", "Lỗi lưu: " + error.message, "info"); }
     };
 
-    const handleExportExcel = async () => {
-        const source = selectedItems.length > 0 ? selectedItems : filteredData;
+    const handleExportExcel = async (mode) => {
+        const source = mode === 'selected' ? selectedItems : filteredData;
         if (!source.length) return showMsg("Lỗi", 'Không có dữ liệu!', "info");
         const sheetData = source.map((row, idx) => ({ "STT": idx + 1, "Mã phiếu": row.issueCode, "Ngày tạo": row.createdAt ? new Date(row.createdAt).toLocaleString('vi-VN') : '---', "Khách hàng": getCustName(row.customerId), "Tổng tiền": row.totalAmount, "Trạng thái": outboundStatusOptions.find(o => o.value === row.status)?.label || row.status, "Người lập": getStfName(row.createdBy) }));
         const ws = XLSX.utils.json_to_sheet(sheetData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "PhieuXuat");
@@ -207,18 +260,66 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
         ...(canCreate ? [{ label: 'THÊM MỚI', iconSrc: addIcon, onClick: () => handleOpenCreate() }] : []),
         { label: 'QUÉT MÃ', iconSrc: scanIcon, onClick: () => { setActiveScanTarget('SEARCH'); setIsScannerOpen(true); } },
         { label: 'CHI TIẾT', iconSrc: infoIcon, onClick: () => { if (selectedIds.length !== 1) return showMsg("Yêu cầu", 'Chọn duy nhất một phiếu!', "info"); setViewingVoucher(selectedItems[0]); setIsViewDetailOpen(true); }},
-        { label: 'XUẤT EXCEL', iconSrc: excelIcon, onClick: () => openExportModal() },
+        { label: 'XUẤT EXCEL', iconSrc: excelIcon, onClick: () => {
+            const bestMode = detectBestExportMode(selectedIds.length, filteredData.length);
+            openExportModal(bestMode);
+        }},
         { label: 'LÀM MỚI', iconSrc: excel1Icon, onClick: () => { fetchData(); clearSelection(); } }
     ];
 
     const SortIcon = ({ col }) => { if (sortConfig.key !== col) return <span className="opacity-20 ml-1 italic">↕</span>; return <span className="ml-1 text-[#1192a8] font-black">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>; };
     const requestSort = (key) => { let direction = 'asc'; if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc'; setSortConfig({ key, direction }); };
 
+    const handleContextMenu = (e, item) => {
+        e.preventDefault();
+        setContextMenu({
+            x: e.clientX,
+            y: e.clientY,
+            item: item
+        });
+    };
+
+    const contextActions = useMemo(() => {
+        if (!contextMenu?.item) return [];
+        const item = contextMenu.item;
+        return [
+            { label: 'Xem chi tiết', onClick: () => { setViewingVoucher(item); setIsViewDetailOpen(true); } },
+            { label: 'Lập phiếu tương tự', onClick: () => {
+                const seed = item.items?.map(it => {
+                    const p = products.find(prod => prod.id === it.productId);
+                    return { ...createEmptyDetail(), productId: it.productId, productName: p?.name || '', unit: p?.baseUnit || '-', quantity: it.quantity, price: it.unitPrice, total: it.quantity * it.unitPrice };
+                }) || [];
+                handleOpenCreate(seed);
+            }},
+            { label: 'Xuất Excel phiếu này', onClick: () => {
+                const sheetData = [{ "Mã phiếu": item.issueCode, "Ngày tạo": new Date(item.createdAt).toLocaleString(), "Khách hàng": getCustName(item.customerId), "Tổng tiền": item.totalAmount, "Trạng thái": item.status }];
+                const ws = XLSX.utils.json_to_sheet(sheetData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Detail");
+                XLSX.writeFile(wb, `PhieuXuat_${item.issueCode}.xlsx`);
+            }},
+            ...( ['PENDING', 'ALLOCATED', 'DRAFT'].includes(item.status) ? [{ label: 'PHÊ DUYỆT QC & XUẤT KHO', onClick: () => handleConfirmQC(item.id), danger: true }] : [])
+        ];
+    }, [contextMenu, products, customers]);
+
     return (
-        <div className="p-6 bg-[#f8f9fa] min-h-full flex flex-col text-left font-sans">
+        <div className="p-6 bg-[#f8f9fa] min-h-full flex flex-col text-left font-sans" onContextMenu={e => e.preventDefault()}>
             <SystemDialog isOpen={dialog.isOpen} title={dialog.title} message={dialog.message} variant={dialog.variant} onClose={() => setDialog({ ...dialog, isOpen: false })} />
             <ScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanSuccess={handleScanSuccess} />
-            
+            <ExportExcelModal 
+                isOpen={isExportModalOpen} 
+                onClose={closeExportModal} 
+                onConfirm={handleExportExcel} 
+                fileName={exportFileName} 
+                setFileName={setExportFileName} 
+            />
+            <VoucherContextMenu 
+                isOpen={!!contextMenu} 
+                x={contextMenu?.x} 
+                y={contextMenu?.y} 
+                title="Thao tác nhanh"
+                subtitle={contextMenu?.item?.issueCode}
+                actions={contextActions}
+                onClose={() => setContextMenu(null)}
+            />
             <div className="sticky top-0 z-20 flex items-center justify-between bg-white/95 backdrop-blur-sm p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 mb-4 md:mb-6">
                 <div className="flex gap-4 overflow-x-auto no-scrollbar pb-1 w-full lg:w-auto">
                     {toolbarActions.map((a, i) => (<ActionButton key={i} {...a} />))}
@@ -263,7 +364,11 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                             {isLoading ? (
                                 <tr><td colSpan="6" className="py-20 text-center animate-pulse">ĐANG TẢI...</td></tr>
                             ) : filteredData.map((item, idx) => (
-                                <tr key={item.id} onClick={(e) => handleRowClick(item, idx, e)} onDoubleClick={() => { setViewingVoucher(item); setIsViewDetailOpen(true); }} className={`border-b border-gray-50 cursor-pointer ${selectedIds.includes(item.id) ? 'bg-[#1192a8]/5' : 'hover:bg-gray-50'}`}>
+                                <tr key={item.id} 
+                                    onClick={(e) => handleRowClick(item, idx, e)} 
+                                    onDoubleClick={() => { setViewingVoucher(item); setIsViewDetailOpen(true); }} 
+                                    onContextMenu={(e) => handleContextMenu(e, item)}
+                                    className={`border-b border-gray-50 cursor-pointer ${selectedIds.includes(item.id) ? 'bg-[#1192a8]/5' : 'hover:bg-gray-50'}`}>
                                     <td className="p-4 md:p-5 text-gray-300 font-bold">{idx + 1}</td>
                                     <td className="p-4 md:p-5 font-black text-[#1192a8] uppercase truncate">{item.issueCode}</td>
                                     <td className="p-4 md:p-5 text-gray-500 font-bold">{item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : '---'}</td>
@@ -322,7 +427,21 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                                 </table>
                             </div>
                         </div>
-                        <div className="p-4 md:p-5 border-t bg-white text-right font-black text-2xl md:text-3xl text-[#1192a8]">{Number(viewingVoucher.totalAmount || 0).toLocaleString()}đ</div>
+                        <div className="p-4 md:p-5 border-t bg-white flex justify-between items-center shrink-0">
+                            <div className="flex gap-2">
+                                {['PENDING', 'ALLOCATED', 'DRAFT'].includes(viewingVoucher.status) && (
+                                    <button 
+                                        onClick={() => handleConfirmQC(viewingVoucher.id)}
+                                        className="px-4 py-2 bg-rose-600 text-white rounded-xl font-bold uppercase text-[10px] shadow-lg shadow-rose-600/20 hover:scale-105 transition-all"
+                                    >
+                                        Phê duyệt QC & Xuất kho
+                                    </button>
+                                )}
+                            </div>
+                            <div className="text-right font-black text-2xl md:text-3xl text-[#1192a8]">
+                                {Number(viewingVoucher.totalAmount || 0).toLocaleString()}đ
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
@@ -362,6 +481,15 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                         </div>
                     </div>
                 </div>
+            )}
+            {isQCModalOpen && (
+                <QCInspectionModal 
+                    isOpen={isQCModalOpen} 
+                    onClose={() => { setIsQCModalOpen(false); setPendingQCOrder(null); }}
+                    items={qcItems}
+                    products={products}
+                    onConfirm={handleConfirmQCResult}
+                />
             )}
         </div>
     );

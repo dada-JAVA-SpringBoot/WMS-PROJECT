@@ -331,6 +331,15 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
     }, [units]);
 
     const getCategoryDisplay = (product) => {
+        // Ưu tiên dùng dữ liệu trực tiếp từ ProductDTO (đã JOIN ở Backend)
+        if (product?.categoryName) {
+            return {
+                name: product.categoryName,
+                code: product.categoryCode || ''
+            };
+        }
+
+        // Nếu không có (ví dụ vừa update ở FE), dùng Map
         const category = categoryMap.get(String(product?.categoryId));
         if (!category) {
             return { name: 'Chưa gán', code: '' };

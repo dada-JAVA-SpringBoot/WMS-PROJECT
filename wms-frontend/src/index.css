@@ -52,14 +52,50 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Hide scrollbar but keep functionality */
+  /* Custom elegant scrollbars instead of hiding them */
   .no-scrollbar::-webkit-scrollbar {
-    display: none;
+    display: block;
+    width: 6px;
+    height: 6px;
+  }
+  .no-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .no-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1; /* slate-300 */
+    border-radius: 4px;
+  }
+  .no-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #a1a1aa; /* zinc-400 */
+  }
+  .no-scrollbar::-webkit-scrollbar-thumb:active {
+    background: #1192a8; /* WMS primary */
   }
   .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+    -ms-overflow-style: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
   }
+}
+
+/* Global scrollbars styling for the whole app */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f8fafc; /* slate-50 */
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1; /* slate-300 */
+  border-radius: 4px;
+  border: 2px solid #f8fafc;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8; /* slate-400 */
+}
+::-webkit-scrollbar-thumb:active {
+  background: #1192a8; /* WMS primary */
 }
 
 @layer utilities {
@@ -67,4 +103,4 @@
     touch-action: none;
   }
 }
-`n@keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } } .animate-bounce-slow { animation: bounce-slow 3s infinite ease-in-out; }
+@keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } } .animate-bounce-slow { animation: bounce-slow 3s infinite ease-in-out; }

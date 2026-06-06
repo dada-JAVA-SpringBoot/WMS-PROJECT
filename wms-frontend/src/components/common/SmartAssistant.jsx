@@ -69,7 +69,7 @@ export default function SmartAssistant({ stats, inboundOrders, outboundOrders, c
                 <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 w-80 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
                     <div className="bg-gradient-to-r from-[#1192a8] to-teal-600 p-6 text-white">
                         <div className="flex justify-between items-start mb-2">
-                            <h3 className="font-black uppercase tracking-tight text-sm">Hệ thống Chuyên gia (Expert System)</h3>
+                            <h3 className="font-black uppercase tracking-tight text-sm">Trợ lý công việc thông minh</h3>
                             <button onClick={() => setIsOpen(false)} className="opacity-60 hover:opacity-100">×</button>
                         </div>
                         <p className="text-[10px] text-teal-50 opacity-80 uppercase font-bold">Phân tích công việc ngày: {new Date().toLocaleDateString('vi-VN')}</p>
@@ -112,7 +112,7 @@ export default function SmartAssistant({ stats, inboundOrders, outboundOrders, c
                     </div>
 
                     <div className="p-4 bg-gray-50 border-t flex justify-center">
-                        <span className="text-[9px] font-bold text-gray-400 uppercase">Hỗ trợ vận hành bởi WMS Expert System Engine</span>
+                        <span className="text-[9px] font-bold text-gray-400 uppercase">Được hỗ trợ bởi Trợ lý ảo thông minh WMS</span>
                     </div>
                 </div>
             )}

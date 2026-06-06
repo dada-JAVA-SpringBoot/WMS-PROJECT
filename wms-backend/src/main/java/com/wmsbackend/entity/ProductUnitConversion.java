@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "ProductUnitConversions")
 public class ProductUnitConversion {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -14,10 +15,10 @@ public class ProductUnitConversion {
     @Column(name = "ProductId", nullable = false)
     private Integer productId;
 
-    @Column(name = "UnitName", nullable = false, length = 50)
+    @Column(name = "UnitName", length = 50, nullable = false)
     private String unitName;
 
-    @Column(name = "ConversionFactor", nullable = false, precision = 18, scale = 4)
+    @Column(name = "ConversionFactor", precision = 18, scale = 4, nullable = false)
     private BigDecimal conversionFactor;
 
     @Column(name = "IsDefault")
@@ -26,21 +27,53 @@ public class ProductUnitConversion {
     @Column(name = "CreatedAt", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // Getters and Setters
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
+    // Getter Setter
 
-    public Integer getProductId() { return productId; }
-    public void setProductId(Integer productId) { this.productId = productId; }
+    public Integer getId() {
+        return id;
+    }
 
-    public String getUnitName() { return unitName; }
-    public void setUnitName(String unitName) { this.unitName = unitName; }
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
-    public BigDecimal getConversionFactor() { return conversionFactor; }
-    public void setConversionFactor(BigDecimal conversionFactor) { this.conversionFactor = conversionFactor; }
+    public Integer getProductId() {
+        return productId;
+    }
 
-    public Boolean getIsDefault() { return isDefault; }
-    public void setIsDefault(Boolean isDefault) { this.isDefault = isDefault; }
+    public void setProductId(Integer productId) {
+        this.productId = productId;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public String getUnitName() {
+        return unitName;
+    }
+
+    public void setUnitName(String unitName) {
+        this.unitName = unitName;
+    }
+
+    public BigDecimal getConversionFactor() {
+        return conversionFactor;
+    }
+
+    public void setConversionFactor(BigDecimal conversionFactor) {
+        this.conversionFactor = conversionFactor;
+    }
+
+    public Boolean getIsDefault() {
+        return isDefault;
+    }
+
+    public void setIsDefault(Boolean isDefault) {
+        this.isDefault = isDefault;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

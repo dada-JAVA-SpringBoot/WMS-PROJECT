@@ -14,6 +14,7 @@ export default function RevenueByMonth() {
     const [detail,  setDetail]  = useState(null);
     const [loading, setLoading] = useState(false);
     const [error,   setError]   = useState(null);
+    const [profitType, setProfitType] = useState('cashflow');
 
     const fetchAll = useCallback(async (y) => {
         setLoading(true); setError(null);
@@ -35,6 +36,8 @@ export default function RevenueByMonth() {
 
     const handleYearChange = (e) => { const y = e.target.value; setYear(y); fetchAll(y); };
 
+    const isActual = profitType === 'actual';
+
     return (
         <div className="space-y-5 p-5">
             <FilterBar>
@@ -42,9 +45,15 @@ export default function RevenueByMonth() {
                 <FilterSelect value={year} onChange={handleYearChange} className="w-[90px]">
                     {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                 </FilterSelect>
+
+                <span className="text-[16px] text-slate-800 ml-auto font-medium">Loại lợi nhuận</span>
+                <FilterSelect value={profitType} onChange={e => setProfitType(e.target.value)} className="w-[200px]">
+                    <option value="cashflow">Theo dòng tiền (Chi/Thu)</option>
+                    <option value="actual">Lợi nhuận thực tế (COGS)</option>
+                </FilterSelect>
             </FilterBar>
 
-            <FinancialCards data={summary} loading={loading} error={error} />
+            <FinancialCards data={summary} loading={loading} error={error} profitType={profitType} />
 
             {detail && !loading && (
                 <>
@@ -52,7 +61,7 @@ export default function RevenueByMonth() {
                         title={`Chi phí, Doanh thu & Hao hụt — Năm ${year}`}
                         labels={detail.labels}
                         series={[
-                            { label: 'Chi phí (Nhập)', color: '#e6b06e', data: detail.costData    },
+                            { label: isActual ? 'Giá vốn hàng bán (COGS)' : 'Chi phí (Nhập)', color: '#e6b06e', data: isActual ? detail.cogsData : detail.costData },
                             { label: 'Doanh thu (Xuất)', color: '#74b9f5', data: detail.revenueData },
                             { label: 'Hao hụt (Thất thoát)', color: '#ef4444', data: detail.lossData },
                         ]}
@@ -61,7 +70,7 @@ export default function RevenueByMonth() {
                         title={`Xu hướng lợi nhuận — ${year}`}
                         labels={detail.labels}
                         series={[
-                            { label: 'Lợi nhuận', color: '#b68cf0', fill: '#b68cf0', data: detail.profitData },
+                            { label: isActual ? 'Lợi nhuận thực tế' : 'Lợi nhuận dòng', color: '#b68cf0', fill: '#b68cf0', data: isActual ? detail.actualProfitData : detail.profitData },
                         ]}
                     />
                 </>

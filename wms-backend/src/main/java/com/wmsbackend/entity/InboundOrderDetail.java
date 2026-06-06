@@ -49,7 +49,18 @@ public class InboundOrderDetail {
     @Transient
     private String batchCode;
 
+    @Column(name = "ExpiryDate")
+    private java.time.LocalDate expiryDate;
+
     // Getter Setter
+
+    public java.time.LocalDate getExpiryDate() {
+        return expiryDate;
+    }
+
+    public void setExpiryDate(java.time.LocalDate expiryDate) {
+        this.expiryDate = expiryDate;
+    }
 
     public BigDecimal getQuantityIntact() {
         return quantityIntact;

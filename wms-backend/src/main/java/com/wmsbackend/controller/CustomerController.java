@@ -32,16 +32,16 @@ public class CustomerController {
         return ResponseEntity.ok(customerService.getAllCustomers());
     }
 
-    // POST — chỉ ADMIN
+    // POST — ADMIN & MANAGER
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public Customer createCustomer(@RequestBody Customer customer) {
         return customerService.createCustomer(customer);
     }
 
-    // PUT — chỉ ADMIN
+    // PUT — ADMIN & MANAGER
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public Customer updateCustomer(@PathVariable Integer id, @RequestBody Customer customer) {
         return customerService.updateCustomer(id, customer);
     }

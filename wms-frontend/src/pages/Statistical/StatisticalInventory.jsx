@@ -3,6 +3,8 @@ import axiosClient from '../../api/axiosClient';
 import PanelCard from '../../components/statistical/PanelCard';
 import StatisticsTable from '../../components/statistical/StatisticsTable';
 import StatMetricCard from '../../components/statistical/StatMetricCard';
+import FilterBar, { FilterButton, FilterDateInput } from '../../components/statistical/FilterBar';
+import { formatCurrencyShort, formatCurrencyVN } from '../../components/statistical/charts/chartUtils';
 
 // ── Cột cho bảng tồn kho ──────────────────────────────────────────────
 const inventoryColumns = [
@@ -121,6 +123,29 @@ export default function StatisticalInventory() {
 
     return (
         <div className="min-h-[calc(100vh-120px)] p-5 space-y-5">
+            {/* Filter Bar */}
+            <FilterBar>
+                <span className="text-[16px] text-slate-800 font-bold uppercase tracking-wider">Kỳ thống kê:</span>
+                <span className="text-[15px] text-slate-700">Từ ngày</span>
+                <FilterDateInput
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-[170px] rounded-lg border-slate-300"
+                />
+                <span className="text-[15px] text-slate-700">Đến ngày</span>
+                <FilterDateInput
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-[170px] rounded-lg border-slate-300"
+                />
+                <FilterButton variant="primary" onClick={handleSearch} className="rounded-lg font-bold">
+                    Lọc dữ liệu
+                </FilterButton>
+                <FilterButton onClick={handleReset} className="rounded-lg font-bold">
+                    Làm mới
+                </FilterButton>
+            </FilterBar>
+
             {/* KPI Cards */}
             {data && (
                 <div className="grid grid-cols-1 gap-5 xl:grid-cols-4">
@@ -133,7 +158,7 @@ export default function StatisticalInventory() {
                     <StatMetricCard
                         icon="📊"
                         value={Number(data.totalStockValue || 0).toLocaleString('vi-VN')}
-                        label="Tổng giá trị tồn kho"
+                        label="Tổng lượng tồn kho (sản phẩm)"
                         circleClass="bg-green-500 text-white"
                     />
                     <StatMetricCard
@@ -151,90 +176,57 @@ export default function StatisticalInventory() {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[345px_minmax(0,1fr)]">
-                {/* Search / Filter Panel */}
-                <PanelCard className="h-fit p-6">
-                    <div className="space-y-6">
-                        <h3 className="text-[17px] font-semibold text-slate-900 uppercase tracking-tight border-b pb-2">Kỳ thống kê</h3>
+            <div className="space-y-5">
+                {/* Inventory Table */}
+                <PanelCard className="overflow-hidden">
+                    <div className="border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <h3 className="text-[17px] font-black text-slate-900 uppercase tracking-tight">
+                            Bảng đối soát tồn kho
+                        </h3>
+                        <span className="text-[12px] font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                            {startDate} ➜ {endDate}
+                        </span>
+                    </div>
 
-                        <div>
-                            <label className="mb-2 block text-[13px] font-black text-gray-400 uppercase">Từ ngày</label>
-                            <input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="h-11 w-full border border-slate-300 rounded-xl bg-white px-3 text-[15px] outline-none focus:border-[#1192a8]"
-                            />
+                    {loading ? (
+                        <div className="p-20 text-center text-[#1192a8] font-bold animate-pulse">ĐANG TẢI DỮ LIỆU...</div>
+                    ) : error ? (
+                        <div className="p-20 text-center text-red-400 font-bold">{error}</div>
+                    ) : inventoryRows.length === 0 ? (
+                        <div className="p-20 text-center text-gray-400 italic">Không tìm thấy sản phẩm nào trong kỳ.</div>
+                    ) : (
+                        <StatisticsTable
+                            columns={inventoryColumns}
+                            rows={inventoryRows}
+                            scrollHeight="400px"
+                        />
+                    )}
+                </PanelCard>
+
+                {/* Sub-tables: ABC Analysis & Loss Details */}
+                <div className="grid grid-cols-1 xl:grid-cols-[450px_1fr] gap-5">
+                    {/* ABC Analysis Summary */}
+                    <PanelCard className="overflow-hidden">
+                        <div className="border-b border-slate-200 px-6 py-4 flex items-center gap-2">
+                            <span className="w-1 h-4 bg-orange-400"></span>
+                            <h3 className="text-[17px] font-black text-slate-900 uppercase tracking-tight">
+                                Phân tích phân lớp ABC
+                            </h3>
                         </div>
-
-                        <div>
-                            <label className="mb-2 block text-[13px] font-black text-gray-400 uppercase">Đến ngày</label>
-                            <input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="h-11 w-full border border-slate-300 rounded-xl bg-white px-3 text-[15px] outline-none focus:border-[#1192a8]"
-                            />
-                        </div>
-
-                        <div className="flex gap-3 pt-1">
-                            <button
-                                onClick={handleSearch}
-                                className="flex-1 h-11 bg-[#1192a8] text-white text-[13px] font-black uppercase rounded-xl hover:bg-[#0d7a8e] shadow-lg shadow-teal-500/20 active:scale-95 transition-all"
-                            >
-                                Lọc dữ liệu
-                            </button>
-                            <button
-                                onClick={handleReset}
-                                className="flex-1 h-11 bg-white text-slate-700 text-[13px] font-black uppercase border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
-                            >
-                                Làm mới
-                            </button>
-                        </div>
-
-                        {/* ABC Analysis Summary */}
-                        {abcRows.length > 0 && (
-                            <div className="pt-5 border-t border-slate-100">
-                                <h4 className="mb-3 text-[14px] font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                                    <span className="w-1 h-4 bg-orange-400"></span> Phân tích ABC
-                                </h4>
+                        <div className="p-6">
+                            {loading ? (
+                                <div className="p-10 text-center text-orange-300 font-bold animate-pulse">ĐANG TẢI PHÂN TÍCH...</div>
+                            ) : abcRows.length === 0 ? (
+                                <div className="p-10 text-center text-gray-400 italic">Không có dữ liệu phân tích ABC.</div>
+                            ) : (
                                 <StatisticsTable
                                     columns={abcColumns}
                                     rows={abcRows}
                                     scrollHeight="180px"
                                     align="center"
                                 />
-                            </div>
-                        )}
-                    </div>
-                </PanelCard>
-
-                {/* Main Content Areas */}
-                <div className="space-y-5">
-                    {/* Inventory Table */}
-                    <PanelCard className="overflow-hidden">
-                        <div className="border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <h3 className="text-[17px] font-black text-slate-900 uppercase tracking-tight">
-                                Bảng đối soát tồn kho
-                            </h3>
-                            <span className="text-[12px] font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-                                {startDate} ➜ {endDate}
-                            </span>
+                            )}
                         </div>
-
-                        {loading ? (
-                            <div className="p-20 text-center text-[#1192a8] font-bold animate-pulse">ĐANG TẢI DỮ LIỆU...</div>
-                        ) : error ? (
-                            <div className="p-20 text-center text-red-400 font-bold">{error}</div>
-                        ) : inventoryRows.length === 0 ? (
-                            <div className="p-20 text-center text-gray-400 italic">Không tìm thấy sản phẩm nào trong kỳ.</div>
-                        ) : (
-                            <StatisticsTable
-                                columns={inventoryColumns}
-                                rows={inventoryRows}
-                                scrollHeight="400px"
-                            />
-                        )}
                     </PanelCard>
 
                     {/* Loss Details Table (MỚI) */}

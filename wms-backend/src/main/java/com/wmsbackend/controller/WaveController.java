@@ -6,13 +6,13 @@ import com.wmsbackend.entity.OutboundOrder;
 import com.wmsbackend.entity.OutboundOrderDetail;
 import com.wmsbackend.entity.Wave;
 import com.wmsbackend.repository.*;
+import com.wmsbackend.util.TimeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,9 +23,11 @@ public class WaveController {
     @Autowired private WaveRepository waveRepository;
     @Autowired private OutboundOrderRepository orderRepository;
     @Autowired private OutboundOrderDetailRepository orderDetailRepository;
-    @Autowired private ProductRepository productRepository;
     @Autowired private LocationRepository locationRepository;
+    @Autowired private ProductRepository productRepository;
     @Autowired private BatchRepository batchRepository;
+    @Autowired private InventoryRepository inventoryRepository;
+    @Autowired private InventoryTransactionRepository transactionRepository;
 
     @GetMapping
     public List<Wave> getAllWaves() {
@@ -40,7 +42,7 @@ public class WaveController {
         wave.setWaveCode("WV-" + System.currentTimeMillis());
         wave.setNote(request.getNote());
         wave.setStatus("CREATED");
-        wave.setCreatedAt(LocalDateTime.now());
+        wave.setCreatedAt(TimeUtils.now());
         
         final Wave savedWave = waveRepository.save(wave);
 
@@ -111,14 +113,21 @@ public class WaveController {
     @Transactional
     public void completeWave(@PathVariable Long id) {
         Wave wave = waveRepository.findById(id).orElseThrow();
+        if ("COMPLETED".equalsIgnoreCase(wave.getStatus())) return;
+
         wave.setStatus("COMPLETED");
-        wave.setCompletedAt(LocalDateTime.now());
+        wave.setCompletedAt(TimeUtils.now());
         waveRepository.save(wave);
 
         List<OutboundOrder> orders = orderRepository.findByWaveId(id);
         for (OutboundOrder order : orders) {
-            order.setStatus("COMPLETED");
-            orderRepository.save(order);
+            // Chuyển sang PENDING (Đang duyệt/QC) thay vì COMPLETED luôn
+            // Hàng vẫn giữ nguyên ở trạng thái ALLOCATED trong Inventory
+            // Cho đến khi admin/QC bấm duyệt từng phiếu.
+            if ("PICKING".equalsIgnoreCase(order.getStatus())) {
+                order.setStatus("PENDING");
+                orderRepository.save(order);
+            }
         }
     }
 }

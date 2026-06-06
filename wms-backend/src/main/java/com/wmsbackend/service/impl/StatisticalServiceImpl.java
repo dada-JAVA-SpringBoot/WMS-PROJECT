@@ -4,6 +4,7 @@ import com.wmsbackend.dto.*;
 import com.wmsbackend.entity.Product;
 import com.wmsbackend.repository.*;
 import com.wmsbackend.service.StatisticalService;
+import com.wmsbackend.util.TimeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,77 +27,43 @@ public class StatisticalServiceImpl implements StatisticalService {
     @Autowired private LocationRepository locationRepository;
     @Autowired private BatchRepository batchRepository;
 
-    // ════════════════════════════════════════════════════════════════════════
-    // 1. Dashboard Overview
-    // ════════════════════════════════════════════════════════════════════════
     @Override
     public DashboardDTO getDashboard() {
         DashboardDTO dto = new DashboardDTO();
-
-        // ── KPI Cards ──────────────────────────────────────────────────────
         dto.setTotalSkus(productRepository.count());
+        BigDecimal totalQty = inventoryRepository.sumTotalQuantityOnHand();
+        dto.setTotalStockQuantity(totalQty != null ? totalQty.doubleValue() : 0.0);
 
-        Double totalQty = inventoryRepository.sumTotalQuantityOnHand();
-        dto.setTotalStockQuantity(totalQty != null ? totalQty : 0.0);
-
-        // Tỉ lệ lấp đầy kho
-        long totalLocations = locationRepository.count();
-        long occupiedLocations = inventoryRepository.countDistinctLocationId();
+        Long totalCapacity = locationRepository.sumTotalCapacity();
         dto.setWarehouseOccupancyRate(
-                totalLocations > 0 ? Math.round((double) occupiedLocations / totalLocations * 1000.0) / 10.0 : 0);
+                (totalCapacity != null && totalCapacity > 0) 
+                ? Math.round((totalQty != null ? totalQty.doubleValue() : 0.0) / totalCapacity * 100.0 * 10.0) / 10.0 
+                : 0);
 
-        // Sản phẩm dưới định mức
         dto.setLowStockCount(productRepository.countLowStockProducts());
-
-        // Đơn nhập chờ xử lý (DRAFT, ORDERED, IN_TRANSIT, PENDING)
         dto.setPendingInbound(
                 inboundOrderRepository.countByStatusIn(List.of("DRAFT", "ORDERED", "IN_TRANSIT", "PENDING")));
-
-        // Đơn xuất chờ xử lý (DRAFT, ALLOCATED, PENDING)
         dto.setPendingOutbound(
                 outboundOrderRepository.countByStatusIn(List.of("DRAFT", "ALLOCATED", "PENDING")));
 
-        // ── Chart: Dòng chảy hàng hóa 7 ngày ──────────────────────────────
         dto.setDailyFlow(buildDailyFlow(7));
-
-        // ── Top 5 sản phẩm tồn nhiều nhất ──────────────────────────────────
         dto.setTopStockProducts(buildTopStockProducts(5));
-
-        // ── Top 5 sản phẩm sắp hết hạn ────────────────────────────────────
         dto.setNearExpiryProducts(buildNearExpiryProducts(5));
-
-        // ── Phân bổ tồn kho theo danh mục ──────────────────────────────────
         dto.setStockByCategory(buildStockByCategory());
-
         return dto;
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // 2. Inventory Stats (Tồn kho & ABC)
-    // ════════════════════════════════════════════════════════════════════════
     @Override
     public InventoryStatsDTO getInventoryStats(LocalDate startDate, LocalDate endDate) {
         InventoryStatsDTO dto = new InventoryStatsDTO();
-
         LocalDateTime startDT = startDate.atStartOfDay();
-        LocalDateTime endDT = endDate.plusDays(1).atStartOfDay(); // exclusive
+        LocalDateTime endDT = endDate.plusDays(1).atStartOfDay();
 
-        // Lấy tất cả sản phẩm active
         List<Product> products = productRepository.findAllActiveProducts();
+        Map<Integer, Double> inboundMap = toProductMap(transactionRepository.sumInboundByProductInPeriod(startDT, endDT));
+        Map<Integer, Double> outboundMap = toProductMap(transactionRepository.sumOutboundByProductInPeriod(startDT, endDT));
+        Map<Integer, Double> adjustmentMap = toProductMap(transactionRepository.sumAdjustmentsByProductInPeriod(startDT, endDT));
 
-        // Lấy tổng nhập/xuất/điều chỉnh theo sản phẩm trong kỳ
-        Map<Integer, Double> inboundMap = toProductMap(
-                transactionRepository.sumInboundByProductInPeriod(startDT, endDT));
-        
-        // Xuất kho (QuantityChange là số âm)
-        Map<Integer, Double> outboundMap = toProductMap(
-                transactionRepository.sumOutboundByProductInPeriod(startDT, endDT));
-        
-        // Lấy các điều chỉnh (ADJUSTMENT)
-        Map<Integer, Double> adjustmentMap = toProductMap(
-                transactionRepository.sumAdjustmentsByProductInPeriod(startDT, endDT));
-
-        // Lấy tồn hiện tại theo sản phẩm
         Map<Integer, Double> currentStockMap = new HashMap<>();
         inventoryRepository.findProductsWithStock().forEach(row -> {
             Integer productId = ((Number) row[0]).intValue();
@@ -104,7 +71,6 @@ public class StatisticalServiceImpl implements StatisticalService {
             currentStockMap.put(productId, qty);
         });
 
-        // Tính toán từng sản phẩm
         List<InventoryStatsDTO.ProductStockSummary> summaries = new ArrayList<>();
         int stt = 0;
         long lowCount = 0;
@@ -116,8 +82,6 @@ public class StatisticalServiceImpl implements StatisticalService {
             double outbound = Math.abs(outboundMap.getOrDefault(p.getId(), 0.0));
             double adjustment = adjustmentMap.getOrDefault(p.getId(), 0.0);
             double endingStock = currentStockMap.getOrDefault(p.getId(), 0.0);
-            
-            // Tồn đầu kỳ = Tồn cuối kỳ - Nhập + Xuất - Điều chỉnh
             double openingStock = endingStock - inbound + outbound - adjustment;
 
             InventoryStatsDTO.ProductStockSummary summary = new InventoryStatsDTO.ProductStockSummary();
@@ -131,7 +95,6 @@ public class StatisticalServiceImpl implements StatisticalService {
             summary.setEndingStock(endingStock);
             summary.setStockValue(endingStock); 
             summary.setAbcClass(""); 
-
             summaries.add(summary);
 
             if (endingStock == 0) zeroCount++;
@@ -140,13 +103,9 @@ public class StatisticalServiceImpl implements StatisticalService {
             }
         }
 
-        // ── Phân tích ABC ──────────────────────────────────────────────────
         List<InventoryStatsDTO.AbcItem> abcResult = calculateABC(summaries);
-
-        // ── Chi tiết hao hụt ────────────────────────────────────────────────
         List<InventoryStatsDTO.LossDetail> lossDetails = new ArrayList<>();
         
-        // 1. Hao hụt từ QC (Hàng hỏng khi nhập)
         List<com.wmsbackend.entity.InboundOrder> completedOrders = inboundOrderRepository.findByStatus("COMPLETED").stream()
             .filter(o -> o.getReceiptDate() != null && !o.getReceiptDate().isBefore(startDT) && o.getReceiptDate().isBefore(endDT))
             .collect(Collectors.toList());
@@ -154,14 +113,12 @@ public class StatisticalServiceImpl implements StatisticalService {
         if (!completedOrders.isEmpty()) {
             List<Long> orderIds = completedOrders.stream().map(com.wmsbackend.entity.InboundOrder::getId).collect(Collectors.toList());
             List<com.wmsbackend.entity.InboundOrderDetail> allQcDetails = inboundOrderRepository.findDetailsByOrderIdIn(orderIds);
-            
             Map<Long, com.wmsbackend.entity.InboundOrder> orderMap = completedOrders.stream().collect(Collectors.toMap(com.wmsbackend.entity.InboundOrder::getId, o -> o));
 
             for (com.wmsbackend.entity.InboundOrderDetail det : allQcDetails) {
                 if (det.getQuantityDamaged() != null && det.getQuantityDamaged().doubleValue() > 0) {
                     com.wmsbackend.entity.InboundOrder order = orderMap.get(det.getInboundOrderId());
                     Product prod = products.stream().filter(pr -> pr.getId().equals(det.getProductId())).findFirst().orElse(null);
-                    
                     InventoryStatsDTO.LossDetail ld = new InventoryStatsDTO.LossDetail();
                     ld.setDate(order != null ? order.getReceiptDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "---");
                     ld.setType("KIỂM ĐỊNH (QC)");
@@ -175,8 +132,7 @@ public class StatisticalServiceImpl implements StatisticalService {
             }
         }
 
-        // 2. Hao hụt từ Kiểm kê (Điều chỉnh âm)
-        transactionRepository.findAll().stream() // Giữ tạm findAll vì quy mô nhỏ, sẽ optimize sau nếu cần
+        transactionRepository.findAll().stream() 
             .filter(t -> t.getTransactionType().equals("ADJUSTMENT") && 
                          t.getQuantityChange() != null && t.getQuantityChange().doubleValue() < 0 &&
                          t.getCreatedAt() != null && !t.getCreatedAt().isBefore(startDT) && t.getCreatedAt().isBefore(endDT))
@@ -193,7 +149,6 @@ public class StatisticalServiceImpl implements StatisticalService {
                 lossDetails.add(ld);
             });
 
-        // ── Tổng kết ───────────────────────────────────────────────────────
         double totalValue = summaries.stream().mapToDouble(s -> s.getStockValue()).sum();
         dto.setProductStocks(summaries);
         dto.setAbcAnalysis(abcResult);
@@ -202,29 +157,22 @@ public class StatisticalServiceImpl implements StatisticalService {
         dto.setTotalProducts(summaries.size());
         dto.setLowStockProducts(lowCount);
         dto.setZeroStockProducts(zeroCount);
-
         return dto;
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // Private Helpers
-    // ════════════════════════════════════════════════════════════════════════
-
     private List<DailyFlowDTO> buildDailyFlow(int days) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = TimeUtils.now().toLocalDate();
         LocalDate startDate = today.minusDays(days - 1);
         LocalDateTime startDT = startDate.atStartOfDay();
         LocalDateTime endDT = today.plusDays(1).atStartOfDay();
 
         List<Object[]> rawData = transactionRepository.findDailyFlow(startDT, endDT);
-
         Map<LocalDate, Map<String, Double>> dataMap = new LinkedHashMap<>();
         for (Object[] row : rawData) {
             LocalDate date;
             if (row[0] instanceof LocalDate) date = (LocalDate) row[0];
             else if (row[0] instanceof java.sql.Date) date = ((java.sql.Date) row[0]).toLocalDate();
             else date = LocalDate.parse(row[0].toString());
-            
             String type = (String) row[1];
             double qty = Math.abs(((Number) row[2]).doubleValue());
             dataMap.computeIfAbsent(date, k -> new HashMap<>()).put(type, qty);
@@ -234,7 +182,6 @@ public class StatisticalServiceImpl implements StatisticalService {
         for (int i = 0; i < days; i++) {
             LocalDate date = startDate.plusDays(i);
             Map<String, Double> dayData = dataMap.getOrDefault(date, Collections.emptyMap());
-
             DailyFlowDTO flow = new DailyFlowDTO();
             flow.setDate(date.format(DateTimeFormatter.ISO_LOCAL_DATE));
             flow.setLabel(getVietnameseDayLabel(date.getDayOfWeek()));
@@ -262,7 +209,7 @@ public class StatisticalServiceImpl implements StatisticalService {
     }
 
     private List<Map<String, Object>> buildNearExpiryProducts(int limit) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = TimeUtils.now().toLocalDate();
         LocalDate threshold = today.plusDays(30);
         List<Object[]> raw = batchRepository.findNearExpiryBatchesWithStock(today, threshold);
         List<Map<String, Object>> result = new ArrayList<>();
@@ -297,28 +244,19 @@ public class StatisticalServiceImpl implements StatisticalService {
         List<InventoryStatsDTO.ProductStockSummary> sorted = summaries.stream()
                 .sorted(Comparator.comparingDouble(InventoryStatsDTO.ProductStockSummary::getStockValue).reversed())
                 .collect(Collectors.toList());
-
         double totalValue = sorted.stream().mapToDouble(s -> s.getStockValue()).sum();
-        if (totalValue <= 0) {
-            return List.of(new InventoryStatsDTO.AbcItem("A", 0, 0, 0), new InventoryStatsDTO.AbcItem("B", 0, 0, 0), new InventoryStatsDTO.AbcItem("C", 0, 0, 0));
-        }
+        if (totalValue <= 0) return List.of(new InventoryStatsDTO.AbcItem("A", 0, 0, 0), new InventoryStatsDTO.AbcItem("B", 0, 0, 0), new InventoryStatsDTO.AbcItem("C", 0, 0, 0));
 
         double cumulative = 0;
         int aCount = 0, bCount = 0, cCount = 0;
         double aValue = 0, bValue = 0, cValue = 0;
-
         for (InventoryStatsDTO.ProductStockSummary s : sorted) {
             cumulative += s.getStockValue();
             double pct = cumulative / totalValue * 100;
-            if (pct <= 80) {
-                s.setAbcClass("A"); aCount++; aValue += s.getStockValue();
-            } else if (pct <= 95) {
-                s.setAbcClass("B"); bCount++; bValue += s.getStockValue();
-            } else {
-                s.setAbcClass("C"); cCount++; cValue += s.getStockValue();
-            }
+            if (pct <= 80) { s.setAbcClass("A"); aCount++; aValue += s.getStockValue(); }
+            else if (pct <= 95) { s.setAbcClass("B"); bCount++; bValue += s.getStockValue(); }
+            else { s.setAbcClass("C"); cCount++; cValue += s.getStockValue(); }
         }
-
         List<InventoryStatsDTO.AbcItem> result = new ArrayList<>();
         result.add(new InventoryStatsDTO.AbcItem("A", aCount, aValue, Math.round(aValue / totalValue * 1000.0) / 10.0));
         result.add(new InventoryStatsDTO.AbcItem("B", bCount, bValue, Math.round(bValue / totalValue * 1000.0) / 10.0));
