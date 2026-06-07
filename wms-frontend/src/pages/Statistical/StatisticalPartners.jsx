@@ -23,7 +23,7 @@ export default function StatisticalPartners() {
     };
 
     return (
-        <div className="bg-[#eef3f6]">
+        <div className="bg-[#eef3f6] dark:bg-gray-900 transition-colors duration-300">
             <SubTabNav tabs={partnerTabs} activeTab={activeTab} onChange={setActiveTab} />
             {renderContent()}
         </div>

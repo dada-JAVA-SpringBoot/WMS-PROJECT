@@ -234,7 +234,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
             const safetyStock = item.safetyStock !== undefined && item.safetyStock !== null
                 ? Number(item.safetyStock)
                 : null;
-                
+
             const matchesStatus =
                 inventoryFilters.status === 'ALL' ||
                 item.status === inventoryFilters.status;
@@ -276,7 +276,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
             ).toLowerCase();
         };
         const compareByCategory = (a, b) => getCategorySortKey(a).localeCompare(getCategorySortKey(b), 'vi', { sensitivity: 'base', numeric: true });
-        
+
         const getAvailableStockSortKey = (item) => {
             const totalStock = Number(item.totalStock || 0);
             const allocatedStock = Number(item.allocatedStock ?? item.quantityAllocated ?? item.allocated ?? 0);
@@ -291,7 +291,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         const getUnitSortKey = (item) => normalizeUnitName(item.baseUnit);
         const getCreatedAtSortKey = (item) => parseDateValue(item.createdAt);
         const getNearestBatchExpirySortKey = (item) => parseDateValue(item.nearestBatchExpiryDate);
-        
+
         const sorters = {
             DEFAULT: (a, b) => compareByCategory(a, b) || compareNullableStrings(a.name, b.name, 'asc'),
             NAME_ASC: (a, b) => compareByCategory(a, b) || compareNullableStrings(a.name, b.name, 'asc'),
@@ -331,20 +331,16 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
     }, [units]);
 
     const getCategoryDisplay = (product) => {
-        // Ưu tiên dùng dữ liệu trực tiếp từ ProductDTO (đã JOIN ở Backend)
         if (product?.categoryName) {
             return {
                 name: product.categoryName,
                 code: product.categoryCode || ''
             };
         }
-
-        // Nếu không có (ví dụ vừa update ở FE), dùng Map
         const category = categoryMap.get(String(product?.categoryId));
         if (!category) {
             return { name: 'Chưa gán', code: '' };
         }
-
         return {
             name: category.name || 'Chưa gán',
             code: category.categoryCode || ''
@@ -438,7 +434,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                 }`}
             >
                 <span>{label}</span>
-                <span className={`text-[10px] leading-none ${isActive ? 'text-[#1192a8]' : 'text-gray-400'}`}>{indicator}</span>
+                <span className={`text-[10px] leading-none ${isActive ? 'text-[#1192a8]' : 'text-gray-400 dark:text-gray-500'}`}>{indicator}</span>
             </button>
         );
     };
@@ -489,16 +485,6 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         setSelectedProductIds([product.id]);
         setSelectionAnchorIndex(index);
     };
-
-    /* const getContextTargetProducts = (product) => {
-        if (selectedProductIds.includes(product.id) && selectedProducts.length > 0) {
-            return selectedProducts;
-        }
-        if (selectedProducts.length > 0) {
-            return selectedProducts;
-        }
-        return [product];
-    }; */
 
     const lastClickRef = useRef({ id: null, time: 0 });
 
@@ -590,7 +576,6 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         setIsBulkEditModalOpen(true);
     };
 
-    // --- CẬP NHẬT GỌI AXIOS KHI XÓA SẢN PHẨM ---
     const handleDeleteProduct = async (productsToDelete = selectedProducts) => {
         if (!productsToDelete.length) {
             showMessage("Thiếu lựa chọn", "Vui lòng chọn ít nhất một sản phẩm trong bảng trước.");
@@ -695,7 +680,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         }
 
         const { workbook, rows } = buildExcelWorkbook(exportSource);
-        
+
         const success = await performExport(workbook, null, rows);
         if (success) {
             closeExportModal();
@@ -743,9 +728,9 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
     };
 
     return (
-        <div className="p-6 bg-[#f8f9fa] min-h-full flex flex-col text-left no-scrollbar">
+        <div className="p-6 bg-[#f8f9fa] dark:bg-gray-900 min-h-full flex flex-col text-left no-scrollbar transition-colors duration-300">
             {/* ── Toolbar: Action Buttons (Sticky) ── */}
-            <div className="sticky top-0 z-20 flex items-center justify-between bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 mb-4 md:mb-6">
+            <div className="sticky top-0 z-20 flex items-center justify-between bg-white dark:bg-gray-800 p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 mb-4 md:mb-6 transition-colors duration-300">
                 <div className="flex gap-4 md:gap-8 overflow-x-auto no-scrollbar pb-1 w-full lg:w-auto">
                     <div onClick={() => setIsAddModalOpen(true)} className="shrink-0"><ActionButton iconSrc={addIcon} label="THÊM MỚI" /></div>
                     <div onClick={() => {
@@ -772,16 +757,16 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                     <div onClick={openExportModalLocal} className="shrink-0"><ActionButton iconSrc={excelIcon} label="XUẤT EXCEL" /></div>
                     <div onClick={() => setIsScannerOpen(true)} className="shrink-0"><ActionButton iconSrc={scanIcon} label="QUÉT MÃ" /></div>
                 </div>
-                <div className="text-xs font-black text-gray-400 uppercase tracking-widest hidden lg:block">Quản lý kho sản phẩm</div>
+                <div className="text-xs font-black text-gray-300 dark:text-gray-600 uppercase tracking-widest hidden lg:block">Quản lý kho sản phẩm</div>
             </div>
 
             {/* ── Filter Bar: Search & Selects ── */}
-            <div className="bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl border border-gray-100 mb-4 md:mb-6 flex flex-col gap-4 shadow-sm">
+            <div className="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-2xl md:rounded-3xl border border-gray-100 dark:border-gray-700 mb-4 md:mb-6 flex flex-col gap-4 shadow-sm transition-colors duration-300">
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4">
                     <select
                         value={searchType}
                         onChange={(e) => setSearchType(e.target.value)}
-                        className="wms-select w-full sm:w-48 !text-sm !py-2.5 md:!py-3"
+                        className="wms-select w-full sm:w-48 !text-sm !py-2.5 md:!py-3 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                     >
                         <option>Tất cả</option>
                         <option>Theo tên SP</option>
@@ -795,47 +780,47 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                             type="text"
                             value={searchKeyword}
                             onChange={(e) => setSearchKeyword(e.target.value)}
-                            className="flex-1 border-2 border-gray-100 rounded-xl px-4 md:px-5 py-2.5 md:py-3 text-sm outline-none focus:border-[#1192a8] transition-all bg-white min-w-0"
+                            className="flex-1 border-2 border-gray-100 dark:border-gray-600 rounded-xl px-4 md:px-5 py-2.5 md:py-3 text-sm outline-none focus:border-[#1192a8] transition-all bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 min-w-0"
                             placeholder="Từ khóa..."
                         />
                         <button
                             onClick={fetchProducts}
-                            className="bg-[#1192a8] text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold text-sm hover:bg-teal-700 transition flex items-center gap-2 whitespace-nowrap cursor-pointer"
+                            className="bg-[#1192a8] text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold text-sm hover:bg-teal-700 transition flex items-center gap-2 whitespace-nowrap cursor-pointer shadow-lg shadow-teal-500/20 active:scale-95"
                         >
                             <span className="hidden sm:inline">↻</span> Làm mới
                         </button>
                     </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-4 border-t border-gray-100">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-4 border-t border-gray-100 dark:border-gray-700">
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">Phân loại:</span>
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase">Phân loại:</span>
                         <select
                             value={inventoryFilters.categoryId}
                             onChange={(e) => setInventoryFilters(prev => ({ ...prev, categoryId: e.target.value }))}
-                            className="wms-select !text-[10px] md:!text-[11px] !py-1 md:!py-1.5 !px-2 md:!px-3 min-w-[120px] md:min-w-[140px]"
+                            className="wms-select !text-[10px] md:!text-[11px] !py-1 md:!py-1.5 !px-2 md:!px-3 min-w-[120px] md:min-w-[140px] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                         >
                             <option value="ALL">Tất cả</option>
                             {categories.map(cat => <option key={cat.id} value={String(cat.id)}>{cat.name}</option>)}
                         </select>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">NCC:</span>
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase">NCC:</span>
                         <select
                             value={inventoryFilters.supplierCode}
                             onChange={(e) => setInventoryFilters(prev => ({ ...prev, supplierCode: e.target.value }))}
-                            className="wms-select !text-[10px] md:!text-[11px] !py-1 md:!py-1.5 !px-2 md:!px-3 min-w-[100px] md:min-w-[140px]"
+                            className="wms-select !text-[10px] md:!text-[11px] !py-1 md:!py-1.5 !px-2 md:!px-3 min-w-[100px] md:min-w-[140px] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                         >
                             <option value="ALL">Tất cả</option>
                             {suppliers.map(sup => <option key={sup.id} value={sup.supplierCode}>{sup.name}</option>)}
                         </select>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">TT:</span>
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase">TT:</span>
                         <select
                             value={inventoryFilters.status}
                             onChange={(e) => setInventoryFilters(prev => ({ ...prev, status: e.target.value }))}
-                            className="wms-select !text-[10px] md:!text-[11px] !py-1 md:!py-1.5 !px-2 md:!px-3 min-w-[80px] md:min-w-[120px]"
+                            className="wms-select !text-[10px] md:!text-[11px] !py-1 md:!py-1.5 !px-2 md:!px-3 min-w-[80px] md:min-w-[120px] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                         >
                             <option value="ALL">Tất cả</option>
                             <option value="ACTIVE">Kinh doanh</option>
@@ -843,11 +828,11 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                         </select>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">Tồn:</span>
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase">Tồn:</span>
                         <select
                             value={inventoryFilters.stock}
                             onChange={(e) => setInventoryFilters(prev => ({ ...prev, stock: e.target.value }))}
-                            className="wms-select !text-[10px] md:!text-[11px] !py-1 md:!py-1.5 !px-2 md:!px-3 min-w-[80px] md:min-w-[120px]"
+                            className="wms-select !text-[10px] md:!text-[11px] !py-1 md:!py-1.5 !px-2 md:!px-3 min-w-[80px] md:min-w-[120px] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                         >
                             <option value="ALL">Tất cả</option>
                             <option value="HAS">Có sẵn</option>
@@ -855,7 +840,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                             <option value="ZERO">Hết hàng</option>
                         </select>
                     </div>
-                    <button 
+                    <button
                         onClick={() => {
                             setInventoryFilters({
                                 status: 'ALL',
@@ -869,7 +854,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                             setSearchKeyword('');
                             setSearchType('Tất cả');
                         }}
-                        className="ml-auto text-[9px] md:text-[10px] font-black text-gray-400 hover:text-red-500 uppercase tracking-tighter cursor-pointer"
+                        className="ml-auto text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 uppercase tracking-tighter cursor-pointer transition-colors"
                     >
                         Xóa bộ lọc ✕
                     </button>
@@ -877,314 +862,301 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
             </div>
 
             {/* ── Content Card (Table or Grid) ── */}
-            <div className="flex-1 bg-white rounded-2xl md:rounded-3xl border border-gray-100 overflow-hidden shadow-sm flex flex-col">
+            <div className="flex-1 bg-white dark:bg-gray-800 rounded-2xl md:rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm flex flex-col transition-colors duration-300">
                 <div className="flex-1 overflow-x-auto no-scrollbar lg:scrollbar-thin">
                     {isLoading ? (
-                        <div className="flex justify-center items-center h-full text-gray-500 font-medium">
-                            <span className="animate-pulse">Đang tải dữ liệu từ máy chủ...</span>
+                        <div className="flex justify-center items-center h-full text-[#1192a8] font-bold animate-pulse uppercase text-xs tracking-widest">
+                            <span>Đang tải dữ liệu từ máy chủ...</span>
                         </div>
                     ) : (
                         inventoryViewMode === 'list' ? (
                             <table className="w-full text-center text-sm min-w-[800px] md:min-w-[1000px]">
-                            <thead className="bg-gray-100 sticky top-0 shadow-sm z-10">
-                        <tr className="text-gray-700 uppercase text-[10px] md:text-xs tracking-wider">
-                            <th className="p-3 md:p-4 font-bold text-left">{renderSortableHeader('Mã SKU', 'SKU')}</th>
-                            <th className="p-3 md:p-4 font-bold text-left">{renderSortableHeader('Tên sản phẩm', 'NAME')}</th>
-                            <th className="p-3 md:p-4 font-bold text-right">{renderSortableHeader('Tồn khả dụng', 'AVAILABLE', 'text-right')}</th>
-                            <th className="p-3 md:p-4 font-bold text-right hidden sm:table-cell">{renderSortableHeader('Tồn an toàn', 'SAFETY', 'text-right')}</th>
-                            <th className="p-3 md:p-4 font-bold text-left hidden md:table-cell">{renderSortableHeader('Đơn vị', 'UNIT', 'text-left')}</th>
-                            <th className="p-3 md:p-4 font-bold hidden lg:table-cell">Mã vạch</th>
-                            <th className="p-3 md:p-4 font-bold text-center">Trạng thái</th>
-                        </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                        {filteredProducts.length > 0 ? (
-                            filteredProducts.map((item, index) => {
-                                const categoryDisplay = getCategoryDisplay(item);
-                                const stockState = getInventoryStockState(item);
-                                const previousCategoryDisplay = index > 0
-                                    ? getCategoryDisplay(filteredProducts[index - 1])
-                                    : null;
-                                const categoryKey = `${categoryDisplay.code || ''}|${categoryDisplay.name || ''}`;
-                                const previousCategoryKey = previousCategoryDisplay
-                                    ? `${previousCategoryDisplay.code || ''}|${previousCategoryDisplay.name || ''}`
-                                    : '';
-                                const isFirstCategoryProduct = index === 0 || categoryKey !== previousCategoryKey;
-                                const categoryProductCount = groupedInventoryProducts.find(group => group.key === categoryKey)?.products.length || 0;
+                                <thead className="bg-gray-50/80 dark:bg-gray-700/50 sticky top-0 shadow-sm z-10 backdrop-blur-sm">
+                                <tr className="text-gray-400 dark:text-gray-500 uppercase text-[10px] md:text-xs tracking-widest font-black">
+                                    <th className="p-3 md:p-4 font-black text-left">{renderSortableHeader('Mã SKU', 'SKU')}</th>
+                                    <th className="p-3 md:p-4 font-black text-left">{renderSortableHeader('Tên sản phẩm', 'NAME')}</th>
+                                    <th className="p-3 md:p-4 font-black text-right">{renderSortableHeader('Tồn khả dụng', 'AVAILABLE', 'text-right')}</th>
+                                    <th className="p-3 md:p-4 font-black text-right hidden sm:table-cell">{renderSortableHeader('Tồn an toàn', 'SAFETY', 'text-right')}</th>
+                                    <th className="p-3 md:p-4 font-black text-left hidden md:table-cell">{renderSortableHeader('Đơn vị', 'UNIT', 'text-left')}</th>
+                                    <th className="p-3 md:p-4 font-black hidden lg:table-cell">Mã vạch</th>
+                                    <th className="p-3 md:p-4 font-black text-center">Trạng thái</th>
+                                </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
+                                {filteredProducts.length > 0 ? (
+                                    filteredProducts.map((item, index) => {
+                                        const categoryDisplay = getCategoryDisplay(item);
+                                        const stockState = getInventoryStockState(item);
+                                        const previousCategoryDisplay = index > 0
+                                            ? getCategoryDisplay(filteredProducts[index - 1])
+                                            : null;
+                                        const categoryKey = `${categoryDisplay.code || ''}|${categoryDisplay.name || ''}`;
+                                        const previousCategoryKey = previousCategoryDisplay
+                                            ? `${previousCategoryDisplay.code || ''}|${previousCategoryDisplay.name || ''}`
+                                            : '';
+                                        const isFirstCategoryProduct = index === 0 || categoryKey !== previousCategoryKey;
+                                        const categoryProductCount = groupedInventoryProducts.find(group => group.key === categoryKey)?.products.length || 0;
 
-                                return (
-                                <React.Fragment key={item.id}>
-                                {isFirstCategoryProduct ? (
-                                    <tr className="bg-slate-50">
-                                                <td colSpan="7" className="px-4 py-2 text-left border-y border-slate-200">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-bold text-slate-800">
-                                                            {categoryDisplay.name}
-                                                        </span>
-                                                {categoryDisplay.code ? (
-                                                    <span className="text-[11px] font-semibold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded">
-                                                        {categoryDisplay.code}
-                                                    </span>
+                                        return (
+                                            <React.Fragment key={item.id}>
+                                                {isFirstCategoryProduct ? (
+                                                    <tr className="bg-slate-50 dark:bg-gray-700/30">
+                                                        <td colSpan="7" className="px-4 py-2 text-left border-y border-slate-200 dark:border-gray-700">
+                                                            <div className="flex items-center gap-2">
+                                                                    <span className="text-sm font-bold text-slate-800 dark:text-gray-100">
+                                                                        {categoryDisplay.name}
+                                                                    </span>
+                                                                {categoryDisplay.code ? (
+                                                                    <span className="text-[11px] font-semibold text-slate-500 dark:text-gray-400 bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 px-2 py-0.5 rounded">
+                                                                            {categoryDisplay.code}
+                                                                        </span>
+                                                                ) : null}
+                                                                <span className="text-[11px] text-slate-400 dark:text-gray-500">
+                                                                        {categoryProductCount} sản phẩm
+                                                                    </span>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
                                                 ) : null}
-                                                <span className="text-[11px] text-slate-400">
-                                                    {categoryProductCount} sản phẩm
-                                                </span>
-                                            </div>
+                                                <tr
+                                                    onClick={(e) => handleRowClick(item, index, e)}
+                                                    onContextMenu={(e) => handleRowContextMenu(e, item, index)}
+                                                    onMouseEnter={(e) => {
+                                                        const rect = e.currentTarget.getBoundingClientRect();
+                                                        const previewWidth = 176;
+                                                        const previewHeight = 176;
+                                                        const nextX = Math.max(8, rect.left - previewWidth - 16);
+                                                        const centeredY = rect.top + (rect.height / 2) - (previewHeight / 2);
+                                                        const nextY = Math.max(8, Math.min(centeredY, window.innerHeight - previewHeight - 8));
+                                                        setHoverPreview({ product: item, x: nextX, y: nextY });
+                                                    }}
+                                                    onMouseMove={(e) => {
+                                                        const rect = e.currentTarget.getBoundingClientRect();
+                                                        const previewWidth = 176;
+                                                        const previewHeight = 176;
+                                                        const nextX = Math.max(8, rect.left - previewWidth - 16);
+                                                        const centeredY = rect.top + (rect.height / 2) - (previewHeight / 2);
+                                                        const nextY = Math.max(8, Math.min(centeredY, window.innerHeight - previewHeight - 8));
+                                                        setHoverPreview(prev => ({ product: item, x: nextX, y: nextY, prevId: prev?.product?.id }));
+                                                    }}
+                                                    onMouseLeave={() => setHoverPreview(prev => (prev?.product?.id === item.id ? null : prev))}
+                                                    onDoubleClick={() => {
+                                                        setSingleSelection(item, index);
+                                                        setSelectedProduct(item);
+                                                    }}
+                                                    className={`transition cursor-pointer group ${
+                                                        selectedProductIds.includes(item.id)
+                                                            ? 'bg-teal-50 dark:bg-[#1192a8]/15 border-l-4 border-l-[#1192a8]'
+                                                            : 'hover:bg-blue-50/50 dark:hover:bg-gray-700/30 border-l-4 border-l-transparent'
+                                                    }`}
+                                                >
+                                                    <td
+                                                        className={`p-4 font-semibold text-left group-hover:underline ${
+                                                            stockState.isBelowSafety ? 'text-red-600 dark:text-red-400' : 'text-[#1192a8]'
+                                                        }`}
+                                                        title={stockState.isBelowSafety ? 'Tồn khả dụng thấp hơn tồn an toàn' : ''}
+                                                    >
+                                                        {item.sku}
+                                                    </td>
+                                                    <td className="p-4 font-medium text-gray-900 dark:text-gray-100 text-left group-hover:text-[#1192a8] dark:group-hover:text-[#38bcd4] transition-colors">{item.name}</td>
+                                                    <td className={`p-4 font-bold text-right ${stockState.isBelowSafety ? 'text-red-600 dark:text-red-400' : 'text-slate-800 dark:text-gray-100'}`}>
+                                                        {stockState.availableStock.toLocaleString()}
+                                                    </td>
+                                                    <td className="p-4 font-semibold text-right text-amber-700 dark:text-amber-400 hidden sm:table-cell">
+                                                        {stockState.safetyStock ?? 'N/A'}
+                                                    </td>
+                                                    <td className="p-4 text-left hidden md:table-cell">
+                                                            <span className="inline-flex items-center text-[11px] font-semibold text-slate-600 dark:text-gray-300 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 px-2 py-1 rounded">
+                                                                {resolveUnitLabel(item) || 'N/A'}
+                                                            </span>
+                                                    </td>
+                                                    <td className="p-4 text-gray-500 dark:text-gray-400 font-mono hidden lg:table-cell">
+                                                        {item.barcode ? (
+                                                            <div className="flex flex-col items-center gap-1">
+                                                                <Barcode
+                                                                    value={item.barcode}
+                                                                    format="CODE128"
+                                                                    width={1.2}
+                                                                    height={26}
+                                                                    fontSize={0}
+                                                                    margin={0}
+                                                                    displayValue={false}
+                                                                    background="transparent"
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <span>N/A</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="p-4 text-center">
+                                                        {item.status === 'ACTIVE' ? (
+                                                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/50 px-2 py-1 rounded-full">
+                                                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> ACTIVE
+                                                                </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 px-2 py-1 rounded-full">
+                                                                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span> INACTIVE
+                                                                </span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            </React.Fragment>
+                                        );
+                                    })
+                                ) : (
+                                    <tr>
+                                        <td colSpan="7" className="p-8 text-gray-400 dark:text-gray-600 text-center italic font-medium">
+                                            Không tìm thấy sản phẩm nào phù hợp với "{searchKeyword}".
                                         </td>
                                     </tr>
-                                ) : null}
-                                <tr
-                                    onClick={(e) => handleRowClick(item, index, e)}
-                                    onContextMenu={(e) => handleRowContextMenu(e, item, index)}
-                                    onMouseEnter={(e) => {
-                                        const rect = e.currentTarget.getBoundingClientRect();
-                                        const previewWidth = 176;
-                                        const previewHeight = 176;
-                                        const nextX = Math.max(8, rect.left - previewWidth - 16);
-                                        const centeredY = rect.top + (rect.height / 2) - (previewHeight / 2);
-                                        const nextY = Math.max(8, Math.min(centeredY, window.innerHeight - previewHeight - 8));
-
-                                        setHoverPreview({
-                                            product: item,
-                                            x: nextX,
-                                            y: nextY
-                                        });
-                                    }}
-                                    onMouseMove={(e) => {
-                                        const rect = e.currentTarget.getBoundingClientRect();
-                                        const previewWidth = 176;
-                                        const previewHeight = 176;
-                                        const nextX = Math.max(8, rect.left - previewWidth - 16);
-                                        const centeredY = rect.top + (rect.height / 2) - (previewHeight / 2);
-                                        const nextY = Math.max(8, Math.min(centeredY, window.innerHeight - previewHeight - 8));
-
-                                        setHoverPreview(prev => ({
-                                            product: item,
-                                            x: nextX,
-                                            y: nextY,
-                                            prevId: prev?.product?.id
-                                        }));
-                                    }}
-                                    onMouseLeave={() => setHoverPreview(prev => (prev?.product?.id === item.id ? null : prev))}
-                                    onDoubleClick={() => {
-                                        setSingleSelection(item, index);
-                                        setSelectedProduct(item);
-                                    }}
-                                    className={`transition cursor-pointer text-gray-700 group ${
-                                        selectedProductIds.includes(item.id) ? 'bg-blue-100' : 'hover:bg-blue-50'
-                                    }`}
-                                >
-                                    <td
-                                        className={`p-4 font-semibold text-left group-hover:underline ${
-                                            stockState.isBelowSafety ? 'text-red-600' : 'text-blue-700'
-                                        }`}
-                                        title={stockState.isBelowSafety ? 'Tồn khả dụng thấp hơn tồn an toàn' : ''}
-                                    >
-                                        {item.sku}
-                                    </td>
-                                    <td className="p-4 font-medium text-gray-900 text-left">{item.name}</td>
-                                    <td className={`p-4 font-bold text-right ${stockState.isBelowSafety ? 'text-red-600' : 'text-slate-800'}`}>
-                                        {stockState.availableStock.toLocaleString()}
-                                    </td>
-                                    <td className="p-4 font-semibold text-right text-amber-700">
-                                        {stockState.safetyStock ?? 'N/A'}
-                                    </td>
-                                    <td className="p-4 text-left">
-                                        <span className="inline-flex items-center text-[11px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 px-2 py-1 rounded">
-                                            {resolveUnitLabel(item) || 'N/A'}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 text-gray-500 font-mono">
-                                        {item.barcode ? (
-                                            <div className="flex flex-col items-center gap-1">
-                                                <Barcode
-                                                    value={item.barcode}
-                                                    format="CODE128"
-                                                    width={1.2}
-                                                    height={26}
-                                                    fontSize={0}
-                                                    margin={0}
-                                                    displayValue={false}
-                                                    background="#ffffff"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <span>N/A</span>
-                                        )}
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        {item.status === 'ACTIVE' ? (
-                                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-1 rounded-full">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> ACTIVE
-                                            </span>
-                                        ) : (
-                                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-gray-500 bg-gray-50 border border-gray-200 px-2 py-1 rounded-full">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span> INACTIVE
-                                            </span>
-                                        )}
-                                    </td>
-                                </tr>
-                                </React.Fragment>
-                                );
-                            })
+                                )}
+                                </tbody>
+                            </table>
                         ) : (
-                            <tr>
-                                <td colSpan="7" className="p-8 text-gray-500 text-center">
-                                    Không tìm thấy sản phẩm nào phù hợp với "{searchKeyword}".
-                                </td>
-                            </tr>
-                        )}
-                        </tbody>
-                        </table>
-                    ) : (
-                        <div className="p-4 space-y-5">
-                            {groupedInventoryProducts.length > 0 ? (
-                                groupedInventoryProducts.map(group => (
-                                    <section key={group.key} className="space-y-3">
-                                        <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-                                            <span className="text-sm font-bold text-slate-800">{group.category.name}</span>
-                                            {group.category.code ? (
-                                                <span className="text-[11px] font-semibold text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
-                                                    {group.category.code}
-                                                </span>
-                                            ) : null}
-                                            <span className="text-[11px] text-slate-400">{group.products.length} sản phẩm</span>
-                                        </div>
+                            <div className="p-4 space-y-5">
+                                {groupedInventoryProducts.length > 0 ? (
+                                    groupedInventoryProducts.map(group => (
+                                        <section key={group.key} className="space-y-3">
+                                            <div className="flex items-center gap-2 border-b border-slate-200 dark:border-gray-700 pb-2">
+                                                <span className="text-sm font-bold text-slate-800 dark:text-gray-100">{group.category.name}</span>
+                                                {group.category.code ? (
+                                                    <span className="text-[11px] font-semibold text-slate-500 dark:text-gray-400 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 px-2 py-0.5 rounded">
+                                                        {group.category.code}
+                                                    </span>
+                                                ) : null}
+                                                <span className="text-[11px] text-slate-400 dark:text-gray-500">{group.products.length} sản phẩm</span>
+                                            </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                                            {group.products.map(({ product, index }) => {
-                                                const unitLabel = unitMap.get(normalizeUnitName(product.baseUnit))?.name || normalizeUnitName(product.baseUnit);
-                                                const stockState = getInventoryStockState(product);
-                                                const isSelected = selectedProductIds.includes(product.id);
+                                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                                                {group.products.map(({ product, index }) => {
+                                                    const unitLabel = unitMap.get(normalizeUnitName(product.baseUnit))?.name || normalizeUnitName(product.baseUnit);
+                                                    const stockState = getInventoryStockState(product);
+                                                    const isSelected = selectedProductIds.includes(product.id);
 
-                                                return (
-                                                    <article
-                                                        key={product.id}
-                                                        onClick={(e) => handleRowClick(product, index, e)}
-                                                        onContextMenu={(e) => handleRowContextMenu(e, product, index)}
-                                                        onDoubleClick={() => {
-                                                            setSingleSelection(product, index);
-                                                            setSelectedProduct(product);
-                                                        }}
-                                                        className={`grid grid-cols-[96px_1fr] gap-3 p-3 border cursor-pointer transition ${
-                                                            isSelected
-                                                                ? 'border-blue-400 bg-blue-50'
-                                                                : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/40'
-                                                        }`}
-                                                    >
-                                                        <div className="w-24 h-24 bg-slate-50 border border-slate-200 overflow-hidden flex items-center justify-center">
-                                                            {product.imageUrl ? (
-                                                                <img
-                                                                    src={product.imageUrl}
-                                                                    alt={product.name}
-                                                                    className="w-full h-full object-contain p-1.5"
-                                                                    onError={(e) => {
-                                                                        e.target.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22200%22%20height%3D%22200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20200%22%3E%3Crect%20width%3D%22200%22%20height%3D%22200%22%20fill%3D%22%23eee%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20font-size%3D%2218%22%20text-anchor%3D%22middle%22%20alignment-baseline%3D%22middle%22%20font-family%3D%22sans-serif%22%20fill%3D%22%23999%22%3ENo+Image%3C%2Ftext%3E%3C%2Fsvg%3E';
-                                                                    }}
-                                                                />
-                                                            ) : (
-                                                                <span className="text-[10px] text-slate-400 font-medium text-center px-2">Chưa có ảnh</span>
-                                                            )}
-                                                        </div>
-
-                                                        <div className="min-w-0 flex flex-col gap-2">
-                                                            <div className="min-w-0">
-                                                                <div
-                                                                    className={`text-xs font-bold truncate ${
-                                                                        stockState.isBelowSafety ? 'text-red-600' : 'text-blue-700'
-                                                                    }`}
-                                                                    title={stockState.isBelowSafety ? 'Tồn khả dụng thấp hơn tồn an toàn' : ''}
-                                                                >
-                                                                    {product.sku || 'Chưa có SKU'}
-                                                                </div>
-                                                                <div className="text-sm font-semibold text-slate-900 truncate" title={product.name}>
-                                                                    {product.name}
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="grid grid-cols-2 gap-2 text-xs">
-                                                                <div>
-                                                                    <div className="text-slate-400">Khả dụng</div>
-                                                                    <div className={`font-bold ${stockState.isBelowSafety ? 'text-red-600' : 'text-green-700'}`}>
-                                                                        {stockState.availableStock.toLocaleString()} {unitLabel}
-                                                                    </div>
-                                                                </div>
-                                                                <div>
-                                                                    <div className="text-slate-400">Tồn an toàn</div>
-                                                                    <div className="font-semibold text-amber-700">{stockState.safetyStock ?? 'N/A'}</div>
-                                                                </div>
-                                                                <div>
-                                                                    <div className="text-slate-400">Tổng tồn</div>
-                                                                    <div className="font-semibold text-slate-700">{stockState.totalStock.toLocaleString()}</div>
-                                                                </div>
-                                                                <div>
-                                                                    <div className="text-slate-400">Đã phân bổ</div>
-                                                                    <div className="font-semibold text-slate-700">{stockState.allocatedStock.toLocaleString()}</div>
-                                                                </div>
-                                                                <div className="col-span-2">
-                                                                    <div
-                                                                        className="text-slate-400"
-                                                                        title="Chỉ cộng vào tồn khả dụng khi phiếu nhập hoàn tất"
-                                                                    >
-                                                                        Đang về kho
-                                                                    </div>
-                                                                    <div className="font-semibold text-cyan-700">{stockState.incomingStock.toLocaleString()} {unitLabel}</div>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="flex items-center justify-between gap-2 text-[11px]">
-                                                                <span className="text-slate-500 font-medium uppercase tracking-wide" title={product.barcode || ''}>
-                                                                    Barcode: {product.barcode || 'N/A'}
-                                                                </span>
-                                                                {product.status === 'ACTIVE' ? (
-                                                                    <span className="shrink-0 font-bold text-green-700">ACTIVE</span>
+                                                    return (
+                                                        <article
+                                                            key={product.id}
+                                                            onClick={(e) => handleRowClick(product, index, e)}
+                                                            onContextMenu={(e) => handleRowContextMenu(e, product, index)}
+                                                            onDoubleClick={() => {
+                                                                setSingleSelection(product, index);
+                                                                setSelectedProduct(product);
+                                                            }}
+                                                            className={`grid grid-cols-[96px_1fr] gap-3 p-3 border rounded-xl cursor-pointer transition-colors duration-200 ${
+                                                                isSelected
+                                                                    ? 'border-[#1192a8] bg-teal-50 dark:bg-[#1192a8]/15'
+                                                                    : 'border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-[#1192a8]/40 dark:hover:border-[#1192a8]/40 hover:bg-blue-50/40 dark:hover:bg-gray-700/30'
+                                                            }`}
+                                                        >
+                                                            <div className="w-24 h-24 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 overflow-hidden flex items-center justify-center rounded-lg">
+                                                                {product.imageUrl ? (
+                                                                    <img
+                                                                        src={product.imageUrl}
+                                                                        alt={product.name}
+                                                                        className="w-full h-full object-contain p-1.5"
+                                                                        onError={(e) => {
+                                                                            e.target.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22200%22%20height%3D%22200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20200%22%3E%3Crect%20width%3D%22200%22%20height%3D%22200%22%20fill%3D%22%23eee%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20font-size%3D%2218%22%20text-anchor%3D%22middle%22%20alignment-baseline%3D%22middle%22%20font-family%3D%22sans-serif%22%20fill%3D%22%23999%22%3ENo+Image%3C%2Ftext%3E%3C%2Fsvg%3E';
+                                                                        }}
+                                                                    />
                                                                 ) : (
-                                                                    <span className="shrink-0 font-bold text-slate-500">INACTIVE</span>
+                                                                    <span className="text-[10px] text-slate-400 dark:text-gray-500 font-medium text-center px-2">Chưa có ảnh</span>
                                                                 )}
                                                             </div>
 
-                                                            {product.supplierCodes ? (
-                                                                <div className="text-[11px] text-slate-500 truncate" title={product.supplierCodes}>
-                                                                    NCC: {product.supplierCodes}
+                                                            <div className="min-w-0 flex flex-col gap-2">
+                                                                <div className="min-w-0">
+                                                                    <div
+                                                                        className={`text-xs font-bold truncate ${
+                                                                            stockState.isBelowSafety ? 'text-red-600 dark:text-red-400' : 'text-[#1192a8]'
+                                                                        }`}
+                                                                        title={stockState.isBelowSafety ? 'Tồn khả dụng thấp hơn tồn an toàn' : ''}
+                                                                    >
+                                                                        {product.sku || 'Chưa có SKU'}
+                                                                    </div>
+                                                                    <div className="text-sm font-semibold text-slate-900 dark:text-gray-100 truncate" title={product.name}>
+                                                                        {product.name}
+                                                                    </div>
                                                                 </div>
-                                                            ) : null}
-                                                        </div>
-                                                    </article>
-                                                );
-                                            })}
-                                        </div>
-                                    </section>
-                                ))
-                            ) : (
-                                <div className="p-8 text-gray-500 text-center">
-                                    Không tìm thấy sản phẩm nào phù hợp với "{searchKeyword}".
-                                </div>
-                            )}
-                        </div>
-                    )
-                )}
-            </div>
-        </div>
 
+                                                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                                                    <div>
+                                                                        <div className="text-slate-400 dark:text-gray-500">Khả dụng</div>
+                                                                        <div className={`font-bold ${stockState.isBelowSafety ? 'text-red-600 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}>
+                                                                            {stockState.availableStock.toLocaleString()} {unitLabel}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="text-slate-400 dark:text-gray-500">Tồn an toàn</div>
+                                                                        <div className="font-semibold text-amber-700 dark:text-amber-400">{stockState.safetyStock ?? 'N/A'}</div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="text-slate-400 dark:text-gray-500">Tổng tồn</div>
+                                                                        <div className="font-semibold text-slate-700 dark:text-gray-300">{stockState.totalStock.toLocaleString()}</div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="text-slate-400 dark:text-gray-500">Đã phân bổ</div>
+                                                                        <div className="font-semibold text-slate-700 dark:text-gray-300">{stockState.allocatedStock.toLocaleString()}</div>
+                                                                    </div>
+                                                                    <div className="col-span-2">
+                                                                        <div className="text-slate-400 dark:text-gray-500" title="Chỉ cộng vào tồn khả dụng khi phiếu nhập hoàn tất">
+                                                                            Đang về kho
+                                                                        </div>
+                                                                        <div className="font-semibold text-cyan-700 dark:text-[#38bcd4]">{stockState.incomingStock.toLocaleString()} {unitLabel}</div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="flex items-center justify-between gap-2 text-[11px]">
+                                                                    <span className="text-slate-500 dark:text-gray-400 font-medium uppercase tracking-wide" title={product.barcode || ''}>
+                                                                        Barcode: {product.barcode || 'N/A'}
+                                                                    </span>
+                                                                    {product.status === 'ACTIVE' ? (
+                                                                        <span className="shrink-0 font-bold text-green-700 dark:text-green-400">ACTIVE</span>
+                                                                    ) : (
+                                                                        <span className="shrink-0 font-bold text-slate-500 dark:text-gray-500">INACTIVE</span>
+                                                                    )}
+                                                                </div>
+
+                                                                {product.supplierCodes ? (
+                                                                    <div className="text-[11px] text-slate-500 dark:text-gray-400 truncate" title={product.supplierCodes}>
+                                                                        NCC: {product.supplierCodes}
+                                                                    </div>
+                                                                ) : null}
+                                                            </div>
+                                                        </article>
+                                                    );
+                                                })}
+                                            </div>
+                                        </section>
+                                    ))
+                                ) : (
+                                    <div className="p-8 text-gray-400 dark:text-gray-600 text-center italic font-medium">
+                                        Không tìm thấy sản phẩm nào phù hợp với "{searchKeyword}".
+                                    </div>
+                                )}
+                            </div>
+                        )
+                    )}
+                </div>
+            </div>
+
+            {/* FAB toggle view mode */}
             <button
                 type="button"
                 onClick={() => setInventoryViewMode(prev => (prev === 'list' ? 'grid' : 'list'))}
-                className="fixed right-6 bottom-6 z-[90] w-14 h-14 rounded-full bg-[#1192a8] text-white shadow-lg border border-white/60 hover:bg-teal-700 transition flex items-center justify-center text-2xl font-bold"
+                className="fixed right-6 bottom-6 z-[90] w-14 h-14 rounded-full bg-[#1192a8] text-white shadow-lg border border-white/20 dark:border-white/10 hover:bg-teal-700 transition flex items-center justify-center text-2xl font-bold"
                 title={inventoryViewMode === 'list' ? 'Chuyển sang dạng ô' : 'Chuyển sang dạng list'}
                 aria-label={inventoryViewMode === 'list' ? 'Chuyển sang dạng ô' : 'Chuyển sang dạng list'}
             >
                 {inventoryViewMode === 'list' ? '▦' : '☰'}
             </button>
 
+            {/* Hover image preview */}
             {hoverPreview?.product && (
                 <div
                     className="pointer-events-none fixed z-[95] hidden xl:block"
-                    style={{
-                        left: `${hoverPreview.x}px`,
-                        top: `${hoverPreview.y}px`
-                    }}
+                    style={{ left: `${hoverPreview.x}px`, top: `${hoverPreview.y}px` }}
                 >
-                    <div className="w-44 h-44 bg-white border border-gray-200 shadow-lg overflow-hidden">
+                    <div className="w-44 h-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg overflow-hidden rounded-xl">
                         {hoverPreview.product.imageUrl ? (
                             <img
                                 src={hoverPreview.product.imageUrl}
@@ -1195,7 +1167,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                                 }}
                             />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gray-50 text-gray-400 text-xs font-medium text-center px-3">
+                            <div className="w-full h-full flex items-center justify-center bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-500 text-xs font-medium text-center px-3">
                                 Chưa có ảnh
                             </div>
                         )}
@@ -1203,7 +1175,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                 </div>
             )}
 
-            {/* Nơi nhúng các Modal */}
+            {/* Modals */}
             <ProductModal
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
@@ -1212,10 +1184,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
 
             <ProductModal
                 isOpen={isEditModalOpen}
-                onClose={() => {
-                    setIsEditModalOpen(false);
-                    setEditingProduct(null);
-                }}
+                onClose={() => { setIsEditModalOpen(false); setEditingProduct(null); }}
                 onSuccess={fetchProducts}
                 product={editingProduct}
                 mode="edit"
@@ -1225,10 +1194,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                 isOpen={isBulkEditModalOpen}
                 products={selectedProducts}
                 onClose={() => setIsBulkEditModalOpen(false)}
-                onEditOne={(product) => {
-                    setEditingProduct(product);
-                    setIsEditModalOpen(true);
-                }}
+                onEditOne={(product) => { setEditingProduct(product); setIsEditModalOpen(true); }}
             />
 
             <InventoryFilterModal
@@ -1238,10 +1204,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                 suppliers={suppliers}
                 units={units}
                 onClose={() => setIsFilterModalOpen(false)}
-                onApply={(nextFilters) => {
-                    setInventoryFilters(nextFilters);
-                    setIsFilterModalOpen(false);
-                }}
+                onApply={(nextFilters) => { setInventoryFilters(nextFilters); setIsFilterModalOpen(false); }}
             />
 
             <ProductDetailModal
@@ -1255,43 +1218,19 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                 y={contextMenu?.y || 0}
                 products={contextMenu?.products || []}
                 onClose={closeContextMenu}
-                onDetail={() => {
-                    closeContextMenu();
-                    handleOpenDetail(contextMenu?.products || []);
-                }}
-                onEdit={() => {
-                    closeContextMenu();
-                    handleOpenEdit(contextMenu?.products || []);
-                }}
-                onDelete={() => {
-                    closeContextMenu();
-                    handleDeleteProduct(contextMenu?.products || []);
-                }}
-                onInbound={() => {
-                    closeContextMenu();
-                    handleCreateReceiptFlow('inbound');
-                }}
-                onOutbound={() => {
-                    closeContextMenu();
-                    handleCreateReceiptFlow('outbound');
-                }}
-                onCopy={() => {
-                    openCopyModal(contextMenu?.products || []);
-                }}
-                onRefresh={() => {
-                    closeContextMenu();
-                    fetchProducts();
-                }}
+                onDetail={() => { closeContextMenu(); handleOpenDetail(contextMenu?.products || []); }}
+                onEdit={() => { closeContextMenu(); handleOpenEdit(contextMenu?.products || []); }}
+                onDelete={() => { closeContextMenu(); handleDeleteProduct(contextMenu?.products || []); }}
+                onInbound={() => { closeContextMenu(); handleCreateReceiptFlow('inbound'); }}
+                onOutbound={() => { closeContextMenu(); handleCreateReceiptFlow('outbound'); }}
+                onCopy={() => { openCopyModal(contextMenu?.products || []); }}
+                onRefresh={() => { closeContextMenu(); fetchProducts(); }}
                 onSelectAll={() => {
                     closeContextMenu();
                     setSelectedProductIds(filteredProducts.map(item => item.id));
                     setSelectionAnchorIndex(filteredProducts.length ? 0 : null);
                 }}
-                onClearSelection={() => {
-                    closeContextMenu();
-                    setSelectedProductIds([]);
-                    setSelectionAnchorIndex(null);
-                }}
+                onClearSelection={() => { closeContextMenu(); setSelectedProductIds([]); setSelectionAnchorIndex(null); }}
             />
 
             <CopyFieldsModal
@@ -1299,10 +1238,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                 products={copyTargetProducts}
                 resolveCategoryLabel={resolveCategoryLabel}
                 resolveUnitLabel={resolveUnitLabel}
-                onClose={() => {
-                    setIsCopyModalOpen(false);
-                    setCopyTargetProducts([]);
-                }}
+                onClose={() => { setIsCopyModalOpen(false); setCopyTargetProducts([]); }}
                 onCopy={handleCopyClipboard}
             />
 
@@ -1325,7 +1261,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                 confirmLabel="Xác nhận"
             />
 
-            <ScannerModal 
+            <ScannerModal
                 isOpen={isScannerOpen}
                 onClose={() => setIsScannerOpen(false)}
                 onScanSuccess={handleScanSuccess}
@@ -1336,9 +1272,13 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
 
 function ActionButton({ iconSrc, label }) {
     return (
-        <button className="flex flex-col items-center gap-1 group bg-transparent border-none cursor-pointer">
-            <img src={iconSrc} alt={label} className="w-9 h-9 group-hover:scale-110 transition duration-200 drop-shadow-sm" />
-            <span className="text-[10px] font-bold text-[#00529c] uppercase tracking-wide group-hover:text-blue-600 transition">{label}</span>
+        <button className="flex flex-col items-center gap-1 group bg-transparent border-none cursor-pointer transition-transform active:scale-90">
+            <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition duration-200">
+                <img src={iconSrc} alt={label} className="w-7 h-7 md:w-9 md:h-9 object-contain dark:opacity-85 dark:brightness-110" />
+            </div>
+            <span className="text-[8px] md:text-[10px] font-bold text-[#00529c] dark:text-[#1192a8] uppercase tracking-tighter group-hover:text-[#1192a8] dark:group-hover:text-[#38bcd4] transition text-center whitespace-nowrap">
+                {label}
+            </span>
         </button>
     );
 }
