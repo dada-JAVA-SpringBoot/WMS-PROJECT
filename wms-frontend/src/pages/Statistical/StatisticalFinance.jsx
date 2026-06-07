@@ -17,23 +17,25 @@ export default function StatisticalFinance() {
 
     const renderContent = () => {
         switch (activeTab) {
-            case 'year':
-                return <RevenueByYear />;
-            case 'month':
-                return <RevenueByMonth />;
-            case 'dayInMonth':
-                return <RevenueByDayInMonth />;
-            case 'dateRange':
-                return <RevenueByDateRange />;
-            default:
-                return <RevenueByYear />;
+            case 'year': return <RevenueByYear />;
+            case 'month': return <RevenueByMonth />;
+            case 'dayInMonth': return <RevenueByDayInMonth />;
+            case 'dateRange': return <RevenueByDateRange />;
+            default: return <RevenueByYear />;
         }
     };
 
     return (
-        <div className="bg-[#eef3f6]">
+        // Thêm dark:bg-gray-900 để đồng bộ nền với các component con
+        <div className="bg-[#eef3f6] dark:bg-gray-900 min-h-screen transition-colors duration-300">
+            {/* Lưu ý: Component SubTabNav cũng cần được cập nhật class
+               để hỗ trợ dark mode (ví dụ: dark:border-gray-700)
+            */}
             <SubTabNav tabs={revenueTabs} activeTab={activeTab} onChange={setActiveTab} />
-            {renderContent()}
+
+            <div className="p-4">
+                {renderContent()}
+            </div>
         </div>
     );
 }
