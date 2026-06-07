@@ -50,22 +50,22 @@ export default function RevenueByDayInMonth() {
     const isActual = profitType === 'actual';
 
     return (
-        <div className="space-y-5 p-5">
+        <div className="space-y-5 p-5 bg-[#f8f9fa] dark:bg-gray-900 min-h-screen transition-colors duration-300">
             <FilterBar>
-                <span className="text-[16px] text-slate-800">{t('pages.RevenueByDayInMonth.lblSelectMonth')}</span>
-                <FilterSelect value={month} onChange={e => setMonth(e.target.value)} className="w-[120px]">
+                <span className="text-[16px] text-slate-800 dark:text-gray-300">{t('pages.RevenueByDayInMonth.lblSelectMonth')}</span>
+                <FilterSelect value={month} onChange={e => setMonth(e.target.value)} className="w-[120px] dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
                     {Array.from({ length: 12 }, (_, i) => (
                         <option key={i + 1} value={i + 1}>{t('pages.RevenueByDayInMonth.optMonth', { val: i + 1 })}</option>
                     ))}
                 </FilterSelect>
-                <span className="text-[16px] text-slate-800">{t('pages.RevenueByDayInMonth.lblSelectYear')}</span>
-                <FilterSelect value={year} onChange={e => setYear(e.target.value)} className="w-[90px]">
+                <span className="text-[16px] text-slate-800 dark:text-gray-300">{t('pages.RevenueByDayInMonth.lblSelectYear')}</span>
+                <FilterSelect value={year} onChange={e => setYear(e.target.value)} className="w-[90px] dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
                     {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                 </FilterSelect>
                 <FilterButton variant="primary" onClick={handleFilter}>{t('pages.RevenueByDayInMonth.btnFilter')}</FilterButton>
 
-                <span className="text-[16px] text-slate-800 ml-auto font-medium">{t('pages.RevenueByDayInMonth.lblProfitType')}</span>
-                <FilterSelect value={profitType} onChange={e => setProfitType(e.target.value)} className="w-[200px]">
+                <span className="text-[16px] text-slate-800 dark:text-gray-300 ml-auto font-medium">{t('pages.RevenueByDayInMonth.lblProfitType')}</span>
+                <FilterSelect value={profitType} onChange={e => setProfitType(e.target.value)} className="w-[200px] dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
                     <option value="cashflow">{t('pages.RevenueByDayInMonth.optCashflow')}</option>
                     <option value="actual">{t('pages.RevenueByDayInMonth.optActual')}</option>
                 </FilterSelect>
@@ -75,22 +75,26 @@ export default function RevenueByDayInMonth() {
 
             {detail && !loading && (
                 <>
-                    <GroupedBarChart
-                        title={t('pages.RevenueByDayInMonth.chartGroupedTitle', { month, year })}
-                        labels={detail.labels}
-                        series={[
-                            { label: isActual ? t('pages.RevenueByDayInMonth.chartGroupedCogsLabel') : t('pages.RevenueByDayInMonth.chartGroupedCostLabel'), color: '#e6b06e', data: isActual ? detail.cogsData : detail.costData },
-                            { label: t('pages.RevenueByDayInMonth.chartGroupedRevenueLabel'), color: '#74b9f5', data: detail.revenueData },
-                            { label: t('pages.RevenueByDayInMonth.chartGroupedLossLabel'), color: '#ef4444', data: detail.lossData },
-                        ]}
-                    />
-                    <LineAreaChart
-                        title={t('pages.RevenueByDayInMonth.chartLineTitle', { month, year })}
-                        labels={detail.labels}
-                        series={[
-                            { label: isActual ? t('pages.RevenueByDayInMonth.chartLineActualLabel') : t('pages.RevenueByDayInMonth.chartLineNetLabel'), color: '#b68cf0', fill: '#b68cf0', data: isActual ? detail.actualProfitData : detail.profitData },
-                        ]}
-                    />
+                    <div className="dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700 transition-colors">
+                        <GroupedBarChart
+                            title={t('pages.RevenueByDayInMonth.chartGroupedTitle', { month, year })}
+                            labels={detail.labels}
+                            series={[
+                                { label: isActual ? t('pages.RevenueByDayInMonth.chartGroupedCogsLabel') : t('pages.RevenueByDayInMonth.chartGroupedCostLabel'), color: '#e6b06e', data: isActual ? detail.cogsData : detail.costData },
+                                { label: t('pages.RevenueByDayInMonth.chartGroupedRevenueLabel'), color: '#74b9f5', data: detail.revenueData },
+                                { label: t('pages.RevenueByDayInMonth.chartGroupedLossLabel'), color: '#ef4444', data: detail.lossData },
+                            ]}
+                        />
+                    </div>
+                    <div className="dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700 transition-colors">
+                        <LineAreaChart
+                            title={t('pages.RevenueByDayInMonth.chartLineTitle', { month, year })}
+                            labels={detail.labels}
+                            series={[
+                                { label: isActual ? t('pages.RevenueByDayInMonth.chartLineActualLabel') : t('pages.RevenueByDayInMonth.chartLineNetLabel'), color: '#b68cf0', fill: '#b68cf0', data: isActual ? detail.actualProfitData : detail.profitData },
+                            ]}
+                        />
+                    </div>
                 </>
             )}
         </div>

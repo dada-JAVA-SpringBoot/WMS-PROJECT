@@ -23,29 +23,29 @@ const createEmptyLineItem = () => ({
 });
 
 const inboundStatusOptions = [
-    { value: 'DRAFT', label: 'Nháp', color: 'bg-gray-100 text-gray-600 border-gray-200' },
-    { value: 'ORDERED', label: 'Đã đặt', color: 'bg-blue-50 text-blue-600 border-blue-100' },
-    { value: 'IN_TRANSIT', label: 'Đang về', color: 'bg-amber-50 text-amber-600 border-amber-100' },
-    { value: 'PENDING', label: 'Đang duyệt (QC)', color: 'bg-rose-50 text-rose-600 border-rose-100' },
-    { value: 'COMPLETED', label: 'Đã nhập', color: 'bg-green-50 text-green-700 border-green-100' },
-    { value: 'CANCELED', label: 'Đã hủy', color: 'bg-red-50 text-red-600 border-red-100' }
+    { value: 'DRAFT', label: 'Nháp', color: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600' },
+    { value: 'ORDERED', label: 'Đã đặt', color: 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800' },
+    { value: 'IN_TRANSIT', label: 'Đang về', color: 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800' },
+    { value: 'PENDING', label: 'Đang duyệt (QC)', color: 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800' },
+    { value: 'COMPLETED', label: 'Đã nhập', color: 'bg-green-50 text-green-700 border-green-100 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' },
+    { value: 'CANCELED', label: 'Đã hủy', color: 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800' }
 ];
 
 export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
     const { t } = useTranslation();
     const { user } = useAuth();
     const reactLocation = useLocation();
-    
-    const [receipts, setReceipts] = useState([]); 
+
+    const [receipts, setReceipts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedReceipt, setSelectedReceipt] = useState(null);
-    const [detailItems, setDetailItems] = useState([]); 
+    const [detailItems, setDetailItems] = useState([]);
     const [contextMenu, setContextMenu] = useState(null);
 
     const [isScannerOpen, setIsScannerOpen] = useState(false);
-    const [activeScanTarget, setActiveScanTarget] = useState('SEARCH'); 
+    const [activeScanTarget, setActiveScanTarget] = useState('SEARCH');
     const [activeItemIndex, setActiveItemIndex] = useState(null);
 
     const [dialog, setDialog] = useState({ isOpen: false, title: '', message: '', variant: 'info' });
@@ -54,7 +54,7 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
     const [isQCModalOpen, setIsQCModalOpen] = useState(false);
     const [pendingQCReceipt, setPendingQCReceipt] = useState(null);
     const [qcItems, setQCItems] = useState([]);
-    
+
     const [filterKeyword, setFilterKeyword] = useState('');
     const [filterSupplier, setFilterSupplier] = useState('ALL');
     const [filterStatus, setFilterStatus] = useState('ALL');
@@ -176,7 +176,7 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
             if (workflow.products && workflow.products.length > 0) {
                 items = workflow.products.map(p => { fetchBatches(p.id); return { ...createEmptyLineItem(), productId: p.id, price: p.price || 0, locationId: workflow.targetLocation?.id || "" }; });
             } else if (workflow.targetLocation) { items = [{ ...createEmptyLineItem(), locationId: workflow.targetLocation.id }]; }
-            setNewItems(items); 
+            setNewItems(items);
             setTimeout(() => clearWorkflow(), 0);
         }
     }, [workflow, clearWorkflow, canCreate]);
@@ -307,15 +307,15 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
     }, [contextMenu, suppliers, t]);
 
     return (
-        <div className="p-6 bg-[#f8f9fa] min-h-full flex flex-col text-left font-sans" onContextMenu={e => e.preventDefault()}>
+        <div className="p-6 bg-[#f8f9fa] dark:bg-gray-900 min-h-full flex flex-col text-left font-sans transition-colors duration-300" onContextMenu={e => e.preventDefault()}>
             <SystemDialog isOpen={dialog.isOpen} title={dialog.title} message={dialog.message} variant={dialog.variant} onClose={() => setDialog({ ...dialog, isOpen: false })} />
             <ScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanSuccess={handleScanSuccess} />
-            <ExportExcelModal 
-                isOpen={isExportModalOpen} 
-                onClose={closeExportModal} 
-                onConfirm={handleExportExcel} 
-                fileName={exportFileName} 
-                setFileName={setExportFileName} 
+            <ExportExcelModal
+                isOpen={isExportModalOpen}
+                onClose={closeExportModal}
+                onConfirm={handleExportExcel}
+                fileName={exportFileName}
+                setFileName={setExportFileName}
             />
             <VoucherContextMenu 
                 isOpen={!!contextMenu} 
@@ -326,26 +326,27 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
                 actions={contextActions}
                 onClose={() => setContextMenu(null)}
             />
-            <div className="sticky top-0 z-20 flex items-center justify-between bg-white/95 backdrop-blur-sm p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 mb-4 md:mb-6">
+
+            <div className="sticky top-0 z-20 flex items-center justify-between bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 mb-4 md:mb-6 transition-colors duration-300">
                 <div className="flex gap-4 overflow-x-auto no-scrollbar pb-1 w-full lg:w-auto">
                     {toolbarActions.map((a, i) => <ActionButton key={i} {...a} />)}
                 </div>
-                <div className="text-xs font-black text-gray-400 uppercase tracking-widest hidden lg:block">{t('pages.ImportReceipts.headerSubtitle')}</div>
+                <div className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest hidden lg:block">{t('pages.ImportReceipts.headerSubtitle')}</div>
             </div>
 
-            <div className="bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl border border-gray-100 mb-4 md:mb-6 flex flex-col gap-4 shadow-sm">
-                <input type="text" value={filterKeyword} onChange={e => setFilterKeyword(e.target.value)} placeholder={t('pages.ImportReceipts.searchPlaceholder')} className="w-full border-2 border-gray-100 rounded-xl px-4 md:px-5 py-2.5 md:py-3 text-sm outline-none focus:border-[#1192a8] transition-all" />
-                <div className="flex flex-wrap gap-x-6 gap-y-3 border-t pt-4">
+            <div className="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-2xl md:rounded-3xl border border-gray-100 dark:border-gray-700 mb-4 md:mb-6 flex flex-col gap-4 shadow-sm transition-colors duration-300">
+                <input type="text" value={filterKeyword} onChange={e => setFilterKeyword(e.target.value)} placeholder={t('pages.ImportReceipts.searchPlaceholder')} className="w-full border-2 border-gray-100 dark:border-gray-600 rounded-xl px-4 md:px-5 py-2.5 md:py-3 text-sm outline-none focus:border-[#1192a8] bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all" />
+                <div className="flex flex-wrap gap-x-6 gap-y-3 border-t border-gray-100 dark:border-gray-700 pt-4">
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('pages.ImportReceipts.filterSupplierLabel')}</span>
-                        <select value={filterSupplier} onChange={e => setFilterSupplier(e.target.value)} className="wms-select !py-1 md:!py-1.5 !text-[10px] md:!text-sm min-w-[120px]">
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{t('pages.ImportReceipts.filterSupplierLabel')}</span>
+                        <select value={filterSupplier} onChange={e => setFilterSupplier(e.target.value)} className="wms-select !py-1 md:!py-1.5 !text-[10px] md:!text-sm min-w-[120px] dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
                             <option value="ALL">{t('pages.ImportReceipts.optionAll')}</option>
                             {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                         </select>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('pages.ImportReceipts.filterStatusLabel')}</span>
-                        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="wms-select !py-1 md:!py-1.5 !text-[10px] md:!text-sm min-w-[120px]">
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{t('pages.ImportReceipts.filterStatusLabel')}</span>
+                        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="wms-select !py-1 md:!py-1.5 !text-[10px] md:!text-sm min-w-[120px] dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
                             <option value="ALL">{t('pages.ImportReceipts.optionAll')}</option>
                             {inboundStatusOptions.map(o => <option key={o.value} value={o.value}>{t('pages.ImportReceipts.status_' + o.value.toLowerCase())}</option>)}
                         </select>
@@ -353,10 +354,10 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
                 </div>
             </div>
 
-            <div className="flex-1 bg-white rounded-2xl md:rounded-3xl border border-gray-100 overflow-hidden shadow-sm flex flex-col">
+            <div className="flex-1 bg-white dark:bg-gray-800 rounded-2xl md:rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm flex flex-col transition-colors duration-300">
                 <div className="overflow-x-auto flex-1 no-scrollbar lg:scrollbar-thin">
                     <table className="w-full text-left min-w-[800px] md:min-w-[1000px]">
-                        <thead className="bg-gray-50 border-b text-[9px] md:text-[10px] font-black text-gray-400 uppercase sticky top-0 z-10">
+                        <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase sticky top-0 z-10">
                             <tr>
                                 <th className="p-4 md:p-5 w-16">#</th>
                                 <th className="p-4 md:p-5 cursor-pointer hover:text-[#1192a8]" onClick={() => requestSort('receiptCode')}>{t('pages.ImportReceipts.colReceiptCode')} <SortIcon col="receiptCode" /></th>
@@ -366,18 +367,18 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
                                 <th className="p-4 md:p-5 text-center w-32 md:w-48">{t('pages.ImportReceipts.colStatus')}</th>
                             </tr>
                         </thead>
-                        <tbody className="text-sm">
-                            {loading ? <tr><td colSpan="6" className="py-20 text-center animate-pulse">{t('pages.ImportReceipts.loadingText')}</td></tr> : filteredReceipts.map((item, idx) => (
+                        <tbody className="text-sm divide-y divide-gray-50 dark:divide-gray-700/50">
+                            {loading ? <tr><td colSpan="6" className="py-20 text-center animate-pulse text-gray-400 dark:text-gray-500">{t('pages.ImportReceipts.loadingText')}</td></tr> : filteredReceipts.map((item, idx) => (
                                 <tr key={item.id} 
                                     onClick={(e) => handleRowClick(item, idx, e)} 
                                     onDoubleClick={() => { setSelectedReceipt(item); axiosClient.get(`/api/inbound/${item.id}/details`).then(res => { setDetailItems(res.data); setIsDetailModalOpen(true); }); }} 
                                     onContextMenu={(e) => handleContextMenu(e, item)}
-                                    className={`border-b border-gray-50 cursor-pointer ${selectedIds.includes(item.id) ? 'bg-[#1192a8]/5' : 'hover:bg-gray-50'}`}>
-                                    <td className="p-4 md:p-5 text-gray-300 font-bold">{idx + 1}</td>
+                                    className={`cursor-pointer transition-colors ${selectedIds.includes(item.id) ? 'bg-[#1192a8]/5 dark:bg-[#1192a8]/10' : 'hover:bg-gray-50 dark:hover:bg-gray-700/30'}`}>
+                                    <td className="p-4 md:p-5 text-gray-300 dark:text-gray-600 font-bold">{idx + 1}</td>
                                     <td className="p-4 md:p-5 font-black text-[#1192a8] uppercase">{item.receiptCode}</td>
-                                    <td className="p-4 md:p-5 text-gray-500 font-bold">{item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : '---'}</td>
-                                    <td className="p-4 md:p-5 font-bold text-gray-700">{suppliers.find(s => s.id === item.supplierId)?.name || '---'}</td>
-                                    <td className="p-4 md:p-5 text-right font-black text-teal-700">{Number(item.totalAmount || 0).toLocaleString()}đ</td>
+                                    <td className="p-4 md:p-5 text-gray-500 dark:text-gray-400 font-bold">{item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : '---'}</td>
+                                    <td className="p-4 md:p-5 font-bold text-gray-700 dark:text-gray-200">{suppliers.find(s => s.id === item.supplierId)?.name || '---'}</td>
+                                    <td className="p-4 md:p-5 text-right font-black text-teal-700 dark:text-teal-400">{Number(item.totalAmount || 0).toLocaleString()}đ</td>
                                     <td className="p-4 md:p-5 text-center" onClick={e => e.stopPropagation()}><select value={item.status} onChange={e => handleUpdateStatus(item.id, e.target.value)} className={`!py-1 !px-2 !text-[9px] md:!text-[10px] uppercase font-black rounded-lg border-2 ${inboundStatusOptions.find(o => o.value === item.status)?.color || ''}`}>{inboundStatusOptions.map(o => <option key={o.value} value={o.value}>{t('pages.ImportReceipts.status_' + o.value.toLowerCase())}</option>)}</select></td>
                                 </tr>
                             ))}
@@ -388,7 +389,7 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
 
             {isDetailModalOpen && selectedReceipt && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[110] flex justify-center items-center p-2 md:p-4">
-                    <div className="bg-white rounded-2xl md:rounded-3xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh] shadow-2xl">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl md:rounded-3xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh] shadow-2xl transition-colors duration-300">
                         <div className="bg-[#1192a8] p-4 md:p-5 text-white flex justify-between items-center shrink-0">
                             <div>
                                 <h2 className="font-bold uppercase tracking-widest text-xs md:text-sm">{t('pages.ImportReceipts.detailModalTitle', { code: selectedReceipt.receiptCode })}</h2>
@@ -396,68 +397,68 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
                             </div>
                             <button onClick={() => setIsDetailModalOpen(false)} className="text-2xl md:text-3xl leading-none">&times;</button>
                         </div>
-                        <div className="p-4 md:p-8 overflow-y-auto flex-1 space-y-6 md:space-y-8 bg-gray-50/30">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-10 border-b pb-6 md:pb-8">
-                                <div><p className="text-[9px] md:text-[10px] text-gray-400 font-black uppercase">{t('pages.ImportReceipts.detailModalSupplier')}</p><p className="text-base md:text-lg font-black text-gray-800">{suppliers.find(s => s.id === selectedReceipt.supplierId)?.name}</p></div>
-                                <div><p className="text-[9px] md:text-[10px] text-gray-400 font-black uppercase">{t('pages.ImportReceipts.detailModalCreatedAt')}</p><p className="text-base md:text-lg font-black text-gray-800">{new Date(selectedReceipt.createdAt).toLocaleString('vi-VN')}</p></div>
+                        <div className="p-4 md:p-8 overflow-y-auto flex-1 space-y-6 md:space-y-8 bg-gray-50/30 dark:bg-gray-900/30">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-10 border-b border-gray-100 dark:border-gray-700 pb-6 md:pb-8">
+                                <div><p className="text-[9px] md:text-[10px] text-gray-400 dark:text-gray-500 font-black uppercase">{t('pages.ImportReceipts.detailModalSupplier')}</p><p className="text-base md:text-lg font-black text-gray-800">{suppliers.find(s => s.id === selectedReceipt.supplierId)?.name}</p></div>
+                                <div><p className="text-[9px] md:text-[10px] text-gray-400 dark:text-gray-500 font-black uppercase">{t('pages.ImportReceipts.detailModalCreatedAt')}</p><p className="text-base md:text-lg font-black text-gray-800">{new Date(selectedReceipt.createdAt).toLocaleString('vi-VN')}</p></div>
                             </div>
                             <div className="overflow-x-auto no-scrollbar">
                                 <table className="w-full text-xs md:text-sm text-left min-w-[600px]">
-                                    <thead className="bg-gray-50 text-gray-400 text-[9px] md:text-[10px] uppercase font-bold">
+                                    <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 text-[9px] md:text-[10px] uppercase font-bold">
                                         <tr>
                                             <th className="p-3">{t('pages.ImportReceipts.detailColProduct')}</th>
                                             <th className="p-3 text-center">{t('pages.ImportReceipts.detailColExpected')}</th>
                                             <th className="p-3 text-center">{t('pages.ImportReceipts.detailColReceived')}</th>
-                                            <th className="p-3 text-center text-teal-600">{t('pages.ImportReceipts.detailColIntact')}</th>
-                                            <th className="p-3 text-center text-rose-500">{t('pages.ImportReceipts.detailColDamaged')}</th>
+                                            <th className="p-3 text-center text-teal-600 dark:text-teal-400">{t('pages.ImportReceipts.detailColIntact')}</th>
+                                            <th className="p-3 text-center text-rose-500 dark:text-rose-400">{t('pages.ImportReceipts.detailColDamaged')}</th>
                                             <th className="p-3 text-right">{t('pages.ImportReceipts.detailColUnitPrice')}</th>
                                             <th className="p-3 text-right">{t('pages.ImportReceipts.detailColSubtotal')}</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {detailItems.map((item, i) => { 
-                                            const p = products.find(prod => prod.id === item.productId); 
-                                            const qtyShow = item.quantityIntact != null ? item.quantityIntact : item.quantityReceived;
-                                            return (
-                                                <tr key={i} className="hover:bg-gray-50/50 transition-colors">
-                                                    <td className="p-3"><p className="font-bold">{p?.name || `SP #${item.productId}`}</p></td>
-                                                    <td className="p-3 text-center text-gray-400">{item.quantityExpected?.toLocaleString()}</td>
-                                                    <td className="p-3 text-center font-bold">{item.quantityReceived.toLocaleString()}</td>
-                                                    <td className="p-3 text-center font-black text-teal-600 bg-teal-50/20">{item.quantityIntact?.toLocaleString() || '---'}</td>
-                                                    <td className="p-3 text-center font-black text-rose-600 bg-rose-50/20">{item.quantityDamaged?.toLocaleString() || '---'}</td>
-                                                    <td className="p-3 text-right text-gray-400">{Number(item.unitPrice).toLocaleString()}đ</td>
-                                                    <td className="p-3 text-right font-black text-[#1192a8]">{(qtyShow * item.unitPrice).toLocaleString()}đ</td>
-                                                </tr>
-                                            ); 
-                                        })}
+                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                    {detailItems.map((item, i) => {
+                                        const p = products.find(prod => prod.id === item.productId);
+                                        const qtyShow = item.quantityIntact != null ? item.quantityIntact : item.quantityReceived;
+                                        return (
+                                            <tr key={i} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors">
+                                                <td className="p-3"><p className="font-bold text-gray-800 dark:text-gray-200">{p?.name || `SP #${item.productId}`}</p></td>
+                                                <td className="p-3 text-center text-gray-400 dark:text-gray-500">{item.quantityExpected?.toLocaleString()}</td>
+                                                <td className="p-3 text-center font-bold text-gray-800 dark:text-gray-300">{item.quantityReceived.toLocaleString()}</td>
+                                                <td className="p-3 text-center font-black text-teal-600 bg-teal-50/20 dark:text-teal-400 dark:bg-teal-900/20">{item.quantityIntact?.toLocaleString() || '---'}</td>
+                                                <td className="p-3 text-center font-black text-rose-600 bg-rose-50/20 dark:text-rose-400 dark:bg-rose-900/20">{item.quantityDamaged?.toLocaleString() || '---'}</td>
+                                                <td className="p-3 text-right text-gray-400 dark:text-gray-500">{Number(item.unitPrice).toLocaleString()}đ</td>
+                                                <td className="p-3 text-right font-black text-[#1192a8]">{(qtyShow * item.unitPrice).toLocaleString()}đ</td>
+                                            </tr>
+                                        );
+                                    })}
                                     </tbody>
                                 </table>
                             </div>
                         </div>
-                        <div className="p-4 md:p-5 border-t bg-white text-right font-black text-2xl md:text-3xl text-teal-700">{Number(selectedReceipt.totalAmount || 0).toLocaleString()}đ</div>
+                        <div className="p-4 md:p-5 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 text-right font-black text-2xl md:text-3xl text-teal-700 dark:text-teal-400 transition-colors duration-300">{Number(selectedReceipt.totalAmount || 0).toLocaleString()}đ</div>
                     </div>
                 </div>
             )}
 
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[100] flex justify-center items-center p-2 md:p-4">
-                    <div className="bg-white rounded-2xl md:rounded-3xl w-full max-w-[98%] md:max-w-[95%] overflow-hidden flex flex-col max-h-[98vh] md:max-h-[95vh] shadow-2xl">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl md:rounded-3xl w-full max-w-[98%] md:max-w-[95%] overflow-hidden flex flex-col max-h-[98vh] md:max-h-[95vh] shadow-2xl transition-colors duration-300">
                         <div className="bg-[#1192a8] p-4 md:p-5 text-white flex justify-between items-center shrink-0">
                             <h2 className="font-bold uppercase tracking-widest text-xs md:text-sm text-left">{t('pages.ImportReceipts.createModalTitle')}</h2>
                             <button onClick={() => setShowCreateModal(false)} className="text-2xl md:text-3xl leading-none">&times;</button>
                         </div>
-                        <div className="p-4 md:p-8 overflow-y-auto flex-1 space-y-6 md:space-y-8 bg-gray-50/50">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 bg-white p-4 md:p-6 rounded-xl md:rounded-2xl border border-gray-100 shadow-sm text-left">
-                                <div><label className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase block mb-1 text-left">{t('pages.ImportReceipts.createLabelSupplier')}</label><select value={supplierId} onChange={e => setSupplierId(e.target.value)} className="wms-select w-full !py-2 !text-xs md:!text-sm"><option value="">{t('pages.ImportReceipts.selectPlaceholder')}</option>{suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
-                                <div><label className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase block mb-1 text-left">{t('pages.ImportReceipts.createLabelCreatedBy')}</label><select value={createdById} onChange={e => setCreatedById(e.target.value)} className="wms-select w-full !py-2 !text-xs md:!text-sm"><option value="">{t('pages.ImportReceipts.selectPlaceholder')}</option>{filteredStaffs.map(s => <option key={s.id} value={s.id}>{s.fullName}</option>)}</select></div>
-                                <div><label className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase block mb-1 text-left">{t('pages.ImportReceipts.createLabelReference')}</label><input type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)} className="wms-select w-full !py-2 border-2 !text-xs md:!text-sm" /></div>
-                                <div><label className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase block mb-1 text-left">{t('pages.ImportReceipts.createLabelStatus')}</label><select value={receiptStatus} onChange={e => setReceiptStatus(e.target.value)} className="wms-select w-full !py-2 !text-xs md:!text-sm">{inboundStatusOptions.map(o => <option key={o.value} value={o.value}>{t('pages.ImportReceipts.status_' + o.value.toLowerCase())}</option>)}</select></div>
+                        <div className="p-4 md:p-8 overflow-y-auto flex-1 space-y-6 md:space-y-8 bg-gray-50/50 dark:bg-gray-900/30">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl md:rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm text-left">
+                                <div><label className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase block mb-1 text-left">{t('pages.ImportReceipts.createLabelSupplier')}</label><select value={supplierId} onChange={e => setSupplierId(e.target.value)} className="wms-select w-full !py-2 !text-xs md:!text-sm"><option value="">{t('pages.ImportReceipts.selectPlaceholder')}</option>{suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+                                <div><label className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase block mb-1 text-left">{t('pages.ImportReceipts.createLabelCreatedBy')}</label><select value={createdById} onChange={e => setCreatedById(e.target.value)} className="wms-select w-full !py-2 !text-xs md:!text-sm"><option value="">{t('pages.ImportReceipts.selectPlaceholder')}</option>{filteredStaffs.map(s => <option key={s.id} value={s.id}>{s.fullName}</option>)}</select></div>
+                                <div><label className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase block mb-1 text-left">{t('pages.ImportReceipts.createLabelReference')}</label><input type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)} className="wms-select w-full !py-2 border-2 !text-xs md:!text-sm" /></div>
+                                <div><label className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase block mb-1 text-left">{t('pages.ImportReceipts.createLabelStatus')}</label><select value={receiptStatus} onChange={e => setReceiptStatus(e.target.value)} className="wms-select w-full !py-2 !text-xs md:!text-sm">{inboundStatusOptions.map(o => <option key={o.value} value={o.value}>{t('pages.ImportReceipts.status_' + o.value.toLowerCase())}</option>)}</select></div>
                             </div>
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center"><h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest text-left">{t('pages.ImportReceipts.createSectionItems')}</h3><button onClick={() => setNewItems([...newItems, createEmptyLineItem()])} className="text-[9px] md:text-[10px] font-black text-[#1192a8] hover:underline uppercase">{t('pages.ImportReceipts.createBtnAddRow')}</button></div>
-                                <div className="bg-white rounded-xl md:rounded-2xl border border-gray-100 overflow-x-auto no-scrollbar"><table className="w-full text-[10px] md:text-xs min-w-[1000px] text-left"><thead><tr className="bg-gray-50 text-gray-400 font-bold uppercase"><th className="p-3">{t('pages.ImportReceipts.detailColProduct')}</th><th className="p-3 w-40 md:w-48">{t('pages.ImportReceipts.createTableColBatch')}</th><th className="p-3">{t('pages.ImportReceipts.createTableColExpiry')}</th><th className="p-3">{t('pages.ImportReceipts.createTableColLocation')}</th><th className="p-3 text-center w-20 md:w-24">{t('pages.ImportReceipts.createTableColQty')}</th><th className="p-3 text-right w-28 md:w-32">{t('pages.ImportReceipts.createTableColPrice')}</th><th className="p-3"></th></tr></thead>
+                                <div className="bg-white dark:bg-gray-800 rounded-xl md:rounded-2xl border border-gray-100 dark:border-gray-700 overflow-x-auto no-scrollbar"><table className="w-full text-[10px] md:text-xs min-w-[1000px] text-left"><thead><tr className="bg-gray-50 text-gray-400 font-bold uppercase"><th className="p-3">{t('pages.ImportReceipts.detailColProduct')}</th><th className="p-3 w-40 md:w-48">{t('pages.ImportReceipts.createTableColBatch')}</th><th className="p-3">{t('pages.ImportReceipts.createTableColExpiry')}</th><th className="p-3">{t('pages.ImportReceipts.createTableColLocation')}</th><th className="p-3 text-center w-20 md:w-24">{t('pages.ImportReceipts.createTableColQty')}</th><th className="p-3 text-right w-28 md:w-32">{t('pages.ImportReceipts.createTableColPrice')}</th><th className="p-3"></th></tr></thead>
                                     <tbody>{newItems.map((item, i) => (
-                                        <tr key={i} className="border-t border-gray-50">
+                                        <tr key={i} className="group">
                                             <td className="p-2"><select value={item.productId} onChange={e => { const next=[...newItems]; next[i].productId=e.target.value; next[i].batchCode = ""; next[i].expiryDate = ""; next[i].isNewBatch = false; setNewItems(next); fetchBatches(e.target.value); }} className="w-full border-none outline-none font-bold text-gray-800 bg-transparent text-left"><option value="">{t('pages.ImportReceipts.selectProductPlaceholder')}</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></td>
                                             <td className="p-2"><div className="flex items-center gap-1">{item.isNewBatch ? <input type="text" value={item.batchCode} onChange={e => { const next=[...newItems]; next[i].batchCode=e.target.value; setNewItems(next); }} placeholder={t('pages.ImportReceipts.inputNewBatchPlaceholder')} className="w-full border border-teal-200 rounded px-2 py-1 bg-teal-50/30 text-teal-800 font-bold" /> : <select value={item.batchCode} onChange={e => { const next=[...newItems]; next[i].batchCode=e.target.value; const b = productBatches[item.productId]?.find(it => it.batchCode === e.target.value); if(b) next[i].expiryDate = b.expiryDate ? b.expiryDate.split('T')[0] : ""; setNewItems(next); }} className="w-full border border-gray-100 rounded px-2 py-1 bg-gray-50/50"><option value="">{t('pages.ImportReceipts.selectBatchPlaceholder')}</option>{productBatches[item.productId]?.map(b => <option key={b.id} value={b.batchCode}>{b.batchCode}</option>)}</select>}<button onClick={() => { const next=[...newItems]; next[i].isNewBatch = !next[i].isNewBatch; next[i].batchCode=""; next[i].expiryDate=""; setNewItems(next); }} className={`w-7 h-7 md:w-8 md:h-8 shrink-0 rounded-lg flex items-center justify-center font-black transition-all ${item.isNewBatch ? 'bg-orange-100 text-orange-600' : 'bg-[#1192a8]/10 text-[#1192a8]'}`}>{item.isNewBatch ? "×" : "+"}</button></div></td>
                                             <td className="p-2"><input type="date" value={item.expiryDate} onChange={e => { const next=[...newItems]; next[i].expiryDate=e.target.value; setNewItems(next); }} readOnly={!item.isNewBatch && item.batchCode !== ""} className={`w-full border border-gray-100 rounded px-2 py-1 ${!item.isNewBatch && item.batchCode !== "" ? 'bg-gray-100 opacity-60' : 'bg-gray-50/50'}`} /></td>
@@ -470,7 +471,7 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
                                 </table></div>
                             </div>
                         </div>
-                        <div className="p-4 md:p-6 border-t bg-white flex flex-col sm:flex-row justify-between items-stretch sm:items-center shrink-0 gap-4">
+                        <div className="p-4 md:p-6 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col sm:flex-row justify-between items-stretch sm:items-center shrink-0 gap-4 transition-colors duration-300">
                             <div className="text-left"><p className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">{t('pages.ImportReceipts.createLabelTotal')}</p><p className="text-xl md:text-2xl font-black text-[#1192a8]">{newItems.reduce((s, i) => s + (i.qtyReceived * i.price), 0).toLocaleString()}đ</p></div>
                             <div className="flex gap-4"><button onClick={() => setShowCreateModal(false)} className="flex-1 sm:flex-none text-gray-400 font-bold uppercase text-[10px] md:text-xs hover:text-gray-600">{t('pages.ImportReceipts.createBtnCancel')}</button><button onClick={handleSaveReceipt} className="flex-1 sm:flex-none px-6 md:px-10 py-2.5 md:py-3 bg-[#1192a8] text-white rounded-xl md:rounded-2xl font-black uppercase text-[10px] md:text-xs shadow-xl shadow-[#1192a8]/20 transition-all hover:scale-105 active:scale-95">{t('pages.ImportReceipts.createBtnSubmit')}</button></div>
                         </div>
@@ -479,8 +480,8 @@ export default function ImportReceiptsPage({ workflow, clearWorkflow }) {
             )}
 
             {isQCModalOpen && (
-                <QCInspectionModal 
-                    isOpen={isQCModalOpen} 
+                <QCInspectionModal
+                    isOpen={isQCModalOpen}
                     onClose={() => { setIsQCModalOpen(false); setPendingQCReceipt(null); }}
                     items={qcItems}
                     products={products}

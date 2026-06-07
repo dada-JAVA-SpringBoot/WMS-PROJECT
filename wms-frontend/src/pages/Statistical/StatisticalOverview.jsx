@@ -27,12 +27,12 @@ export default function StatisticalOverview() {
         getDashboardData();
     }, []);
 
-    if (loading) return <div className="p-5">{t('pages.StatisticalOverview.loading')}</div>;
-    if (error) return <div className="p-5 text-red-500">{error}</div>;
+    if (loading) return <div className="p-5 text-gray-600 dark:text-gray-400 transition-colors duration-300">{t('pages.StatisticalOverview.loading')}</div>;
+    if (error) return <div className="p-5 text-red-500 dark:text-red-400 transition-colors duration-300">{error}</div>;
 
     // Dữ liệu chart từ API
-    const chartLabels = data?.dailyFlow?.map(f => f.label) || [];
-    const chartInbound = data?.dailyFlow?.map(f => f.inbound) || [];
+    const chartLabels   = data?.dailyFlow?.map(f => f.label)    || [];
+    const chartInbound  = data?.dailyFlow?.map(f => f.inbound)  || [];
     const chartOutbound = data?.dailyFlow?.map(f => f.outbound) || [];
 
     // Cột cho bảng Top sản phẩm tồn nhiều
@@ -81,8 +81,9 @@ export default function StatisticalOverview() {
     }));
 
     return (
-        <div className="space-y-5 p-5">
-            {/* KPI Cards Row 1: Inventory Health & Operations */}
+        <div className="space-y-5 p-5 bg-[#f8f9fa] dark:bg-gray-900 min-h-full transition-colors duration-300">
+
+            {/* KPI Cards */}
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 <StatMetricCard 
                     icon="📦" 
@@ -123,17 +124,17 @@ export default function StatisticalOverview() {
             </div>
 
             {/* Smart Suggestion Alert Bar */}
-            <div className="bg-cyan-50/50 border border-cyan-100 rounded-2xl p-4 flex items-center gap-3 text-cyan-800 text-sm font-semibold shadow-sm">
+            <div className="bg-cyan-50/50 dark:bg-cyan-900/20 border border-cyan-100 dark:border-cyan-800 rounded-2xl p-4 flex items-center gap-3 text-cyan-800 dark:text-cyan-300 text-sm font-semibold shadow-sm transition-colors duration-300">
                 <span className="text-xl">💡</span>
                 <p>
-                    {t('pages.StatisticalOverview.lblOptimizationSuggestion')} {t('pages.StatisticalOverview.lblOccupancyCurrentlyAt')} <span className="font-extrabold text-cyan-600">{data?.warehouseOccupancyRate?.toFixed(1)}%</span>. 
+                    {t('pages.StatisticalOverview.lblOptimizationSuggestion')} {t('pages.StatisticalOverview.lblOccupancyCurrentlyAt')} <span className="font-extrabold text-cyan-600 dark:text-cyan-400">{data?.warehouseOccupancyRate?.toFixed(1)}%</span>. 
                     {data?.warehouseOccupancyRate > 75 
                         ? t('pages.StatisticalOverview.txtOccupancyHigh') 
                         : t('pages.StatisticalOverview.txtOccupancyLow')}
                 </p>
             </div>
 
-            {/* Chart: Dòng chảy hàng hóa 7 ngày (dữ liệu thực từ API) */}
+            {/* Chart */}
             {chartLabels.length > 0 && (
                 <LineAreaChart
                     title={t('pages.StatisticalOverview.lblFlowChartTitle')}
@@ -148,52 +149,40 @@ export default function StatisticalOverview() {
             {/* Tables Row: Top tồn kho & Sắp hết hạn */}
             <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
                 <PanelCard className="overflow-hidden">
-                    <div className="border-b border-slate-200 px-6 py-4">
-                        <h3 className="text-[17px] font-semibold text-slate-900">
+                    <div className="border-b border-slate-200 dark:border-gray-700 px-6 py-4">
+                        <h3 className="text-[17px] font-semibold text-slate-900 dark:text-gray-100">
                             {t('pages.StatisticalOverview.lblTopStockTitle')}
                         </h3>
                     </div>
-                    <StatisticsTable
-                        columns={topStockColumns}
-                        rows={topStockRows}
-                        scrollHeight="300px"
-                    />
+                    <StatisticsTable columns={topStockColumns} rows={topStockRows} scrollHeight="300px" />
                     {topStockRows.length === 0 && (
-                        <div className="p-6 text-center text-gray-400">{t('pages.StatisticalOverview.noStockData')}</div>
+                        <div className="p-6 text-center text-gray-400 dark:text-gray-600">{t('pages.StatisticalOverview.noStockData')}</div>
                     )}
                 </PanelCard>
 
                 <PanelCard className="overflow-hidden">
-                    <div className="border-b border-slate-200 px-6 py-4">
-                        <h3 className="text-[17px] font-semibold text-slate-900">
+                    <div className="border-b border-slate-200 dark:border-gray-700 px-6 py-4">
+                        <h3 className="text-[17px] font-semibold text-slate-900 dark:text-gray-100">
                             {t('pages.StatisticalOverview.lblNearExpiryTitle')}
                         </h3>
                     </div>
-                    <StatisticsTable
-                        columns={expiryColumns}
-                        rows={expiryRows}
-                        scrollHeight="300px"
-                    />
+                    <StatisticsTable columns={expiryColumns} rows={expiryRows} scrollHeight="300px" />
                     {expiryRows.length === 0 && (
-                        <div className="p-6 text-center text-gray-400">{t('pages.StatisticalOverview.noNearExpiryData')}</div>
+                        <div className="p-6 text-center text-gray-400 dark:text-gray-600">{t('pages.StatisticalOverview.noNearExpiryData')}</div>
                     )}
                 </PanelCard>
             </div>
 
             {/* Table: Phân bổ tồn kho theo danh mục */}
             <PanelCard className="overflow-hidden">
-                <div className="border-b border-slate-200 px-6 py-4">
-                    <h3 className="text-[17px] font-semibold text-slate-900">
+                <div className="border-b border-slate-200 dark:border-gray-700 px-6 py-4">
+                    <h3 className="text-[17px] font-semibold text-slate-900 dark:text-gray-100">
                         {t('pages.StatisticalOverview.lblStockByCategoryTitle')}
                     </h3>
                 </div>
-                <StatisticsTable
-                    columns={categoryColumns}
-                    rows={categoryRows}
-                    scrollHeight="300px"
-                />
+                <StatisticsTable columns={categoryColumns} rows={categoryRows} scrollHeight="300px" />
                 {categoryRows.length === 0 && (
-                    <div className="p-6 text-center text-gray-400">{t('pages.StatisticalOverview.noData')}</div>
+                    <div className="p-6 text-center text-gray-400 dark:text-gray-600">{t('pages.StatisticalOverview.noData')}</div>
                 )}
             </PanelCard>
         </div>

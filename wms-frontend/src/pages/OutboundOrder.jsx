@@ -19,18 +19,19 @@ import { useExcelExport } from '../hooks/useExcelExport';
 import { useAuth } from '../context/AuthContext';
 
 const createEmptyDetail = () => ({
-    id: Math.random(), 
-    productId: '', 
-    productName: '', 
-    batchId: '', 
-    batchCode: '', 
-    locationId: '', 
+    id: Math.random(),
+    productId: '',
+    productName: '',
+    batchId: '',
+    batchCode: '',
+    locationId: '',
     binCode: '',
-    unit: '-', 
-    quantity: 1, 
-    price: 0, 
+    unit: '-',
+    quantity: 1,
+    price: 0,
     total: 0
 });
+
 
 export default function ExportReceipts({ workflow, clearWorkflow }) {
     const { t } = useTranslation();
@@ -38,19 +39,18 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
     const reactLocation = useLocation();
 
     const outboundStatusOptions = useMemo(() => [
-        { value: 'DRAFT', label: t('pages.OutboundOrder.status.DRAFT'), color: 'bg-gray-100 text-gray-500 border-gray-200' },
-        { value: 'ALLOCATED', label: t('pages.OutboundOrder.status.ALLOCATED'), color: 'bg-blue-50 text-blue-700 border-blue-100' },
-        { value: 'PENDING', label: t('pages.OutboundOrder.status.PENDING'), color: 'bg-rose-50 text-rose-600 border-rose-100' },
-        { value: 'COMPLETED', label: t('pages.OutboundOrder.status.COMPLETED'), color: 'bg-green-50 text-green-700 border-green-100' },
-        { value: 'CANCELED', label: t('pages.OutboundOrder.status.CANCELED'), color: 'bg-red-50 text-red-600 border-red-100' }
+        { value: 'DRAFT', label: t('pages.OutboundOrder.status.DRAFT'), color: 'bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600' },
+        { value: 'ALLOCATED', label: t('pages.OutboundOrder.status.ALLOCATED'), color: 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800' },
+        { value: 'PENDING', label: t('pages.OutboundOrder.status.PENDING'), color: 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800' },
+        { value: 'COMPLETED', label: t('pages.OutboundOrder.status.COMPLETED'), color: 'bg-green-50 text-green-700 border-green-100 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' },
+        { value: 'CANCELED', label: t('pages.OutboundOrder.status.CANCELED'), color: 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800' }
     ], [t]);
-    
     const [exportData, setExportData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [contextMenu, setContextMenu] = useState(null);
 
     const [isScannerOpen, setIsScannerOpen] = useState(false);
-    const [activeScanTarget, setActiveScanTarget] = useState('SEARCH'); 
+    const [activeScanTarget, setActiveScanTarget] = useState('SEARCH');
     const [activeItemIndex, setActiveItemIndex] = useState(null);
 
     const [dialog, setDialog] = useState({ isOpen: false, title: '', message: '', variant: 'info' });
@@ -162,27 +162,22 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                 const seed = workflow.products.map(p => ({ id: Math.random(), productId: p.id, productName: p.name, unit: p.baseUnit || '-', quantity: 1, price: p.price || 0, total: p.price || 0, batchId: '', batchCode: '', locationId: '', binCode: '' }));
                 setDetails(seed);
             } else { setDetails([createEmptyDetail()]); }
-            setIsCreateOpen(true); 
+            setIsCreateOpen(true);
             setTimeout(() => clearWorkflow(), 0);
         }
-    }, [workflow, clearWorkflow, products, canCreate]); 
+    }, [workflow, clearWorkflow, products, canCreate]);
 
     const handleUpdateStatus = async (id, nextStatus) => {
         const order = exportData.find(o => o.id === id);
-        
-        // Nếu chọn chuyển sang "Đã xuất kho" (COMPLETED)
         if (nextStatus === 'COMPLETED') {
-            // Kiểm tra quyền QC/ADMIN
             const canApprove = roles.some(r => ['ADMIN', 'MANAGER', 'QUALITY_CONTROL'].includes(r));
             if (!canApprove) {
                 showMsg(t('pages.OutboundOrder.dialog.denied'), t('pages.OutboundOrder.dialog.noPermissionApprove'), "info");
                 return;
             }
-
             try {
                 const res = await axiosClient.get(`/api/outbound-orders/${id}/details`);
                 setPendingQCOrder(order);
-                // Map chi tiết sang định dạng QC (giả lập quantityReceived là số lượng nhặt được)
                 setQCItems(res.data.map(it => ({ ...it, quantityReceived: it.quantity })));
                 setIsQCModalOpen(true);
                 return;
@@ -191,14 +186,12 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                 return;
             }
         }
-
         try { await axiosClient.put(`/api/outbound-orders/${id}/status`, { status: nextStatus }); fetchData(); }
         catch (error) { showMsg(t('pages.OutboundOrder.dialog.error'), t('pages.OutboundOrder.dialog.updateError', { message: error.response?.data?.message || error.message }), "info"); }
     };
 
     const handleConfirmQCResult = async (inspectionData) => {
         try {
-            // Gọi endpoint QC backend đã viết trước đó
             await axiosClient.post(`/api/outbound-orders/${pendingQCOrder.id}/qc`);
             setIsQCModalOpen(false); setPendingQCOrder(null); fetchData();
             showMsg(t('pages.OutboundOrder.dialog.success'), t('pages.OutboundOrder.dialog.qcSuccess'), "info");
@@ -282,11 +275,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
 
     const handleContextMenu = (e, item) => {
         e.preventDefault();
-        setContextMenu({
-            x: e.clientX,
-            y: e.clientY,
-            item: item
-        });
+        setContextMenu({ x: e.clientX, y: e.clientY, item });
     };
 
     const contextActions = useMemo(() => {
@@ -317,7 +306,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
     }, [contextMenu, products, customers, t]);
 
     return (
-        <div className="p-6 bg-[#f8f9fa] min-h-full flex flex-col text-left font-sans" onContextMenu={e => e.preventDefault()}>
+        <div className="p-6 bg-[#f8f9fa] dark:bg-gray-900 min-h-full flex flex-col text-left font-sans transition-colors duration-300" onContextMenu={e => e.preventDefault()}>
             <SystemDialog isOpen={dialog.isOpen} title={dialog.title} message={dialog.message} variant={dialog.variant} onClose={() => setDialog({ ...dialog, isOpen: false })} />
             <ScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanSuccess={handleScanSuccess} />
             <ExportExcelModal 
@@ -336,26 +325,26 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                 actions={contextActions}
                 onClose={() => setContextMenu(null)}
             />
-            <div className="sticky top-0 z-20 flex items-center justify-between bg-white/95 backdrop-blur-sm p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 mb-4 md:mb-6">
+            <div className="sticky top-0 z-20 flex items-center justify-between bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 mb-4 md:mb-6 transition-colors duration-300">
                 <div className="flex gap-4 overflow-x-auto no-scrollbar pb-1 w-full lg:w-auto">
                     {toolbarActions.map((a, i) => (<ActionButton key={i} {...a} />))}
                 </div>
-                <h1 className="text-xs font-black text-gray-400 uppercase tracking-widest hidden lg:block">{t('pages.OutboundOrder.title')}</h1>
+                <h1 className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest hidden lg:block">{t('pages.OutboundOrder.title')}</h1>
             </div>
 
-            <div className="bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl border border-gray-100 mb-4 md:mb-6 flex flex-col gap-4 shadow-sm">
-                <input type="text" value={searchKeyword} onChange={e => setSearchKeyword(e.target.value)} placeholder={t('pages.OutboundOrder.searchPlaceholder')} className="w-full border-2 border-gray-100 rounded-xl px-4 md:px-5 py-2.5 md:py-3 text-sm outline-none focus:border-[#1192a8] transition-all" />
-                <div className="flex flex-wrap gap-x-6 gap-y-3 border-t pt-4">
+            <div className="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-2xl md:rounded-3xl border border-gray-100 dark:border-gray-700 mb-4 md:mb-6 flex flex-col gap-4 shadow-sm transition-colors duration-300">
+                <input type="text" value={searchKeyword} onChange={e => setSearchKeyword(e.target.value)} placeholder={t('pages.OutboundOrder.searchPlaceholder')} className="w-full border-2 border-gray-100 dark:border-gray-600 rounded-xl px-4 md:px-5 py-2.5 md:py-3 text-sm outline-none focus:border-[#1192a8] bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all" />
+                <div className="flex flex-wrap gap-x-6 gap-y-3 border-t border-gray-100 dark:border-gray-700 pt-4">
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('pages.OutboundOrder.filter.customer')}</span>
-                        <select value={filterCustomer} onChange={e => setFilterCustomer(e.target.value)} className="wms-select !py-1 md:!py-1.5 !text-[10px] md:!text-sm min-w-[120px]">
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{t('pages.OutboundOrder.filter.customer')}</span>
+                        <select value={filterCustomer} onChange={e => setFilterCustomer(e.target.value)} className="wms-select !py-1 md:!py-1.5 !text-[10px] md:!text-sm min-w-[120px] dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
                             <option value="ALL">{t('pages.OutboundOrder.filter.all')}</option>
                             {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('pages.OutboundOrder.filter.creator')}</span>
-                        <select value={filterStaff} onChange={e => setFilterStaff(e.target.value)} className="wms-select !py-1 md:!py-1.5 !text-[10px] md:!text-sm min-w-[120px]">
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{t('pages.OutboundOrder.filter.creator')}</span>
+                        <select value={filterStaff} onChange={e => setFilterStaff(e.target.value)} className="wms-select !py-1 md:!py-1.5 !text-[10px] md:!text-sm min-w-[120px] dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
                             <option value="ALL">{t('pages.OutboundOrder.filter.all')}</option>
                             {staffs.map(s => <option key={s.id} value={s.id}>{s.fullName}</option>)}
                         </select>
@@ -363,10 +352,11 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                 </div>
             </div>
 
-            <div className="flex-1 bg-white rounded-2xl md:rounded-3xl border border-gray-100 overflow-hidden shadow-sm flex flex-col">
+            {/* Table */}
+            <div className="flex-1 bg-white dark:bg-gray-800 rounded-2xl md:rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm flex flex-col transition-colors duration-300">
                 <div className="overflow-x-auto flex-1 no-scrollbar lg:scrollbar-thin">
                     <table className="w-full text-left min-w-[800px] md:min-w-[1000px]">
-                        <thead className="bg-gray-50 border-b text-[9px] md:text-[10px] font-black text-gray-400 uppercase sticky top-0 z-10">
+                        <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase sticky top-0 z-10">
                             <tr>
                                 <th className="p-4 md:p-5 w-16">#</th>
                                 <th className="p-4 md:p-5 cursor-pointer hover:text-[#1192a8]" onClick={() => requestSort('issueCode')}>{t('pages.OutboundOrder.table.voucherCode')} <SortIcon col="issueCode" /></th>
@@ -378,18 +368,18 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                         </thead>
                         <tbody className="text-sm">
                             {isLoading ? (
-                                <tr><td colSpan="6" className="py-20 text-center animate-pulse">{t('pages.OutboundOrder.table.loading')}</td></tr>
+                                <tr><td colSpan="6" className="py-20 text-center animate-pulse text-gray-400 dark:text-gray-500">{t('pages.OutboundOrder.table.loading')}</td></tr>
                             ) : filteredData.map((item, idx) => (
                                 <tr key={item.id} 
                                     onClick={(e) => handleRowClick(item, idx, e)} 
                                     onDoubleClick={() => { setViewingVoucher(item); setIsViewDetailOpen(true); }} 
                                     onContextMenu={(e) => handleContextMenu(e, item)}
-                                    className={`border-b border-gray-50 cursor-pointer ${selectedIds.includes(item.id) ? 'bg-[#1192a8]/5' : 'hover:bg-gray-50'}`}>
-                                    <td className="p-4 md:p-5 text-gray-300 font-bold">{idx + 1}</td>
+                                    className={`border-b border-gray-50 dark:border-gray-700/50 cursor-pointer transition-colors ${selectedIds.includes(item.id) ? 'bg-[#1192a8]/5 dark:bg-[#1192a8]/10' : 'hover:bg-gray-50 dark:hover:bg-gray-700/30'}`}>
+                                    <td className="p-4 md:p-5 text-gray-300 dark:text-gray-600 font-bold">{idx + 1}</td>
                                     <td className="p-4 md:p-5 font-black text-[#1192a8] uppercase truncate">{item.issueCode}</td>
-                                    <td className="p-4 md:p-5 text-gray-500 font-bold">{item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : '---'}</td>
-                                    <td className="p-4 md:p-5 font-bold text-gray-700">{getCustName(item.customerId)}</td>
-                                    <td className="p-4 md:p-5 text-right font-black text-teal-700">{Number(item.totalAmount || 0).toLocaleString()}đ</td>
+                                    <td className="p-4 md:p-5 text-gray-500 dark:text-gray-400 font-bold">{item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : '---'}</td>
+                                    <td className="p-4 md:p-5 font-bold text-gray-700 dark:text-gray-200">{getCustName(item.customerId)}</td>
+                                    <td className="p-4 md:p-5 text-right font-black text-teal-700 dark:text-teal-400">{Number(item.totalAmount || 0).toLocaleString()}đ</td>
                                     <td className="p-4 md:p-5 text-center" onClick={e => e.stopPropagation()}>
                                         <select value={item.status} onChange={e => handleUpdateStatus(item.id, e.target.value)} className={`!py-1 !px-2 !text-[9px] md:!text-[10px] uppercase font-black rounded-lg border-2 ${outboundStatusOptions.find(o => o.value === item.status)?.color || ''}`}>
                                             {outboundStatusOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -402,9 +392,10 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                 </div>
             </div>
 
+            {/* Modal: View Detail */}
             {isViewDetailOpen && viewingVoucher && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[110] flex justify-center items-center p-2 md:p-4">
-                    <div className="bg-white rounded-2xl md:rounded-3xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh] shadow-2xl">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl md:rounded-3xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh] shadow-2xl transition-colors duration-300">
                         <div className="bg-[#1192a8] p-4 md:p-5 text-white flex justify-between items-center shrink-0">
                             <div>
                                 <h2 className="font-bold uppercase tracking-widest text-xs md:text-sm">{t('pages.OutboundOrder.detailModal.receipt', { code: viewingVoucher.issueCode })}</h2>
@@ -412,14 +403,14 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                             </div>
                             <button onClick={() => setIsViewDetailOpen(false)} className="text-2xl md:text-3xl leading-none">&times;</button>
                         </div>
-                        <div className="p-4 md:p-8 overflow-y-auto flex-1 space-y-6 md:space-y-8 bg-gray-50/30">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-10 border-b pb-6 md:pb-8">
-                                <div><p className="text-[9px] md:text-[10px] text-gray-400 font-black uppercase">{t('pages.OutboundOrder.detailModal.customer')}</p><p className="text-base md:text-lg font-black text-gray-800">{getCustName(viewingVoucher.customerId)}</p></div>
-                                <div><p className="text-[9px] md:text-[10px] text-gray-400 font-black uppercase">{t('pages.OutboundOrder.detailModal.createdTime')}</p><p className="text-base md:text-lg font-black text-gray-800">{viewingVoucher.createdAt ? new Date(viewingVoucher.createdAt).toLocaleString('vi-VN') : '---'}</p></div>
+                        <div className="p-4 md:p-8 overflow-y-auto flex-1 space-y-6 md:space-y-8 bg-gray-50/30 dark:bg-gray-900/30">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-10 border-b border-gray-100 dark:border-gray-700 pb-6 md:pb-8">
+                                <div><p className="text-[9px] md:text-[10px] text-gray-400 dark:text-gray-500 font-black uppercase">{t('pages.OutboundOrder.detailModal.customer')}</p><p className="text-base md:text-lg font-black text-gray-800">{getCustName(viewingVoucher.customerId)}</p></div>
+                                <div><p className="text-[9px] md:text-[10px] text-gray-400 dark:text-gray-500 font-black uppercase">{t('pages.OutboundOrder.detailModal.createdTime')}</p><p className="text-base md:text-lg font-black text-gray-800">{viewingVoucher.createdAt ? new Date(viewingVoucher.createdAt).toLocaleString('vi-VN') : '---'}</p></div>
                             </div>
                             <div className="overflow-x-auto no-scrollbar">
                                 <table className="w-full text-xs md:text-sm text-left min-w-[500px]">
-                                    <thead className="bg-gray-50 text-gray-400 text-[9px] md:text-[10px] uppercase font-bold">
+                                    <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 text-[9px] md:text-[10px] uppercase font-bold">
                                         <tr>
                                             <th className="p-3">{t('pages.OutboundOrder.detailModal.product')}</th>
                                             <th className="p-3 text-center">{t('pages.OutboundOrder.detailModal.quantity')}</th>
@@ -427,14 +418,14 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                                             <th className="p-3 text-right">{t('pages.OutboundOrder.detailModal.total')}</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-100">
+                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                                         {viewingVoucher.items?.map((row, i) => { 
                                             const p = products.find(prod => prod.id === row.productId); 
                                             return (
                                                 <tr key={i}>
-                                                    <td className="p-3 font-bold text-left"><p>{p?.name || t('pages.OutboundOrder.productPlaceholder', { id: row.productId })}</p></td>
-                                                    <td className="p-3 text-center font-black text-gray-700">{row.quantity?.toLocaleString()}</td>
-                                                    <td className="p-3 text-right text-gray-400">{Number(row.unitPrice || 0).toLocaleString()}đ</td>
+                                                    <td className="p-3 font-bold text-left text-gray-800 dark:text-gray-200"><p>{p?.name || t('pages.OutboundOrder.productPlaceholder', { id: row.productId })}</p></td>
+                                                    <td className="p-3 text-center font-black text-gray-700 dark:text-gray-300">{row.quantity?.toLocaleString()}</td>
+                                                    <td className="p-3 text-right text-gray-400 dark:text-gray-500">{Number(row.unitPrice || 0).toLocaleString()}đ</td>
                                                     <td className="p-3 text-right font-black text-[#1192a8]">{(row.quantity * (row.unitPrice || 0)).toLocaleString()}đ</td>
                                                 </tr>
                                             ); 
@@ -443,7 +434,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                                 </table>
                             </div>
                         </div>
-                        <div className="p-4 md:p-5 border-t bg-white flex justify-between items-center shrink-0">
+                        <div className="p-4 md:p-5 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-between items-center shrink-0 transition-colors duration-300">
                             <div className="flex gap-2">
                                 {['PENDING', 'ALLOCATED', 'DRAFT'].includes(viewingVoucher.status) && (
                                     <button 
@@ -462,50 +453,106 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                 </div>
             )}
 
+            {/* Modal: Create */}
             {isCreateOpen && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[100] flex justify-center items-center p-2 md:p-4">
-                    <div className="bg-white rounded-2xl md:rounded-3xl w-full max-w-[98%] md:max-w-[95%] overflow-hidden flex flex-col max-h-[98vh] md:max-h-[95vh] shadow-2xl">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl md:rounded-3xl w-full max-w-[98%] md:max-w-[95%] overflow-hidden flex flex-col max-h-[98vh] md:max-h-[95vh] shadow-2xl transition-colors duration-300">
                         <div className="bg-[#1192a8] p-4 md:p-5 text-white flex justify-between items-center shrink-0">
                             <h2 className="font-bold uppercase tracking-widest text-xs md:text-sm text-left">{t('pages.OutboundOrder.createModal.title')}</h2>
                             <button onClick={() => setIsCreateOpen(false)} className="text-2xl md:text-3xl leading-none">&times;</button>
                         </div>
-                        <div className="p-4 md:p-8 overflow-y-auto flex-1 space-y-6 md:space-y-8 bg-gray-50/50">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 bg-white p-4 md:p-6 rounded-xl md:rounded-2xl border border-gray-100 shadow-sm text-left">
-                                <div><label className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase block mb-1">{t('pages.OutboundOrder.createModal.customer')}</label><select value={formData.customerId} onChange={e => setFormData({...formData, customerId: e.target.value})} className="wms-select w-full !py-2 !text-xs md:!text-sm"><option value="">{t('pages.OutboundOrder.createModal.selectPlaceholder')}</option>{customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
-                                <div><label className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase block mb-1">{t('pages.OutboundOrder.createModal.creator')}</label><select value={formData.staffId} onChange={e => setFormData({...formData, staffId: e.target.value})} className="wms-select !py-2 !w-full !text-xs md:!text-sm"><option value="">{t('pages.OutboundOrder.createModal.selectPlaceholder')}</option>{filteredStaffs.map(s => <option key={s.id} value={s.id}>{s.fullName}</option>)}</select></div>
-                                <div><label className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase block mb-1">{t('pages.OutboundOrder.createModal.voucherCode')}</label><input type="text" value={formData.voucherCode} readOnly className="wms-select w-full !py-2 bg-gray-100 opacity-70 !text-xs md:!text-sm" /></div>
-                                <div><label className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase block mb-1">{t('pages.OutboundOrder.createModal.createdDate')}</label><input type="date" value={formData.voucherDate} onChange={e => setFormData({...formData, voucherDate: e.target.value})} className="wms-select w-full !py-2 !text-xs md:!text-sm" /></div>
+                        <div className="p-4 md:p-8 overflow-y-auto flex-1 space-y-6 md:space-y-8 bg-gray-50/50 dark:bg-gray-900/30">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl md:rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm text-left">
+                                <div>
+                                    <label className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase block mb-1">{t('pages.OutboundOrder.createModal.customer')} *</label>
+                                    <select value={formData.customerId} onChange={e => setFormData({...formData, customerId: e.target.value})} className="wms-select w-full !py-2 !text-xs md:!text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
+                                        <option value="">{t('pages.OutboundOrder.createModal.selectPlaceholder')}</option>
+                                        {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase block mb-1">{t('pages.OutboundOrder.createModal.creator')}</label>
+                                    <select value={formData.staffId} onChange={e => setFormData({...formData, staffId: e.target.value})} className="wms-select !py-2 !w-full !text-xs md:!text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
+                                        <option value="">{t('pages.OutboundOrder.createModal.selectPlaceholder')}</option>
+                                        {filteredStaffs.map(s => <option key={s.id} value={s.id}>{s.fullName}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase block mb-1">{t('pages.OutboundOrder.createModal.voucherCode')}</label>
+                                    <input type="text" value={formData.voucherCode} readOnly className="wms-select w-full !py-2 bg-gray-100 dark:bg-gray-700/50 opacity-70 !text-xs md:!text-sm dark:text-gray-400" />
+                                </div>
+                                <div>
+                                    <label className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase block mb-1">{t('pages.OutboundOrder.createModal.createdDate')}</label>
+                                    <input type="date" value={formData.voucherDate} onChange={e => setFormData({...formData, voucherDate: e.target.value})} className="wms-select w-full !py-2 !text-xs md:!text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
+                                </div>
                             </div>
                             <div className="space-y-4">
-                                <div className="flex justify-between items-center"><h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest text-left">{t('pages.OutboundOrder.createModal.productHeader')}</h3><button onClick={() => setDetails([...details, createEmptyDetail()])} className="text-[9px] md:text-[10px] font-black text-blue-600 uppercase hover:underline">{t('pages.OutboundOrder.createModal.addRow')}</button></div>
-                                <div className="bg-white rounded-xl md:rounded-2xl border border-gray-100 overflow-x-auto no-scrollbar text-left"><table className="w-full text-[10px] md:text-xs text-left min-w-[1000px]"><thead><tr className="bg-gray-50 text-gray-400 font-bold uppercase"><th className="p-3">{t('pages.OutboundOrder.createModal.product')}</th><th className="p-3">{t('pages.OutboundOrder.createModal.fefoSuggestion')}</th><th className="p-3 text-center w-20 md:w-24">{t('pages.OutboundOrder.createModal.quantity')}</th><th className="p-3 text-right w-28 md:w-32">{t('pages.OutboundOrder.createModal.price')}</th><th className="p-3 w-10"></th></tr></thead>
-                                    <tbody>{details.map((row, i) => (
-                                        <tr key={row.id} className="border-t border-gray-50 group">
-                                            <td className="p-2"><select value={row.productId} onChange={e => { const next = [...details]; next[i].productId = e.target.value; const p = products.find(it => String(it.id) === e.target.value); if(p){ next[i].productName = p.name; next[i].price = p.price || 0; } next[i].total = Number(next[i].quantity) * Number(next[i].price); setDetails(next); }} className="w-full border-none outline-none font-bold bg-transparent text-left"><option value="">{t('pages.OutboundOrder.createModal.productSelectPlaceholder')}</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></td>
-                                            <td className="p-2 min-w-[200px]"><div className="flex items-center gap-2">{row.batchCode ? <div className="flex flex-col text-left"><span className="font-black text-[#1192a8]">{t('pages.OutboundOrder.createModal.batch', { code: row.batchCode })}</span><span className="text-[9px] text-gray-400">{t('pages.OutboundOrder.createModal.location', { code: row.binCode })}</span></div> : <button onClick={() => handleFEFOSuggestion(i)} className="text-[9px] font-black text-rose-500 hover:text-rose-700 bg-rose-50 px-2 py-1 rounded-lg border border-rose-100 animate-pulse">{t('pages.OutboundOrder.createModal.fefoButton')}</button>}</div></td>
-                                            <td className="p-2"><input type="number" value={row.quantity} onChange={e => { const next = [...details]; next[i].quantity = e.target.value; next[i].total = Number(e.target.value) * Number(next[i].price); setDetails(next); }} className="w-full text-center font-black text-teal-600 bg-transparent outline-none" /></td>
-                                            <td className="p-2"><input type="number" value={row.price} onChange={e => { const next = [...details]; next[i].price = e.target.value; next[i].total = Number(next[i].quantity) * Number(e.target.value); setDetails(next); }} className="w-full text-right font-bold bg-transparent outline-none" /></td>
-                                            <td className="p-2 text-right"><div className="flex items-center gap-2 justify-end"><button onClick={() => { setActiveScanTarget('ITEM'); setActiveItemIndex(i); setIsScannerOpen(true); }} className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-cyan-50 transition-colors shrink-0"><img src={scanIcon} className="w-4 h-4 object-contain opacity-60" alt="Scan" /></button><button onClick={() => setDetails(details.filter((_, idx) => idx !== i))} className="text-red-300 text-lg hover:text-red-500 transition-colors shrink-0 leading-none">&times;</button></div></td>
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-[10px] md:text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest text-left">{t('pages.OutboundOrder.createModal.productHeader')}</h3>
+                                    <button onClick={() => setDetails([...details, createEmptyDetail()])} className="text-[9px] md:text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase hover:underline">{t('pages.OutboundOrder.createModal.addRow')}</button>
+                                </div>
+                                <div className="bg-white dark:bg-gray-800 rounded-xl md:rounded-2xl border border-gray-100 dark:border-gray-700 overflow-x-auto no-scrollbar text-left">
+                                    <table className="w-full text-[10px] md:text-xs text-left min-w-[1000px]">
+                                        <thead>
+                                        <tr className="bg-gray-50 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 font-bold uppercase">
+                                            <th className="p-3">{t('pages.OutboundOrder.createModal.product')}</th>
+                                            <th className="p-3">{t('pages.OutboundOrder.createModal.fefoSuggestion')}</th>
+                                            <th className="p-3 text-center w-20 md:w-24">{t('pages.OutboundOrder.createModal.quantity')}</th>
+                                            <th className="p-3 text-right w-28 md:w-32">{t('pages.OutboundOrder.createModal.price')}</th>
+                                            <th className="p-3 w-10"></th>
                                         </tr>
-                                    ))}</tbody>
-                                </table></div>
+                                        </thead>
+                                        <tbody>
+                                        {details.map((row, i) => (
+                                            <tr key={row.id} className="border-t border-gray-50 dark:border-gray-700 group">
+                                                <td className="p-2">
+                                                    <select value={row.productId} onChange={e => { const next = [...details]; next[i].productId = e.target.value; const p = products.find(it => String(it.id) === e.target.value); if(p){ next[i].productName = p.name; next[i].price = p.price || 0; } next[i].total = Number(next[i].quantity) * Number(next[i].price); setDetails(next); }} className="w-full border-none outline-none font-bold bg-transparent dark:text-gray-200 text-left">
+                                                        <option value="">-- SP --</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                                    </select>
+                                                </td>
+                                                <td className="p-2 min-w-[200px]">
+                                                    <div className="flex items-center gap-2">
+                                                        {row.batchCode ? (
+                                                            <div className="flex flex-col text-left">
+                                                                <span className="font-black text-[#1192a8]">Lô: {row.batchCode}</span>
+                                                                <span className="text-[9px] text-gray-400 dark:text-gray-500">Vị trí: {row.binCode}</span>
+                                                            </div>
+                                                        ) : (
+                                                            <button onClick={() => handleFEFOSuggestion(i)} className="text-[9px] font-black text-rose-500 hover:text-rose-700 bg-rose-50 dark:bg-rose-900/20 px-2 py-1 rounded-lg border border-rose-100 dark:border-rose-800 animate-pulse">⚡ GỢI Ý FEFO</button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="p-2">
+                                                    <input type="number" value={row.quantity} onChange={e => { const next = [...details]; next[i].quantity = e.target.value; next[i].total = Number(e.target.value) * Number(next[i].price); setDetails(next); }} className="w-full text-center font-black text-teal-600 dark:text-teal-400 bg-transparent outline-none" />
+                                                </td>
+                                                <td className="p-2">
+                                                    <input type="number" value={row.price} onChange={e => { const next = [...details]; next[i].price = e.target.value; next[i].total = Number(next[i].quantity) * Number(e.target.value); setDetails(next); }} className="w-full text-right font-bold bg-transparent outline-none dark:text-gray-300" />
+                                                </td>
+                                                <td className="p-2 text-right">
+                                                    <div className="flex items-center gap-2 justify-end">
+                                                        <button onClick={() => { setActiveScanTarget('ITEM'); setActiveItemIndex(i); setIsScannerOpen(true); }} className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-colors shrink-0">
+                                                            <img src={scanIcon} className="w-4 h-4 object-contain opacity-60" alt="Scan" />
+                                                        </button>
+                                                        <button onClick={() => setDetails(details.filter((_, idx) => idx !== i))} className="text-red-300 dark:text-red-500 text-lg hover:text-red-500 dark:hover:text-red-400 transition-colors shrink-0 leading-none">&times;</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
-                        <div className="p-4 md:p-6 border-t bg-white flex flex-col sm:flex-row justify-between items-stretch sm:items-center shrink-0 gap-4">
-                            <div className="text-left"><p className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">{t('pages.OutboundOrder.createModal.totalValue')}</p><p className="text-xl md:text-2xl font-black text-[#1192a8]">{details.reduce((s, r) => s + r.total, 0).toLocaleString()}đ</p></div>
-                            <div className="flex gap-4"><button onClick={() => setIsCreateOpen(false)} className="flex-1 sm:flex-none text-gray-400 font-bold uppercase text-[10px] md:text-xs hover:text-gray-600">{t('pages.OutboundOrder.createModal.cancel')}</button><button onClick={handleSave} className="flex-1 sm:flex-none px-6 md:px-10 py-2.5 md:py-3 bg-[#1192a8] text-white rounded-xl md:rounded-2xl font-black uppercase text-[10px] md:text-xs shadow-lg shadow-[#1192a8]/20 transition-all hover:scale-105 active:scale-95">{t('pages.OutboundOrder.createModal.confirm')}</button></div>
+                        <div className="p-4 md:p-6 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col sm:flex-row justify-between items-stretch sm:items-center shrink-0 gap-4 transition-colors duration-300">
+                            <div className="text-left"><p className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase">{t('pages.OutboundOrder.createModal.totalValue')}</p><p className="text-xl md:text-2xl font-black text-[#1192a8]">{details.reduce((s, r) => s + r.total, 0).toLocaleString()}đ</p></div>
+                            <div className="flex gap-4"><button onClick={() => setIsCreateOpen(false)} className="flex-1 sm:flex-none text-gray-400 dark:text-gray-500 font-bold uppercase text-[10px] md:text-xs hover:text-gray-600 dark:hover:text-gray-300">{t('pages.OutboundOrder.createModal.cancel')}</button><button onClick={handleSave} className="flex-1 sm:flex-none px-6 md:px-10 py-2.5 md:py-3 bg-[#1192a8] text-white rounded-xl md:rounded-2xl font-black uppercase text-[10px] md:text-xs shadow-lg shadow-[#1192a8]/20 transition-all hover:scale-105 active:scale-95">{t('pages.OutboundOrder.createModal.confirm')}</button></div>
                         </div>
                     </div>
                 </div>
             )}
+
             {isQCModalOpen && (
-                <QCInspectionModal 
-                    isOpen={isQCModalOpen} 
-                    onClose={() => { setIsQCModalOpen(false); setPendingQCOrder(null); }}
-                    items={qcItems}
-                    products={products}
-                    onConfirm={handleConfirmQCResult}
-                />
+                <QCInspectionModal isOpen={isQCModalOpen} onClose={() => { setIsQCModalOpen(false); setPendingQCOrder(null); }} items={qcItems} products={products} onConfirm={handleConfirmQCResult} />
             )}
         </div>
     );

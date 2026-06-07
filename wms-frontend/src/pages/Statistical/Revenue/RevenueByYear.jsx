@@ -45,17 +45,17 @@ export default function RevenueByYear() {
     const isActual = profitType === 'actual';
 
     return (
-        <div className="space-y-5 p-5">
+        <div className="space-y-5 p-5 bg-[#f8f9fa] dark:bg-gray-900 min-h-screen transition-colors duration-300">
             <FilterBar>
-                <span className="text-[16px] text-slate-800">{t('pages.RevenueByYear.lblFromYear')}</span>
-                <FilterInput value={fromYear} onChange={e => setFromYear(e.target.value)} className="w-[74px]" placeholder="2018" />
-                <span className="text-[16px] text-slate-800">{t('pages.RevenueByYear.lblToYear')}</span>
-                <FilterInput value={toYear}   onChange={e => setToYear(e.target.value)}   className="w-[74px]" placeholder="2024" />
+                <span className="text-[16px] text-slate-800 dark:text-gray-300">{t('pages.RevenueByYear.lblFromYear')}</span>
+                <FilterInput value={fromYear} onChange={e => setFromYear(e.target.value)} className="w-[74px] dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" placeholder="2018" />
+                <span className="text-[16px] text-slate-800 dark:text-gray-300">{t('pages.RevenueByYear.lblToYear')}</span>
+                <FilterInput value={toYear}   onChange={e => setToYear(e.target.value)}   className="w-[74px] dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" placeholder="2024" />
                 <FilterButton variant="primary" onClick={handleFilter}>{t('pages.RevenueByYear.btnFilter')}</FilterButton>
                 <FilterButton onClick={handleReset}>{t('pages.RevenueByYear.btnReset')}</FilterButton>
 
-                <span className="text-[16px] text-slate-800 ml-auto font-medium">{t('pages.RevenueByYear.lblProfitType')}</span>
-                <FilterSelect value={profitType} onChange={e => setProfitType(e.target.value)} className="w-[200px]">
+                <span className="text-[16px] text-slate-800 dark:text-gray-300 ml-auto font-medium">{t('pages.RevenueByYear.lblProfitType')}</span>
+                <FilterSelect value={profitType} onChange={e => setProfitType(e.target.value)} className="w-[200px] dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
                     <option value="cashflow">{t('pages.RevenueByYear.optCashflow')}</option>
                     <option value="actual">{t('pages.RevenueByYear.optActual')}</option>
                 </FilterSelect>
@@ -65,22 +65,26 @@ export default function RevenueByYear() {
 
             {detail && !loading && (
                 <>
-                    <GroupedBarChart
-                        title={t('pages.RevenueByYear.chartGroupedTitle')}
-                        labels={detail.labels}
-                        series={[
-                            { label: isActual ? t('pages.RevenueByYear.chartGroupedCogsLabel') : t('pages.RevenueByYear.chartGroupedCostLabel'), color: '#e6b06e', data: isActual ? detail.cogsData : detail.costData },
-                            { label: t('pages.RevenueByYear.chartGroupedRevenueLabel'), color: '#74b9f5', data: detail.revenueData },
-                            { label: t('pages.RevenueByYear.chartGroupedLossLabel'), color: '#ef4444', data: detail.lossData },
-                        ]}
-                    />
-                    <LineAreaChart
-                        title={t('pages.RevenueByYear.chartLineTitle')}
-                        labels={detail.labels}
-                        series={[
-                            { label: isActual ? t('pages.RevenueByYear.chartLineActualLabel') : t('pages.RevenueByYear.chartLineNetLabel'), color: '#b68cf0', fill: '#b68cf0', data: isActual ? detail.actualProfitData : detail.profitData },
-                        ]}
-                    />
+                    <div className="dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700 transition-colors">
+                        <GroupedBarChart
+                            title={t('pages.RevenueByYear.chartGroupedTitle')}
+                            labels={detail.labels}
+                            series={[
+                                { label: isActual ? t('pages.RevenueByYear.chartGroupedCogsLabel') : t('pages.RevenueByYear.chartGroupedCostLabel'), color: '#e6b06e', data: isActual ? detail.cogsData : detail.costData },
+                                { label: t('pages.RevenueByYear.chartGroupedRevenueLabel'), color: '#74b9f5', data: detail.revenueData },
+                                { label: t('pages.RevenueByYear.chartGroupedLossLabel'), color: '#ef4444', data: detail.lossData },
+                            ]}
+                        />
+                    </div>
+                    <div className="dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700 transition-colors">
+                        <LineAreaChart
+                            title={t('pages.RevenueByYear.chartLineTitle')}
+                            labels={detail.labels}
+                            series={[
+                                { label: isActual ? t('pages.RevenueByYear.chartLineActualLabel') : t('pages.RevenueByYear.chartLineNetLabel'), color: '#b68cf0', fill: '#b68cf0', data: isActual ? detail.actualProfitData : detail.profitData },
+                            ]}
+                        />
+                    </div>
                 </>
             )}
         </div>

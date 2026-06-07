@@ -371,7 +371,11 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product = nul
                         loading={isUnitSubmitting} 
                     />
                 )}
-                <SystemDialog isOpen={!!systemDialog} {...systemDialog} onClose={() => setDialog ? setDialog({ ...dialog, isOpen: false }) : setSystemDialog(null)} />
+                <SystemDialog
+                    isOpen={!!systemDialog}
+                    {...systemDialog}
+                    onClose={() => setSystemDialog(null)}
+                />
             </div>
         </div>
     );

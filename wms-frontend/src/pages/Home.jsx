@@ -76,7 +76,7 @@ export default function Home() {
             if (canSeeCounting && user?.id) {
                 try {
                     const ccRes = await axiosClient.get('/api/cycle-counts');
-                    const assigned = (ccRes.data || []).filter(p => 
+                    const assigned = (ccRes.data || []).filter(p =>
                         p.status !== 'COMPLETED' && String(p.assignedTo) === String(user.id)
                     );
                     setCycleCounts(assigned);
@@ -93,10 +93,10 @@ export default function Home() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center h-full bg-[#f8fafc] dark:bg-gray-900 transition-colors duration-300">
                 <div className="flex flex-col items-center gap-4">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1192a8]"></div>
-                    <span className="text-gray-500 font-bold animate-pulse uppercase text-xs tracking-widest">{t('home.loading')}</span>
+                    <span className="text-gray-500 dark:text-gray-400 font-bold animate-pulse uppercase text-xs tracking-widest">{t('home.loading')}</span>
                 </div>
             </div>
         );
@@ -104,11 +104,11 @@ export default function Home() {
 
     if (dashboardType === 'NONE') {
         return (
-            <div className="min-h-full flex items-center justify-center bg-[#f8fafc] p-6">
+            <div className="min-h-full flex items-center justify-center bg-[#f8fafc] dark:bg-gray-900 p-6 transition-colors duration-300">
                 <div className="max-w-md text-center">
                     <div className="text-6xl mb-6">🔒</div>
-                    <h2 className="text-2xl font-black text-gray-800 mb-2">{t('home.restricted_access')}</h2>
-                    <p className="text-gray-500 mb-8">
+                    <h2 className="text-2xl font-black text-gray-800 dark:text-gray-100 mb-2">{t('home.restricted_access')}</h2>
+                    <p className="text-gray-500 dark:text-gray-400 mb-8">
                         {t('home.no_dashboard')} ({getRoleLabel(roles)})
                     </p>
                 </div>
@@ -117,30 +117,30 @@ export default function Home() {
     }
 
     return (
-        <div className="min-h-full bg-[#f8fafc] p-6 lg:p-8 relative">
+        <div className="min-h-full bg-[#f8fafc] dark:bg-gray-900 p-6 lg:p-8 relative transition-colors duration-300">
             {/* Header summary */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 border-b border-gray-100 pb-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 border-b border-gray-100 dark:border-gray-700 pb-8">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-800 tracking-tight">
+                    <h1 className="text-3xl font-black text-gray-800 dark:text-gray-100 tracking-tight">
                         {t('home.welcome')} <span className="text-[#1192a8]">{user?.fullName || user?.username}</span>!
                     </h1>
                     <div className="flex items-center gap-2 mt-2">
-                        <span className="px-3 py-1 bg-white border border-gray-200 rounded-full text-xs font-bold text-gray-500 shadow-sm">
+                        <span className="px-3 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-xs font-bold text-gray-500 dark:text-gray-300 shadow-sm">
                             {getRoleLabel(roles)}
                         </span>
-                        <span className="text-gray-400 text-xs">•</span>
-                        <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">
+                        <span className="text-gray-400 dark:text-gray-500 text-xs">•</span>
+                        <span className="text-gray-400 dark:text-gray-500 text-xs font-medium uppercase tracking-wider">
                             {new Date().toLocaleDateString(i18n.language?.startsWith('en') ? 'en-US' : 'vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                         </span>
                     </div>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
                     <div className="text-right hidden md:block">
-                        <div className="text-xs font-bold text-gray-400 uppercase tracking-tighter leading-none mb-1">{t('home.employee_code')}</div>
-                        <div className="text-sm font-black text-gray-700">{user?.employeeCode || '---'}</div>
+                        <div className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tighter leading-none mb-1">{t('home.employee_code')}</div>
+                        <div className="text-sm font-black text-gray-700 dark:text-gray-200">{user?.employeeCode || '---'}</div>
                     </div>
-                    <div className="w-12 h-12 bg-[#1192a8] rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-teal-100">
+                    <div className="w-12 h-12 bg-[#1192a8] rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-teal-100 dark:shadow-teal-900/30">
                         {(user?.fullName || user?.username || 'U').charAt(0).toUpperCase()}
                     </div>
                 </div>
@@ -150,20 +150,20 @@ export default function Home() {
             {dashboardType === 'EXECUTIVE' && <ExecutiveDashboard stats={stats} roles={roles} />}
             {dashboardType === 'STORAGE' && <StorageDashboard stats={stats} roles={roles} cycleCounts={cycleCounts} />}
             {dashboardType === 'OPERATIONS' && (
-                <OperationsDashboard 
-                    roles={roles} 
-                    stats={stats} 
-                    inboundOrders={inboundOrders.filter(o => ['DRAFT', 'PENDING', 'ORDERED'].includes(o.status))} 
+                <OperationsDashboard
+                    roles={roles}
+                    stats={stats}
+                    inboundOrders={inboundOrders.filter(o => ['DRAFT', 'PENDING', 'ORDERED'].includes(o.status))}
                     outboundOrders={outboundOrders.filter(o => ['DRAFT', 'ALLOCATED', 'PICKING'].includes(o.status))}
                     cycleCounts={cycleCounts}
                 />
             )}
             {dashboardType === 'QC' && (
-                <QualityControlDashboard 
-                    roles={roles} 
-                    stats={stats} 
-                    inboundOrders={inboundOrders} 
-                    outboundOrders={outboundOrders} 
+                <QualityControlDashboard
+                    roles={roles}
+                    stats={stats}
+                    inboundOrders={inboundOrders}
+                    outboundOrders={outboundOrders}
                 />
             )}
 
@@ -173,6 +173,7 @@ export default function Home() {
                 inboundOrders={inboundOrders}
                 outboundOrders={outboundOrders}
                 cycleCounts={cycleCounts}
-            />        </div>
+            />
+        </div>
     );
 }
