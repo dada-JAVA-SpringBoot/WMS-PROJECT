@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import imgHelp from '../../../components/common/icons/a1.png';
 import imgQL from '../../../components/common/icons/a13.png';
@@ -50,7 +51,9 @@ import mp1 from '../../../components/common/icons/mypham1.jpg';
 import mp2 from '../../../components/common/icons/mypham2.jpg';
 import mp3 from '../../../components/common/icons/mypham3.png';
 import mp4 from '../../../components/common/icons/mypham4.png';
+
 const Hero = ({ onEnter }) => {
+    const { t } = useTranslation();
     return (
         <div className="animate-fade-in">
 
@@ -60,26 +63,26 @@ const Hero = ({ onEnter }) => {
                     <div className="space-y-8">
                         <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 px-4 py-1.5 rounded-full text-sm font-medium">
                             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                            Phiên bản mới nhất 2026
+                            {t('pages.Hero.version')}
                         </div>
                         <h1 className="text-3xl lg:text-4xl font-black leading-tight">
-                            Giải pháp quản lý Kho hàng <br/>
-                            thông minh, linh hoạt
+                            {t('pages.Hero.titlePart1')} <br/>
+                            {t('pages.Hero.titlePart2')}
                         </h1>
                         <ul className="space-y-4 text-lg text-blue-100">
-                            <li className="flex items-start gap-3"><span className="text-green-400 mt-1">✔</span> Kiểm soát tồn kho chặt chẽ, chống thất thoát 100%.</li>
-                            <li className="flex items-start gap-3"><span className="text-green-400 mt-1">✔</span> Tự động hóa quy trình nhập - xuất - kiểm kê.</li>
+                            <li className="flex items-start gap-3"><span className="text-green-400 mt-1">✔</span> {t('pages.Hero.bullet1')}</li>
+                            <li className="flex items-start gap-3"><span className="text-green-400 mt-1">✔</span> {t('pages.Hero.bullet2')}</li>
                         </ul>
                         <div className="flex gap-4 pt-4">
                             <button onClick={onEnter} className="bg-white text-[#149ca8] px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-50 transition shadow-[0_0_40px_rgba(255,255,255,0.3)] active:scale-95">
-                                Vào hệ thống quản trị
+                                {t('pages.Hero.adminAccess')}
                             </button>
                         </div>
                     </div>
                     <div className="relative h-[400px] lg:h-[450px] w-full rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] overflow-hidden border-4 border-white/30 group">
                         <img
                             src={imgQL}
-                            alt="Quản lý kho"
+                            alt={t('pages.Hero.imgWarehouseAlt')}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                         />
                     </div>
@@ -90,10 +93,10 @@ const Hero = ({ onEnter }) => {
             <section className="bg-white border-b border-gray-100">
                 <div className="max-w-[1200px] mx-auto px-6 py-10">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-gray-100">
-                        <div><h4 className="text-4xl font-black text-[#149ca8] mb-2">500+</h4><p className="text-gray-500 font-medium">Doanh nghiệp tin dùng</p></div>
-                        <div><h4 className="text-4xl font-black text-[#149ca8] mb-2">99%</h4><p className="text-gray-500 font-medium">Chính xác dữ liệu</p></div>
-                        <div><h4 className="text-4xl font-black text-[#149ca8] mb-2">30%</h4><p className="text-gray-500 font-medium">Tiết kiệm chi phí</p></div>
-                        <div><h4 className="text-4xl font-black text-[#149ca8] mb-2">24/7</h4><p className="text-gray-500 font-medium">Hỗ trợ kỹ thuật</p></div>
+                        <div><h4 className="text-4xl font-black text-[#149ca8] mb-2">500+</h4><p className="text-gray-500 font-medium">{t('pages.Hero.statsCompanies')}</p></div>
+                        <div><h4 className="text-4xl font-black text-[#149ca8] mb-2">99%</h4><p className="text-gray-500 font-medium">{t('pages.Hero.statsAccuracy')}</p></div>
+                        <div><h4 className="text-4xl font-black text-[#149ca8] mb-2">30%</h4><p className="text-gray-500 font-medium">{t('pages.Hero.statsSavings')}</p></div>
+                        <div><h4 className="text-4xl font-black text-[#149ca8] mb-2">24/7</h4><p className="text-gray-500 font-medium">{t('pages.Hero.statsSupport')}</p></div>
                     </div>
                 </div>
             </section>
@@ -101,8 +104,8 @@ const Hero = ({ onEnter }) => {
 
             <section className="py-24 bg-gradient-to-b from-blue-50/50 to-white relative overflow-hidden">
                 <div className="max-w-[1200px] mx-auto px-6 text-center">
-                    <h2 className="text-[#149ca8] font-bold tracking-widest text-sm mb-4 uppercase">Trải nghiệm vượt trội</h2>
-                    <h3 className="text-3xl lg:text-4xl font-black mb-10 text-gray-900">Mọi thông tin kho hàng nằm gọn trong tay bạn</h3>
+                    <h2 className="text-[#149ca8] font-bold tracking-widest text-sm mb-4 uppercase">{t('pages.Hero.tag')}</h2>
+                    <h3 className="text-3xl lg:text-4xl font-black mb-10 text-gray-900">{t('pages.Hero.experienceTitle')}</h3>
 
                     <div className="w-full max-w-[1000px] mx-auto h-[500px] bg-white rounded-t-3xl shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-200 border-b-0 flex flex-col relative overflow-hidden">
                         <div className="h-10 bg-gray-100 border-b border-gray-200 flex items-center px-4 gap-2">
@@ -114,7 +117,7 @@ const Hero = ({ onEnter }) => {
                         <div className="w-full bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden border-4 border-white/50">
                             <img
                                 src={imgHero}
-                                alt="Trang chủ"
+                                alt={t('pages.Hero.imgHomeAlt')}
 
                                 className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
                             />
@@ -127,24 +130,24 @@ const Hero = ({ onEnter }) => {
             <section className="py-24 bg-white border-t border-gray-100">
                 <div className="max-w-[1200px] mx-auto px-6">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl lg:text-4xl font-black text-gray-900 mb-4">Số hóa toàn bộ quy trình vận hành</h2>
-                        <p className="text-gray-500">Từ lúc hàng về kho đến khi giao tới tay khách hàng</p>
+                        <h2 className="text-3xl lg:text-4xl font-black text-gray-900 mb-4">{t('pages.Hero.processTitle')}</h2>
+                        <p className="text-gray-500">{t('pages.Hero.processSubtitle')}</p>
                     </div>
                     <div className="grid md:grid-cols-3 gap-8">
                         <div className="bg-[#eef5ff] p-8 rounded-3xl relative overflow-hidden group hover:-translate-y-2 transition-transform">
                             <div className="w-12 h-12 bg-[#149ca8] text-white rounded-xl flex items-center justify-center text-xl font-bold mb-6">1</div>
-                            <h4 className="text-2xl font-bold mb-3 text-gray-900">Nhập kho (Inbound)</h4>
-                            <p className="text-gray-600 mb-6">Tạo phiếu nhập từ nhà cung cấp nhanh chóng. Tự động cộng dồn số lượng và cập nhật giá trị tồn kho tức thời.</p>
+                            <h4 className="text-2xl font-bold mb-3 text-gray-900">{t('pages.Hero.processStepInboundTitle')}</h4>
+                            <p className="text-gray-600 mb-6">{t('pages.Hero.processStepInboundDesc')}</p>
                         </div>
                         <div className="bg-[#f5f3ff] p-8 rounded-3xl relative overflow-hidden group hover:-translate-y-2 transition-transform">
                             <div className="w-12 h-12 bg-purple-600 text-white rounded-xl flex items-center justify-center text-xl font-bold mb-6">2</div>
-                            <h4 className="text-2xl font-bold mb-3 text-gray-900">Lưu trữ & Kiểm kê</h4>
-                            <p className="text-gray-600 mb-6">Phân bổ vị trí cất hàng thông minh. Theo dõi thời gian lưu kho và hỗ trợ kiểm kê định kỳ không cần đóng cửa.</p>
+                            <h4 className="text-2xl font-bold mb-3 text-gray-900">{t('pages.Hero.processStepInventoryTitle')}</h4>
+                            <p className="text-gray-600 mb-6">{t('pages.Hero.processStepInventoryDesc')}</p>
                         </div>
                         <div className="bg-[#ebfaef] p-8 rounded-3xl relative overflow-hidden group hover:-translate-y-2 transition-transform">
                             <div className="w-12 h-12 bg-green-600 text-white rounded-xl flex items-center justify-center text-xl font-bold mb-6">3</div>
-                            <h4 className="text-2xl font-bold mb-3 text-gray-900">Xuất kho (Outbound)</h4>
-                            <p className="text-gray-600 mb-6">Tự động trừ tồn khi có phiếu xuất. Kết nối với thông tin khách hàng để điều phối xuất hàng chính xác 100%.</p>
+                            <h4 className="text-2xl font-bold mb-3 text-gray-900">{t('pages.Hero.processStepOutboundTitle')}</h4>
+                            <p className="text-gray-600 mb-6">{t('pages.Hero.processStepOutboundDesc')}</p>
                         </div>
                     </div>
                 </div>
@@ -153,27 +156,27 @@ const Hero = ({ onEnter }) => {
 
             <section className="py-24 bg-gray-50 border-t border-gray-200">
                 <div className="max-w-[1200px] mx-auto px-6">
-                    <h2 className="text-3xl lg:text-4xl font-black text-center mb-16 text-gray-900">Tạm biệt những "cơn đau đầu" khi quản lý kho</h2>
+                    <h2 className="text-3xl lg:text-4xl font-black text-center mb-16 text-gray-900">{t('pages.Hero.painPointsTitle')}</h2>
                     <div className="grid lg:grid-cols-2 gap-16 items-center">
                         <div className="relative h-[450px] rounded-[3rem] border-4 border-white shadow-xl overflow-hidden bg-red-50">
                             <img
                                 src={imgHelp}
-                                alt="Bài toán khó khăn trong quản lý kho"
+                                alt={t('pages.Hero.painPointsImgAlt')}
                                 className="w-full h-full object-contain p-4 hover:scale-105 transition-transform duration-500"
                             />
                         </div>
                         <div className="space-y-8">
                             <div className="flex gap-5 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-red-200 transition-colors">
                                 <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-sm font-bold shrink-0">✕</div>
-                                <div><h4 className="font-bold text-lg mb-1">Dữ liệu lệch pha, thất thoát hàng</h4><p className="text-gray-500">Sổ sách một đằng, hàng thực tế một nẻo gây tổn thất chi phí.</p></div>
+                                <div><h4 className="font-bold text-lg mb-1">{t('pages.Hero.painPointsDiscrepancyTitle')}</h4><p className="text-gray-500">{t('pages.Hero.painPointsDiscrepancyDesc')}</p></div>
                             </div>
                             <div className="flex gap-5 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-red-200 transition-colors">
                                 <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-sm font-bold shrink-0">✕</div>
-                                <div><h4 className="font-bold text-lg mb-1">Tốn hàng giờ để tìm kiếm hàng hóa</h4><p className="text-gray-500">Không nhớ vị trí cất hàng, nhân viên mới mất nhiều tuần để làm quen kho.</p></div>
+                                <div><h4 className="font-bold text-lg mb-1">{t('pages.Hero.painPointsSearchTimeTitle')}</h4><p className="text-gray-500">{t('pages.Hero.painPointsSearchTimeDesc')}</p></div>
                             </div>
                             <div className="flex gap-5 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-red-200 transition-colors">
                                 <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-sm font-bold shrink-0">✕</div>
-                                <div><h4 className="font-bold text-lg mb-1">Báo cáo chậm trễ</h4><p className="text-gray-500">Cuối tháng mới biết doanh thu và tồn kho, không kịp đưa ra quyết định.</p></div>
+                                <div><h4 className="font-bold text-lg mb-1">{t('pages.Hero.painPointsDelayedReportsTitle')}</h4><p className="text-gray-500">{t('pages.Hero.painPointsDelayedReportsDesc')}</p></div>
                             </div>
                         </div>
                     </div>
@@ -186,33 +189,33 @@ const Hero = ({ onEnter }) => {
             <section className="bg-[#149ca8] text-white py-24 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-400/20 to-transparent"></div>
                 <div className="max-w-[1200px] mx-auto px-6 relative z-10">
-                    <h2 className="text-3xl lg:text-4xl font-black text-center mb-16">Công cụ hỗ trợ vận hành thông minh</h2>
+                    <h2 className="text-3xl lg:text-4xl font-black text-center mb-16">{t('pages.Hero.toolsTitle')}</h2>
                     <div className="grid md:grid-cols-3 gap-8">
                         <div className="bg-white text-gray-800 p-8 rounded-3xl shadow-xl hover:-translate-y-2 transition-transform duration-300">
                             <div className="w-14 h-14 bg-[#149ca8] rounded-2xl flex items-center justify-center text-white text-2xl mb-6 shadow-md">
                                 🤖
                             </div>
-                            <h3 className="font-bold text-xl mb-4 text-gray-900">Trợ lý ảo hỗ trợ công việc</h3>
+                            <h3 className="font-bold text-xl mb-4 text-gray-900">{t('pages.Hero.toolsVirtualAssistantTitle')}</h3>
                             <p className="text-gray-500 leading-relaxed text-sm">
-                                Gợi ý các công việc cần ưu tiên dựa trên dữ liệu thực tế, giúp quản lý và nhân viên kho nắm bắt tình hình tức thời.
+                                {t('pages.Hero.toolsVirtualAssistantDesc')}
                             </p>
                         </div>
                         <div className="bg-white text-gray-800 p-8 rounded-3xl shadow-xl hover:-translate-y-2 transition-transform duration-300">
                             <div className="w-14 h-14 bg-[#149ca8] rounded-2xl flex items-center justify-center text-white text-2xl mb-6 shadow-md">
                                 📸
                             </div>
-                            <h3 className="font-bold text-xl mb-4 text-gray-900">Quét Barcode & QR Code</h3>
+                            <h3 className="font-bold text-xl mb-4 text-gray-900">{t('pages.Hero.toolsBarcodeScannerTitle')}</h3>
                             <p className="text-gray-500 leading-relaxed text-sm">
-                                Tích hợp quét mã vạch qua camera điện thoại hoặc máy quét cầm tay để thực hiện các thao tác nhập xuất, kiểm kê nhanh chóng.
+                                {t('pages.Hero.toolsBarcodeScannerDesc')}
                             </p>
                         </div>
                         <div className="bg-white text-gray-800 p-8 rounded-3xl shadow-xl hover:-translate-y-2 transition-transform duration-300">
                             <div className="w-14 h-14 bg-[#149ca8] rounded-2xl flex items-center justify-center text-white text-2xl mb-6 shadow-md">
                                 📊
                             </div>
-                            <h3 className="font-bold text-xl mb-4 text-gray-900">Thống kê theo thời gian thực</h3>
+                            <h3 className="font-bold text-xl mb-4 text-gray-900">{t('pages.Hero.toolsStatisticsTitle')}</h3>
                             <p className="text-gray-500 leading-relaxed text-sm">
-                                Biểu đồ và số liệu báo cáo được cập nhật ngay khi có biến động, giúp đưa ra các quyết định vận hành chính xác.
+                                {t('pages.Hero.toolsStatisticsDesc')}
                             </p>
                         </div>
                     </div>
@@ -222,15 +225,15 @@ const Hero = ({ onEnter }) => {
 
             <section className="py-24 bg-[#fafbfc] border-t border-gray-100">
                 <div className="max-w-[1200px] mx-auto px-6">
-                    <h2 className="text-3xl lg:text-4xl font-black text-center mb-16 text-gray-900">Giải thưởng đạt được</h2>
+                    <h2 className="text-3xl lg:text-4xl font-black text-center mb-16 text-gray-900">{t('pages.Hero.awardsTitle')}</h2>
 
                     <div className="flex overflow-x-auto lg:grid lg:grid-cols-5 gap-6 pb-8 lg:pb-0 snap-x snap-mandatory">
                         {[
-                            { name: "Cúp vàng Gold Cup", icon: cup1 },
-                            { name: "Sao Khuê", icon: cup2 },
-                            { name: "Sản phẩm ưa chuộng nhất", icon: cup3 },
-                            { name: "Giải vàng Make in Vietnam", icon: cup4 },
-                            { name: "Chuyển Đổi Số Việt Nam", icon: cup5 }
+                            { name: t('pages.Hero.awardGoldCup'), icon: cup1 },
+                            { name: t('pages.Hero.awardSaoKhue'), icon: cup2 },
+                            { name: t('pages.Hero.awardMostPopular'), icon: cup3 },
+                            { name: t('pages.Hero.awardMakeInVietnam'), icon: cup4 },
+                            { name: t('pages.Hero.awardDigitalTransformation'), icon: cup5 }
                         ].map((award, index) => (
                             <div key={index} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center min-w-[200px] snap-center hover:shadow-lg transition-shadow">
                                 <div className="h-32 w-24 bg-gray-50 rounded-lg flex items-center justify-center mb-4 overflow-hidden border border-gray-100 group">
@@ -251,28 +254,28 @@ const Hero = ({ onEnter }) => {
             <section className="py-24 bg-white border-t border-gray-100">
                 <div className="max-w-[1200px] mx-auto px-6">
                     <h2 className="text-3xl lg:text-4xl font-black text-center mb-16 text-gray-900">
-                        Hàng ngàn doanh nghiệp đã lựa chọn AUTO HOME
+                        {t('pages.Hero.businessesTitle')}
                     </h2>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[
-                            "Dược phẩm",
-                            "Thực phẩm & Đồ uống",
-                            "Điện tử & Công nghệ",
-                            "Thời trang & May mặc",
-                            "Hàng tiêu dùng (FMCG)",
-                            "Vật liệu xây dựng",
-                            "Phụ tùng ô tô",
-                            "Mỹ phẩm & Làm đẹp"
-                        ].map((industry, index) => {
-                            const isPharma = industry === "Dược phẩm";
-                            const isFood = industry === "Thực phẩm & Đồ uống";
-                            const isTech = industry === "Điện tử & Công nghệ";
-                            const isFashion = industry === "Thời trang & May mặc";
-                            const isConsumer = industry === "Hàng tiêu dùng (FMCG)";
-                            const isConstruction = industry === "Vật liệu xây dựng";
-                            const isOto = industry === "Phụ tùng ô tô";
-                            const isMyPham = industry === "Mỹ phẩm & Làm đẹp";
+                            { id: "Pharma", name: t('pages.Hero.industryPharma') },
+                            { id: "FnB", name: t('pages.Hero.industryFnB') },
+                            { id: "Tech", name: t('pages.Hero.industryTech') },
+                            { id: "Fashion", name: t('pages.Hero.industryFashion') },
+                            { id: "Consumer", name: t('pages.Hero.industryConsumer') },
+                            { id: "Construction", name: t('pages.Hero.industryConstruction') },
+                            { id: "Automotive", name: t('pages.Hero.industryAutomotive') },
+                            { id: "Beauty", name: t('pages.Hero.industryBeauty') }
+                        ].map((item, index) => {
+                            const isPharma = item.id === "Pharma";
+                            const isFood = item.id === "FnB";
+                            const isTech = item.id === "Tech";
+                            const isFashion = item.id === "Fashion";
+                            const isConsumer = item.id === "Consumer";
+                            const isConstruction = item.id === "Construction";
+                            const isOto = item.id === "Automotive";
+                            const isMyPham = item.id === "Beauty";
 
                             const getIcon = (pos) => {
                                 if (isPharma) return [duoc1, duoc2, duoc3, duoc4][pos];
@@ -288,7 +291,7 @@ const Hero = ({ onEnter }) => {
 
                             return (
                                 <div key={index} className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                                    <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">{industry}</div>
+                                    <div className="bg-[#d2dcf0] text-center py-2.5 font-bold text-gray-800 text-sm">{item.name}</div>
                                     <div className="p-4 grid grid-cols-2 gap-4">
                                         {[0, 1, 2, 3].map((pos) => (
                                             <div key={pos} className="aspect-square group bg-gray-50 rounded flex justify-center items-center overflow-hidden">

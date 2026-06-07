@@ -1,22 +1,24 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function InventoryAlerts({ nearExpiry, topStock }) {
+    const { t } = useTranslation();
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {/* Sắp hết hạn */}
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="p-4 border-b border-gray-50 bg-orange-50/50">
                     <h3 className="font-bold text-orange-800 flex items-center gap-2">
-                        <span>⚠️</span> Hàng sắp hết hạn
+                        <span>⚠️</span> {t('pages.InventoryAlerts.nearExpiry')}
                     </h3>
                 </div>
                 <div className="overflow-auto max-h-[300px]">
                     <table className="w-full text-sm text-left">
                         <thead className="bg-gray-50 text-gray-500 uppercase text-[10px] font-bold">
                             <tr>
-                                <th className="px-4 py-3">Sản phẩm</th>
-                                <th className="px-4 py-3">Lô</th>
-                                <th className="px-4 py-3">Ngày hết hạn</th>
+                                <th className="px-4 py-3">{t('pages.InventoryAlerts.product')}</th>
+                                <th className="px-4 py-3">{t('pages.InventoryAlerts.batch')}</th>
+                                <th className="px-4 py-3">{t('pages.InventoryAlerts.expiryDate')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
@@ -30,7 +32,7 @@ export default function InventoryAlerts({ nearExpiry, topStock }) {
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan="3" className="px-4 py-8 text-center text-gray-400">Không có hàng sắp hết hạn.</td>
+                                    <td colSpan="3" className="px-4 py-8 text-center text-gray-400">{t('pages.InventoryAlerts.noNearExpiry')}</td>
                                 </tr>
                             )}
                         </tbody>
@@ -42,15 +44,15 @@ export default function InventoryAlerts({ nearExpiry, topStock }) {
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="p-4 border-b border-gray-50 bg-blue-50/50">
                     <h3 className="font-bold text-blue-800 flex items-center gap-2">
-                        <span>📊</span> Tồn kho nhiều nhất
+                        <span>📊</span> {t('pages.InventoryAlerts.topStock')}
                     </h3>
                 </div>
                 <div className="overflow-auto max-h-[300px]">
                     <table className="w-full text-sm text-left">
                         <thead className="bg-gray-50 text-gray-500 uppercase text-[10px] font-bold">
                             <tr>
-                                <th className="px-4 py-3">Sản phẩm</th>
-                                <th className="px-4 py-3 text-right">Số lượng</th>
+                                <th className="px-4 py-3">{t('pages.InventoryAlerts.product')}</th>
+                                <th className="px-4 py-3 text-right">{t('pages.InventoryAlerts.quantity')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
@@ -63,7 +65,7 @@ export default function InventoryAlerts({ nearExpiry, topStock }) {
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan="2" className="px-4 py-8 text-center text-gray-400">Không có dữ liệu.</td>
+                                    <td colSpan="2" className="px-4 py-8 text-center text-gray-400">{t('pages.InventoryAlerts.noData')}</td>
                                 </tr>
                             )}
                         </tbody>

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { ActionButton } from '../components/common/SharedUI';
@@ -24,40 +25,43 @@ const emptyFormData = {
 const normalizeText = (value) => String(value || '').trim().toLowerCase();
 
 const STATUS_META = {
-    EMPTY: { label: 'Trống', className: 'bg-gray-100 text-gray-600 border-gray-200' },
-    FULL: { label: 'Đã chật', className: 'bg-amber-100 text-amber-800 border-amber-200' },
-    ALLOCATED: { label: 'Đã phân bổ', className: 'bg-blue-100 text-blue-700 border-blue-200' },
-    EXPECTED: { label: 'Hàng dự kiến', className: 'bg-violet-100 text-violet-700 border-violet-200' },
-    OCCUPIED: { label: 'Đang dùng', className: 'bg-cyan-100 text-cyan-700 border-cyan-200' }
+    EMPTY: { labelKey: 'pages.WarehouseArea.status.empty', className: 'bg-gray-100 text-gray-600 border-gray-200' },
+    FULL: { labelKey: 'pages.WarehouseArea.status.full', className: 'bg-amber-100 text-amber-800 border-amber-200' },
+    ALLOCATED: { labelKey: 'pages.WarehouseArea.status.allocated', className: 'bg-blue-100 text-blue-700 border-blue-200' },
+    EXPECTED: { labelKey: 'pages.WarehouseArea.status.expected', className: 'bg-violet-100 text-violet-700 border-violet-200' },
+    OCCUPIED: { labelKey: 'pages.WarehouseArea.status.occupied', className: 'bg-cyan-100 text-cyan-700 border-cyan-200' }
 };
 
 const STORAGE_META = {
-    NORMAL: { label: 'Bình thường', className: 'bg-slate-100 text-slate-700 border-slate-200' },
-    COLD: { label: 'Kho lạnh', className: 'bg-blue-100 text-blue-700 border-blue-200' },
-    CHILLED: { label: 'Kho mát', className: 'bg-cyan-100 text-cyan-700 border-cyan-200' },
-    FROZEN: { label: 'Kho đông', className: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
-    BULK: { label: 'Kho bulk', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    QUARANTINE: { label: 'Cách ly', className: 'bg-rose-100 text-rose-700 border-rose-200' }
+    NORMAL: { labelKey: 'pages.WarehouseArea.storage.normal', className: 'bg-slate-100 text-slate-700 border-slate-200' },
+    COLD: { labelKey: 'pages.WarehouseArea.storage.cold', className: 'bg-blue-100 text-blue-700 border-blue-200' },
+    CHILLED: { labelKey: 'pages.WarehouseArea.storage.chilled', className: 'bg-cyan-100 text-cyan-700 border-cyan-200' },
+    FROZEN: { labelKey: 'pages.WarehouseArea.storage.frozen', className: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
+    BULK: { labelKey: 'pages.WarehouseArea.storage.bulk', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    QUARANTINE: { labelKey: 'pages.WarehouseArea.storage.quarantine', className: 'bg-rose-100 text-rose-700 border-rose-200' }
 };
 
 const CONTAINER_META = {
-    CAI: { label: 'Cái', className: 'bg-gray-100 text-gray-600 border-gray-200' },
-    HOP: { label: 'Hộp', className: 'bg-amber-100 text-amber-800 border-amber-200' },
-    THUNG: { label: 'Thùng', className: 'bg-blue-100 text-blue-700 border-blue-200' },
-    PALLET: { label: 'Pallet', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    LOC: { label: 'Lốc', className: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
-    VI: { label: 'Vỉ', className: 'bg-purple-100 text-purple-700 border-purple-200' },
-    GOI: { label: 'Gói', className: 'bg-pink-100 text-pink-700 border-pink-200' },
-    KG: { label: 'Kg', className: 'bg-slate-100 text-slate-700 border-slate-200' },
-    KHAY: { label: 'Khay', className: 'bg-teal-100 text-teal-700 border-teal-200' },
-    CHAI: { label: 'Chai', className: 'bg-cyan-100 text-cyan-700 border-cyan-200' }
+    CAI: { labelKey: 'pages.WarehouseArea.container.cai', className: 'bg-gray-100 text-gray-600 border-gray-200' },
+    HOP: { labelKey: 'pages.WarehouseArea.container.hop', className: 'bg-amber-100 text-amber-800 border-amber-200' },
+    THUNG: { labelKey: 'pages.WarehouseArea.container.thung', className: 'bg-blue-100 text-blue-700 border-blue-200' },
+    PALLET: { labelKey: 'pages.WarehouseArea.container.pallet', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    LOC: { labelKey: 'pages.WarehouseArea.container.loc', className: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
+    VI: { labelKey: 'pages.WarehouseArea.container.vi', className: 'bg-purple-100 text-purple-700 border-purple-200' },
+    GOI: { labelKey: 'pages.WarehouseArea.container.goi', className: 'bg-pink-100 text-pink-700 border-pink-200' },
+    KG: { labelKey: 'pages.WarehouseArea.container.kg', className: 'bg-slate-100 text-slate-700 border-slate-200' },
+    KHAY: { labelKey: 'pages.WarehouseArea.container.khay', className: 'bg-teal-100 text-teal-700 border-teal-200' },
+    CHAI: { labelKey: 'pages.WarehouseArea.container.chai', className: 'bg-cyan-100 text-cyan-700 border-cyan-200' }
 };
 
-function getStorageTypeLabel(storageType) {
-    return STORAGE_META[String(storageType || 'NORMAL').toUpperCase()]?.label || 'Bình thường';
+function getStorageTypeLabel(storageType, t) {
+    const meta = STORAGE_META[String(storageType || 'NORMAL').toUpperCase()];
+    if (meta?.labelKey && t) return t(meta.labelKey);
+    return meta?.label || 'Bình thường';
 }
 
 export default function WarehouseAreaPage({ onCreateInbound }) {
+    const { t } = useTranslation();
     const reactLocation = useLocation();
     const [locations, setLocations] = useState([]);
     const [units, setUnits] = useState([]);
@@ -109,12 +113,12 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
     }, [units]);
 
     const getContainerMeta = (containerType) => {
-        if (!containerType) return { label: 'Cái', className: 'bg-gray-100 text-gray-600 border-gray-200' };
+        if (!containerType) return { label: t('pages.WarehouseArea.container.cai'), className: 'bg-gray-100 text-gray-600 border-gray-200' };
         const code = containerType.toUpperCase().trim();
         const shortCode = code.startsWith('UNIT-') ? code.substring(5) : code;
-        if (CONTAINER_META[shortCode]) return CONTAINER_META[shortCode];
-        if (CONTAINER_META[code]) return CONTAINER_META[code];
-        const label = unitMap.get(code) || unitMap.get(shortCode) || containerType || 'Cái';
+        const meta = CONTAINER_META[shortCode] || CONTAINER_META[code];
+        if (meta) return { label: t(meta.labelKey), className: meta.className };
+        const label = unitMap.get(code) || unitMap.get(shortCode) || containerType || t('pages.WarehouseArea.container.cai');
         return { label, className: 'bg-slate-100 text-slate-700 border-slate-200' };
     };
 
@@ -170,17 +174,17 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
     const handleExportGlobalExcel = () => {
         if (!locations.length) return;
         const data = locations.map(loc => ({
-            'Khu vực': loc.zone,
-            'Mã vị trí': loc.binCode,
-            'Lối (Aisle)': loc.aisle,
-            'Kệ (Rack)': loc.rack,
-            'Tầng (Level)': loc.level,
-            'Sức chứa': loc.capacity,
-            'Tồn thực tế': loc.quantityOnHand || 0,
+            [t('pages.WarehouseArea.filters.zone')]: loc.zone,
+            [t('pages.WarehouseArea.form.binCode')]: loc.binCode,
+            [t('pages.WarehouseArea.form.aisle')]: loc.aisle,
+            [t('pages.WarehouseArea.form.rack')]: loc.rack,
+            [t('pages.WarehouseArea.form.level')]: loc.level,
+            [t('pages.WarehouseArea.form.capacity')]: loc.capacity,
+            [t('pages.WarehouseArea.labels.actualStock')]: loc.quantityOnHand || 0,
             'Tỷ lệ (%)': loc.capacity > 0 ? ((loc.quantityOnHand || 0) / loc.capacity * 100).toFixed(1) : 0,
-            'Loại kho': getStorageTypeLabel(loc.storageType),
-            'Vật chứa': loc.containerType,
-            'Trạng thái': STATUS_META[loc.statusCode]?.label || loc.statusCode
+            [t('pages.WarehouseArea.form.storageType')]: getStorageTypeLabel(loc.storageType, t),
+            [t('pages.WarehouseArea.form.containerType')]: loc.containerType,
+            [t('pages.WarehouseArea.filters.status')]: STATUS_META[loc.statusCode]?.labelKey ? t(STATUS_META[loc.statusCode].labelKey) : loc.statusCode
         }));
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
@@ -209,7 +213,7 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
                     'Theo lối': loc.aisle,
                     'Theo kệ': loc.rack,
                     'Theo tầng': loc.level,
-                    'Theo loại kho': getStorageTypeLabel(loc.storageType),
+                    'Theo loại kho': getStorageTypeLabel(loc.storageType, t),
                     'Theo loại hàng': getContainerMeta(loc.containerType).label
                 };
                 matchesKeyword = searchType === 'Tất cả'
@@ -276,25 +280,25 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
 
     const handleFormChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
     const handleSaveForm = async () => {
-        if (!formData.binCode || !formData.zone) return setFormError('Vui lòng nhập đầy đủ Mã vị trí và Khu vực.');
+        if (!formData.binCode || !formData.zone) return setFormError(t('pages.WarehouseArea.errors.fillRequired'));
         const payload = { ...formData, capacity: parseInt(formData.capacity || 100, 10) };
         const url = formMode === 'create' ? `/api/locations` : `/api/locations/${selectedLocationId}`;
         try {
             if (formMode === 'create') { await axiosClient.post(url, payload); }
             else { await axiosClient.put(url, payload); }
             setIsFormOpen(false); setFormError(''); await fetchLocations();
-        } catch { setFormError('Không lưu được dữ liệu vị trí.'); }
+        } catch { setFormError(t('pages.WarehouseArea.errors.saveFailed')); }
     };
 
     const handleDeleteLocation = async (location = selectedLocation) => {
         if (!location) return;
-        showConfirm("Xác nhận xóa", `Bạn có chắc chắn muốn xóa vị trí ${location.binCode}?`, async () => {
+        showConfirm(t("pages.WarehouseArea.confirmDeleteTitle"), t("pages.WarehouseArea.confirmDeleteMsg", { binCode: location.binCode }), async () => {
             try {
                 await axiosClient.delete(`/api/locations/${location.id}`);
                 if (selectedLocationId === location.id) setSelectedLocationId(null);
                 await fetchLocations();
-                showMsg("Thành công", "Đã xóa vị trí thành công.");
-            } catch { showMsg("Lỗi", 'Không thể xóa vị trí (Có thể đang có hàng tồn kho).'); }
+                showMsg(t("pages.WarehouseArea.successTitle"), t("pages.WarehouseArea.deleteSuccessMsg"));
+            } catch { showMsg(t("pages.WarehouseArea.errorTitle"), t('pages.WarehouseArea.deleteErrorMsg')); }
         });
     };
 
@@ -325,21 +329,21 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
             <div className="sticky top-0 z-20 flex flex-col bg-white/95 backdrop-blur-sm p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 mb-4 md:mb-6 transition-all gap-4">
                 <div className="flex items-center justify-between w-full">
                     <div className="flex gap-4 md:gap-6 overflow-x-auto no-scrollbar pb-1 flex-1">
-                        <ActionButton label="THÊM MỚI" iconSrc={addIcon} onClick={openCreateForm} />
-                        <ActionButton label="QUÉT MÃ" iconSrc={scanIcon} onClick={() => setIsScannerOpen(true)} />
-                        <ActionButton label="SỬA" iconSrc={fixIcon} onClick={() => openEditForm()} />
-                        <ActionButton label="XÓA" iconSrc={deleteIcon} onClick={() => handleDeleteLocation()} />
-                        <ActionButton label="LÀM MỚI" iconSrc={excel1Icon} onClick={fetchLocations} />
+                        <ActionButton label={t("pages.WarehouseArea.actions.add")} iconSrc={addIcon} onClick={openCreateForm} />
+                        <ActionButton label={t("pages.WarehouseArea.actions.scan")} iconSrc={scanIcon} onClick={() => setIsScannerOpen(true)} />
+                        <ActionButton label={t("pages.WarehouseArea.actions.edit")} iconSrc={fixIcon} onClick={() => openEditForm()} />
+                        <ActionButton label={t("pages.WarehouseArea.actions.delete")} iconSrc={deleteIcon} onClick={() => handleDeleteLocation()} />
+                        <ActionButton label={t("pages.WarehouseArea.actions.refresh")} iconSrc={excel1Icon} onClick={fetchLocations} />
                     </div>
-                    <div className="text-xs font-black text-gray-300 uppercase tracking-widest hidden lg:block ml-4">Quản lý sơ đồ vị trí</div>
+                    <div className="text-xs font-black text-gray-300 uppercase tracking-widest hidden lg:block ml-4">{t("pages.WarehouseArea.title")}</div>
                 </div>
                 
                 {/* Status Legend - Moved below toolbar for mobile */}
                 <div className="flex flex-wrap gap-2 md:gap-3 bg-gray-50/50 p-2 md:p-3 rounded-xl md:rounded-2xl border border-gray-100/50 justify-center sm:justify-start">
-                    <StatusLegend label="Trống" value={statusCounts.EMPTY || 0} className="bg-white text-gray-500 border-gray-200" />
-                    <StatusLegend label="Chật" value={statusCounts.FULL || 0} className="bg-amber-50 text-amber-700 border-amber-100" />
-                    <StatusLegend label="Phân bổ" value={statusCounts.ALLOCATED || 0} className="bg-blue-50 text-blue-700 border-blue-100" />
-                    <StatusLegend label="Đang dùng" value={statusCounts.OCCUPIED || 0} className="bg-cyan-50 text-cyan-700 border-cyan-100" />
+                    <StatusLegend label={t("pages.WarehouseArea.status.empty")} value={statusCounts.EMPTY || 0} className="bg-white text-gray-500 border-gray-200" />
+                    <StatusLegend label={t("pages.WarehouseArea.status.full")} value={statusCounts.FULL || 0} className="bg-amber-50 text-amber-700 border-amber-100" />
+                    <StatusLegend label={t("pages.WarehouseArea.status.allocated")} value={statusCounts.ALLOCATED || 0} className="bg-blue-50 text-blue-700 border-blue-100" />
+                    <StatusLegend label={t("pages.WarehouseArea.status.occupied")} value={statusCounts.OCCUPIED || 0} className="bg-cyan-50 text-cyan-700 border-cyan-100" />
                 </div>
             </div>
 
@@ -347,43 +351,43 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
             <div className="bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 flex flex-col gap-4 mb-4 md:mb-6">
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                     <select value={searchType} onChange={(e) => setSearchType(e.target.value)} className="wms-select w-full sm:w-48 !text-sm !py-2.5 md:!py-3">
-                        <option value="Tất cả">Tất cả kiểu tìm</option>
-                        <option value="Theo mã vị trí">Theo mã vị trí</option>
-                        <option value="Theo khu vực">Theo khu vực</option>
-                        <option value="Theo loại kho">Theo loại kho</option>
+                        <option value="Tất cả">{t("pages.WarehouseArea.searchAll")}</option>
+                        <option value="Theo mã vị trí">{t("pages.WarehouseArea.searchByBinCode")}</option>
+                        <option value="Theo khu vực">{t("pages.WarehouseArea.searchByZone")}</option>
+                        <option value="Theo loại kho">{t("pages.WarehouseArea.searchByStorageType")}</option>
                     </select>
                     <div className="relative flex-1">
-                        <input type="text" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} placeholder="Nhập từ khóa tìm kiếm nhanh..." className="w-full border-2 border-gray-100 rounded-xl px-4 py-2.5 md:py-3 text-sm outline-none focus:border-[#1192a8] focus:ring-4 focus:ring-[#1192a8]/10 transition-all bg-white"/>
+                        <input type="text" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} placeholder={t("pages.WarehouseArea.searchPlaceholder")} className="w-full border-2 border-gray-100 rounded-xl px-4 py-2.5 md:py-3 text-sm outline-none focus:border-[#1192a8] focus:ring-4 focus:ring-[#1192a8]/10 transition-all bg-white"/>
                     </div>
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-gray-50 pt-4">
                     <div className="flex items-center gap-2 flex-1 sm:flex-none min-w-[140px]">
-                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase shrink-0">Khu vực:</span>
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase shrink-0">{t("pages.WarehouseArea.filters.zone")}</span>
                         <select value={filterZone} onChange={(e) => setFilterZone(e.target.value)} className="wms-select w-full !text-[11px] !py-1.5 !px-2">
-                            <option value="ALL">Tất cả</option>
+                            <option value="ALL">{t("pages.WarehouseArea.filters.all")}</option>
                             {zones.map(z => <option key={z} value={z}>{z}</option>)}
                         </select>
                     </div>
                     <div className="flex items-center gap-2 flex-1 sm:flex-none min-w-[140px]">
-                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase shrink-0">Trạng thái:</span>
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase shrink-0">{t("pages.WarehouseArea.filters.status")}</span>
                         <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="wms-select w-full !text-[11px] !py-1.5 !px-2">
-                            <option value="ALL">Tất cả</option>
-                            {Object.entries(STATUS_META).map(([code, meta]) => <option key={code} value={code}>{meta.label}</option>)}
+                            <option value="ALL">{t("pages.WarehouseArea.filters.all")}</option>
+                            {Object.entries(STATUS_META).map(([code, meta]) => <option key={code} value={code}>{t(meta.labelKey)}</option>)}
                         </select>
                     </div>
                     <div className="flex items-center gap-2 flex-1 sm:flex-none min-w-[140px]">
-                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase shrink-0">Loại kho:</span>
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase shrink-0">{t("pages.WarehouseArea.filters.storageType")}</span>
                         <select value={filterStorage} onChange={(e) => setFilterStorage(e.target.value)} className="wms-select w-full !text-[11px] !py-1.5 !px-2">
-                            <option value="ALL">Tất cả</option>
-                            {Object.entries(STORAGE_META).map(([code, meta]) => <option key={code} value={code}>{meta.label}</option>)}
+                            <option value="ALL">{t("pages.WarehouseArea.filters.all")}</option>
+                            {Object.entries(STORAGE_META).map(([code, meta]) => <option key={code} value={code}>{t(meta.labelKey)}</option>)}
                         </select>
                     </div>
                     <button 
                         onClick={() => { setFilterZone('ALL'); setFilterStatus('ALL'); setFilterStorage('ALL'); setSearchKeyword(''); }} 
                         className="ml-auto text-[9px] md:text-[10px] font-black text-gray-400 hover:text-red-500 uppercase tracking-tighter cursor-pointer transition-colors"
                     >
-                        Xóa bộ lọc ✕
+                        {t("pages.WarehouseArea.filters.clear")}
                     </button>
                 </div>
             </div>
@@ -393,7 +397,7 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
                 {isLoading ? (
                     <div className="flex-1 flex flex-col justify-center items-center py-20 text-[#1192a8] font-bold">
                         <div className="w-10 h-10 border-4 border-[#1192a8] border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <span className="animate-pulse tracking-widest uppercase text-xs">Đang tải dữ liệu sơ đồ...</span>
+                        <span className="animate-pulse tracking-widest uppercase text-xs">{t("pages.WarehouseArea.loading")}</span>
                     </div>
                 ) : (
                     <div className="flex-1 overflow-y-auto no-scrollbar pr-1">
@@ -401,8 +405,8 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
                             {groupedLocations.length > 0 ? groupedLocations.map((group) => (
                                 <section key={group.zoneLabel} className="rounded-2xl md:rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
                                     <div className="px-4 md:px-6 py-3 md:py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center">
-                                        <h4 className="text-sm md:text-base font-black text-[#1192a8] uppercase tracking-wide">Khu vực: {group.zoneLabel}</h4>
-                                        <span className="text-[10px] md:text-xs font-bold text-gray-400 bg-white px-2 py-0.5 rounded-full border border-gray-200">{group.locations.length} vị trí</span>
+                                        <h4 className="text-sm md:text-base font-black text-[#1192a8] uppercase tracking-wide">{t("pages.WarehouseArea.groupZoneTitle", { zone: group.zoneLabel })}</h4>
+                                        <span className="text-[10px] md:text-xs font-bold text-gray-400 bg-white px-2 py-0.5 rounded-full border border-gray-200">{t("pages.WarehouseArea.locationCount", { count: group.locations.length })}</span>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 p-4 md:p-6 bg-white">
                                         {group.locations.map((loc, idx) => (
@@ -418,11 +422,11 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
                                                 <div className="flex items-baseline justify-between mb-4">
                                                     <div className="flex items-baseline gap-3 min-w-0">
                                                         <h5 className="text-lg font-black text-[#1192a8] truncate uppercase" title={loc.binCode}>{loc.binCode}</h5>
-                                                        {viewMode === 'details' && <span className="text-[9px] font-bold text-gray-300 uppercase italic shrink-0">Hàng hóa:</span>}
+                                                        {viewMode === 'details' && <span className="text-[9px] font-bold text-gray-300 uppercase italic shrink-0">{t("pages.WarehouseArea.labels.goods")}</span>}
                                                     </div>
                                                     {viewMode === 'details' && (
                                                         <div className="text-right shrink-0">
-                                                            <span className="text-[8px] font-bold text-gray-400 uppercase block leading-none mb-0.5">Tỉ lệ</span>
+                                                            <span className="text-[8px] font-bold text-gray-400 uppercase block leading-none mb-0.5">{t("pages.WarehouseArea.labels.ratio")}</span>
                                                             <span className="text-xs font-black text-gray-700">{(loc.quantityOnHand || 0).toLocaleString()} / {(loc.capacity || 0).toLocaleString()}</span>
                                                         </div>
                                                     )}
@@ -441,7 +445,7 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
                                 </section>
                             )) : (
                                 <div className="py-20 text-center text-gray-400 italic font-medium uppercase text-xs tracking-widest animate-pulse">
-                                    Không có dữ liệu vị trí phù hợp với bộ lọc.
+                                    {t("pages.WarehouseArea.noData")}
                                 </div>
                             )}
                         </div>
@@ -450,41 +454,41 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
             </div>
 
             <button onClick={() => setViewMode(prev => prev === 'grid' ? 'details' : 'grid')} className="fixed bottom-10 right-10 w-16 h-16 bg-[#1192a8] text-white rounded-full shadow-[0_10px_30px_rgba(17,146,168,0.4)] flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 group overflow-hidden">
-                <div className="flex flex-col items-center gap-0.5"><span className="text-2xl font-bold leading-none">{viewMode === 'grid' ? '≡' : '▦'}</span><span className="text-[8px] font-black uppercase tracking-tighter">{viewMode === 'grid' ? 'CHI TIẾT' : 'LƯỚI'}</span></div>
+                <div className="flex flex-col items-center gap-0.5"><span className="text-2xl font-bold leading-none">{viewMode === 'grid' ? '≡' : '▦'}</span><span className="text-[8px] font-black uppercase tracking-tighter">{viewMode === 'grid' ? t('pages.WarehouseArea.viewMode.details') : t('pages.WarehouseArea.viewMode.grid')}</span></div>
             </button>
 
             {isFormOpen && (
                 <div className="fixed inset-0 bg-black/40 z-50 flex justify-center items-center backdrop-blur-md p-4">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[780px] flex flex-col max-h-[92vh]">
                         <div className="px-5 py-4 flex justify-between items-center border-b border-gray-200">
-                            <div className="flex items-center gap-2"><img src={addIcon} alt="add" className="h-5 w-5 object-contain" /><h2 className="text-xl font-medium text-[#0e7c8a] uppercase">{formMode === 'create' ? 'Thêm vị trí mới' : 'Cập nhật thông tin'}</h2></div>
+                            <div className="flex items-center gap-2"><img src={addIcon} alt="add" className="h-5 w-5 object-contain" /><h2 className="text-xl font-medium text-[#0e7c8a] uppercase">{formMode === 'create' ? t('pages.WarehouseArea.form.addTitle') : t('pages.WarehouseArea.form.editTitle')}</h2></div>
                             <button onClick={() => setIsFormOpen(false)} className="text-2xl hover:text-red-500">×</button>
                         </div>
                         <div className="p-6 overflow-y-auto flex-1 text-left">
                             {formError && <div className="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-xs font-bold mb-4 border border-red-100 uppercase italic">⚠️ {formError}</div>}
                             <div className="grid grid-cols-2 gap-4">
-                                <Field label="Khu vực (Zone) *"><input type="text" name="zone" value={formData.zone} onChange={handleFormChange} placeholder="VD: Khu A" className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1192a8]"/></Field>
-                                <Field label="Mã vị trí (Bin Code) *"><input type="text" name="binCode" value={formData.binCode} onChange={handleFormChange} placeholder="VD: A1-01-01" className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1192a8]"/></Field>
-                                <Field label="Lối (Aisle)"><input type="text" name="aisle" value={formData.aisle} onChange={handleFormChange} className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1192a8]"/></Field>
-                                <Field label="Kệ (Rack)"><input type="text" name="rack" value={formData.rack} onChange={handleFormChange} className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1192a8]"/></Field>
-                                <Field label="Tầng (Level)"><input type="text" name="level" value={formData.level} onChange={handleFormChange} className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1192a8]"/></Field>
-                                <Field label="Sức chứa"><input type="number" name="capacity" value={formData.capacity} onChange={handleFormChange} className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1192a8]"/></Field>
-                                <Field label="Loại kho"><select name="storageType" value={formData.storageType} onChange={handleFormChange} className="wms-select w-full !py-2.5"><option value="NORMAL">Bình thường</option><option value="CHILLED">Kho mát</option><option value="COLD">Kho lạnh</option><option value="FROZEN">Kho đông</option><option value="BULK">Kho bulk</option><option value="QUARANTINE">Cách ly</option></select></Field>
-                                <Field label="Loại hàng chứa"><select name="containerType" value={formData.containerType} onChange={handleFormChange} className="wms-select w-full !py-2.5">{units.map(unit => (<option key={unit.id} value={unit.unitCode}>{unit.name}</option>))}</select></Field>
+                                <Field label={t('pages.WarehouseArea.form.zone')}><input type="text" name="zone" value={formData.zone} onChange={handleFormChange} placeholder="VD: Khu A" className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1192a8]"/></Field>
+                                <Field label={t('pages.WarehouseArea.form.binCode')}><input type="text" name="binCode" value={formData.binCode} onChange={handleFormChange} placeholder="VD: A1-01-01" className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1192a8]"/></Field>
+                                <Field label={t('pages.WarehouseArea.form.aisle')}><input type="text" name="aisle" value={formData.aisle} onChange={handleFormChange} className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1192a8]"/></Field>
+                                <Field label={t('pages.WarehouseArea.form.rack')}><input type="text" name="rack" value={formData.rack} onChange={handleFormChange} className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1192a8]"/></Field>
+                                <Field label={t('pages.WarehouseArea.form.level')}><input type="text" name="level" value={formData.level} onChange={handleFormChange} className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1192a8]"/></Field>
+                                <Field label={t('pages.WarehouseArea.form.capacity')}><input type="number" name="capacity" value={formData.capacity} onChange={handleFormChange} className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1192a8]"/></Field>
+                                <Field label={t('pages.WarehouseArea.form.storageType')}><select name="storageType" value={formData.storageType} onChange={handleFormChange} className="wms-select w-full !py-2.5"><option value="NORMAL">{t('pages.WarehouseArea.storage.normal')}</option><option value="CHILLED">{t('pages.WarehouseArea.storage.chilled')}</option><option value="COLD">{t('pages.WarehouseArea.storage.cold')}</option><option value="FROZEN">{t('pages.WarehouseArea.storage.frozen')}</option><option value="BULK">{t('pages.WarehouseArea.storage.bulk')}</option><option value="QUARANTINE">{t('pages.WarehouseArea.storage.quarantine')}</option></select></Field>
+                                <Field label={t('pages.WarehouseArea.form.containerType')}><select name="containerType" value={formData.containerType} onChange={handleFormChange} className="wms-select w-full !py-2.5">{units.map(unit => (<option key={unit.id} value={unit.unitCode}>{unit.name}</option>))}</select></Field>
                             </div>
                         </div>
-                        <div className="p-4 border-t flex justify-end gap-3"><button onClick={() => setIsFormOpen(false)} className="px-6 py-2.5 text-gray-500 font-bold text-sm">HỦY BỎ</button><button onClick={handleSaveForm} className="px-8 py-2.5 bg-[#1192a8] text-white rounded-xl font-bold text-sm shadow-lg hover:bg-teal-700 transition">XÁC NHẬN</button></div>
+                        <div className="p-4 border-t flex justify-end gap-3"><button onClick={() => setIsFormOpen(false)} className="px-6 py-2.5 text-gray-500 font-bold text-sm">{t('pages.WarehouseArea.form.cancel')}</button><button onClick={handleSaveForm} className="px-8 py-2.5 bg-[#1192a8] text-white rounded-xl font-bold text-sm shadow-lg hover:bg-teal-700 transition">{t('pages.WarehouseArea.form.confirm')}</button></div>
                     </div>
                 </div>
             )}
 
             <VoucherContextMenu
-                isOpen={!!contextMenu} x={contextMenu?.x || 0} y={contextMenu?.y || 0} title="Tác vụ nhanh" subtitle={contextMenu?.item?.binCode || ''}
+                isOpen={!!contextMenu} x={contextMenu?.x || 0} y={contextMenu?.y || 0} title={t("pages.WarehouseArea.contextMenu.title")} subtitle={contextMenu?.item?.binCode || ''}
                 actions={[
-                    { label: 'Xem tồn kho', onClick: () => { closeContextMenu(); setViewingLocation(contextMenu?.item); setIsInventoryOpen(true); } },
-                    { label: 'Lập phiếu nhập', onClick: () => { closeContextMenu(); handleCreateInboundFromLoc(contextMenu?.item); } },
-                    { label: 'Sửa thông tin', onClick: () => { closeContextMenu(); openEditForm(contextMenu?.item); } },
-                    { label: 'Xóa vị trí này', danger: true, onClick: () => { closeContextMenu(); handleDeleteLocation(contextMenu?.item); } }
+                    { label: t('pages.WarehouseArea.contextMenu.viewInventory'), onClick: () => { closeContextMenu(); setViewingLocation(contextMenu?.item); setIsInventoryOpen(true); } },
+                    { label: t('pages.WarehouseArea.contextMenu.createInbound'), onClick: () => { closeContextMenu(); handleCreateInboundFromLoc(contextMenu?.item); } },
+                    { label: t('pages.WarehouseArea.contextMenu.editInfo'), onClick: () => { closeContextMenu(); openEditForm(contextMenu?.item); } },
+                    { label: t('pages.WarehouseArea.contextMenu.deleteLocation'), danger: true, onClick: () => { closeContextMenu(); handleDeleteLocation(contextMenu?.item); } }
                 ]}
                 onClose={closeContextMenu}
             />
@@ -494,12 +498,14 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
 }
 
 function StatusBadge({ statusCode }) {
+    const { t } = useTranslation();
     const meta = STATUS_META[statusCode] || STATUS_META.EMPTY;
-    return <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${meta.className}`}>{meta.label}</span>;
+    return <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${meta.className}`}>{t(meta.labelKey)}</span>;
 }
 function StorageBadge({ storageType }) {
+    const { t } = useTranslation();
     const meta = STORAGE_META[String(storageType || 'NORMAL').toUpperCase()] || STORAGE_META.NORMAL;
-    return <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${meta.className}`}>{meta.label}</span>;
+    return <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${meta.className}`}>{t(meta.labelKey)}</span>;
 }
 function CardField({ label, value }) {
     return (<div><p className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-1 text-left">{label}</p><p className="text-xs font-black text-gray-700 text-left">{value}</p></div>);
@@ -512,6 +518,7 @@ function StatusLegend({ label, value, className }) {
 }
 
 function LocationInventoryInline({ locationId, onTransferSuccess }) {
+    const { t } = useTranslation();
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(false);
     const [transferTarget, setTransferTarget] = useState(null);
@@ -524,7 +531,7 @@ function LocationInventoryInline({ locationId, onTransferSuccess }) {
         fetchItems();
     }, [locationId]);
     if (loading) return (<div className="space-y-1"><div className="h-3 bg-gray-100 animate-pulse rounded w-full"></div><div className="h-3 bg-gray-50 animate-pulse rounded w-2/3"></div></div>);
-    if (inventory.length === 0) return <div className="text-[10px] text-gray-300 italic py-1 text-left">Vị trí trống</div>;
+    if (inventory.length === 0) return <div className="text-[10px] text-gray-300 italic py-1 text-left">{t('pages.WarehouseArea.inline.emptyLocation')}</div>;
     return (
         <div className="space-y-3 max-h-80 overflow-y-auto pr-2 scrollbar-thin">
             {inventory.map((inv, i) => (
@@ -532,11 +539,11 @@ function LocationInventoryInline({ locationId, onTransferSuccess }) {
                     <div className="flex-1 min-w-0 text-left">
                         <p className="text-[13px] font-black text-gray-800 truncate mb-1 leading-tight">{inv.productName}</p>
                         <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
-                            <div className="flex items-center gap-1.5"><span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Mã lô:</span><span className="text-[12px] font-mono font-bold text-[#1192a8] bg-[#1192a8]/5 px-1.5 py-0.5 rounded border border-[#1192a8]/10">{inv.batchCode}</span></div>
-                            <div className="flex items-center gap-1.5"><span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Số lượng:</span><span className="text-[14px] font-black text-gray-900">{Number(inv.onHand).toLocaleString()}</span></div>
+                            <div className="flex items-center gap-1.5"><span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{t('pages.WarehouseArea.inline.batchCode')}</span><span className="text-[12px] font-mono font-bold text-[#1192a8] bg-[#1192a8]/5 px-1.5 py-0.5 rounded border border-[#1192a8]/10">{inv.batchCode}</span></div>
+                            <div className="flex items-center gap-1.5"><span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{t('pages.WarehouseArea.inline.quantity')}</span><span className="text-[14px] font-black text-gray-900">{Number(inv.onHand).toLocaleString()}</span></div>
                         </div>
                     </div>
-                    <button onClick={(e) => { e.stopPropagation(); setTransferTarget({ product: { id: inv.productId, name: inv.productName, sku: inv.productSku, baseUnit: 'Cái' }, inv }); }} className="opacity-0 group-hover/item:opacity-100 bg-[#1192a8] text-white text-[11px] font-black px-4 py-2 rounded-lg shadow-lg shadow-[#1192a8]/20 transition-all hover:scale-105 active:scale-95 whitespace-nowrap ml-4">CHUYỂN</button>
+                    <button onClick={(e) => { e.stopPropagation(); setTransferTarget({ product: { id: inv.productId, name: inv.productName, sku: inv.productSku, baseUnit: 'Cái' }, inv }); }} className="opacity-0 group-hover/item:opacity-100 bg-[#1192a8] text-white text-[11px] font-black px-4 py-2 rounded-lg shadow-lg shadow-[#1192a8]/20 transition-all hover:scale-105 active:scale-95 whitespace-nowrap ml-4">{t('pages.WarehouseArea.inline.transfer')}</button>
                 </div>
             ))}
             {transferTarget && (<TransferModal isOpen={!!transferTarget} onClose={() => setTransferTarget(null)} product={transferTarget.product} stockLine={transferTarget.inv} onSuccess={() => { setTransferTarget(null); onTransferSuccess(); }}/>)}

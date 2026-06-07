@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import inboundIcon from '../common/icons/inbound.png';
 import outboundIcon from '../common/icons/outbound.png';
@@ -6,32 +7,33 @@ import storageIcon from '../common/icons/storage-stacks.png';
 import inventoryIcon from '../common/icons/product.png';
 
 export default function QuickActions({ roles }) {
+    const { t } = useTranslation();
     const navigate = useNavigate();
 
     const actions = [
         {
-            label: 'Nhập kho',
+            label: t('pages.QuickActions.inbound'),
             icon: inboundIcon,
             path: '/admin/inbound',
             roles: ['ADMIN', 'MANAGER', 'INBOUND_STAFF', 'STOREKEEPER'],
             color: 'bg-blue-600'
         },
         {
-            label: 'Xuất kho',
+            label: t('pages.QuickActions.outbound'),
             icon: outboundIcon,
             path: '/admin/outbound',
             roles: ['ADMIN', 'MANAGER', 'OUTBOUND_STAFF', 'STOREKEEPER'],
             color: 'bg-red-600'
         },
         {
-            label: 'Chuyển kho',
+            label: t('pages.QuickActions.transfer'),
             icon: storageIcon,
             path: '/admin/warehouse-area',
             roles: ['ADMIN', 'MANAGER', 'STOREKEEPER', 'HANDLER'],
             color: 'bg-teal-600'
         },
         {
-            label: 'Kiểm kê',
+            label: t('pages.QuickActions.inventory'),
             icon: inventoryIcon,
             path: '/admin/cycle-counting',
             roles: ['ADMIN', 'MANAGER', 'INVENTORY_CHECKER', 'STOREKEEPER'],
@@ -45,7 +47,7 @@ export default function QuickActions({ roles }) {
 
     return (
         <div className="mb-8">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Thao tác nhanh</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">{t('pages.QuickActions.quickActions')}</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {allowedActions.map((action, idx) => (
                     <button

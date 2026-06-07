@@ -11,6 +11,8 @@ import com.wmsbackend.repository.StaffRepository;
 import com.wmsbackend.security.JwtUtil;
 import com.wmsbackend.security.StaffUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,6 +38,15 @@ public class AuthController {
     @Autowired private StaffRepository staffRepository;
     @Autowired private RoleRepository roleRepository;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private MessageSource messageSource;
+
+    private String getMessage(String code) {
+        try {
+            return messageSource.getMessage(code, null, LocaleContextHolder.getLocale());
+        } catch (Exception e) {
+            return code;
+        }
+    }
 
     // ── ĐĂNG NHẬP ─────────────────────────────────────────────────────────
     @PostMapping("/login")
@@ -49,7 +60,7 @@ public class AuthController {
         } catch (AuthenticationException e) {
             System.out.println("Xác thực thất bại: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Tên đăng nhập hoặc mật khẩu không đúng"));
+                    .body(Map.of("message", getMessage("auth.login.incorrect")));
         }
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
@@ -71,11 +82,11 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         if (staffRepository.existsByUsername(request.getUsername())) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Tên đăng nhập đã tồn tại"));
+                    .body(Map.of("message", getMessage("auth.username.exists")));
         }
         if (staffRepository.existsByEmployeeCode(request.getEmployeeCode())) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Mã nhân viên đã tồn tại"));
+                    .body(Map.of("message", getMessage("auth.employee_code.exists")));
         }
 
         // Lấy roles từ DB
@@ -103,7 +114,7 @@ public class AuthController {
 
         staffRepository.save(staff);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("message", "Tạo tài khoản thành công"));
+                .body(Map.of("message", getMessage("auth.register.success")));
     }
 
     // ── ĐỔI MẬT KHẨU (nhân viên tự đổi) ─────────────────────────────────
@@ -118,11 +129,11 @@ public class AuthController {
 
         Staff staff = staffRepository.findByUsername(username).orElseThrow();
         if (!passwordEncoder.matches(oldPass, staff.getPassword())) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Mật khẩu hiện tại không đúng"));
+            return ResponseEntity.badRequest().body(Map.of("message", getMessage("auth.password.incorrect")));
         }
         staff.setPassword(passwordEncoder.encode(newPass));
         staffRepository.save(staff);
-        return ResponseEntity.ok(Map.of("message", "Đổi mật khẩu thành công"));
+        return ResponseEntity.ok(Map.of("message", getMessage("auth.password.success")));
     }
 
     // ── LẤY THÔNG TIN USER HIỆN TẠI (/me) ────────────────────────────────

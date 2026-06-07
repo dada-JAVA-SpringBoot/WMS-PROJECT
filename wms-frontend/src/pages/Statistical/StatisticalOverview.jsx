@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import axiosClient from '../../api/axiosClient';
 import StatMetricCard from '../../components/statistical/StatMetricCard';
 import LineAreaChart from '../../components/statistical/charts/LineAreaChart';
@@ -6,6 +7,7 @@ import PanelCard from '../../components/statistical/PanelCard';
 import StatisticsTable from '../../components/statistical/StatisticsTable';
 
 export default function StatisticalOverview() {
+    const { t } = useTranslation();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -17,7 +19,7 @@ export default function StatisticalOverview() {
                 setData(res.data);
             } catch (error) {
                 console.error('Không tải được dữ liệu dashboard:', error);
-                setError('Không thể tải dữ liệu. Vui lòng thử lại.');
+                setError(t('pages.StatisticalOverview.loadError'));
             } finally {
                 setLoading(false);
             }
@@ -25,7 +27,7 @@ export default function StatisticalOverview() {
         getDashboardData();
     }, []);
 
-    if (loading) return <div className="p-5">Đang tải dữ liệu vận hành...</div>;
+    if (loading) return <div className="p-5">{t('pages.StatisticalOverview.loading')}</div>;
     if (error) return <div className="p-5 text-red-500">{error}</div>;
 
     // Dữ liệu chart từ API
@@ -35,10 +37,10 @@ export default function StatisticalOverview() {
 
     // Cột cho bảng Top sản phẩm tồn nhiều
     const topStockColumns = [
-        { key: 'stt', label: 'STT', minWidth: 60 },
-        { key: 'sku', label: 'SKU', minWidth: 120 },
-        { key: 'name', label: 'Tên sản phẩm', minWidth: 260 },
-        { key: 'totalStock', label: 'Tồn kho', minWidth: 120 },
+        { key: 'stt', label: t('pages.StatisticalOverview.colSTT'), minWidth: 60 },
+        { key: 'sku', label: t('pages.StatisticalOverview.colSKU'), minWidth: 120 },
+        { key: 'name', label: t('pages.StatisticalOverview.colProductName'), minWidth: 260 },
+        { key: 'totalStock', label: t('pages.StatisticalOverview.colStock'), minWidth: 120 },
     ];
     const topStockRows = (data?.topStockProducts || []).map((item, i) => ({
         id: i,
@@ -50,11 +52,11 @@ export default function StatisticalOverview() {
 
     // Cột cho bảng sản phẩm sắp hết hạn
     const expiryColumns = [
-        { key: 'stt', label: 'STT', minWidth: 60 },
-        { key: 'name', label: 'Sản phẩm', minWidth: 220 },
-        { key: 'batchCode', label: 'Lô hàng', minWidth: 140 },
-        { key: 'expiryDate', label: 'Hạn sử dụng', minWidth: 140 },
-        { key: 'quantity', label: 'Tồn kho', minWidth: 100 },
+        { key: 'stt', label: t('pages.StatisticalOverview.colSTT'), minWidth: 60 },
+        { key: 'name', label: t('pages.StatisticalOverview.colProduct'), minWidth: 220 },
+        { key: 'batchCode', label: t('pages.StatisticalOverview.colBatchCode'), minWidth: 140 },
+        { key: 'expiryDate', label: t('pages.StatisticalOverview.colExpiryDate'), minWidth: 140 },
+        { key: 'quantity', label: t('pages.StatisticalOverview.colStock'), minWidth: 100 },
     ];
     const expiryRows = (data?.nearExpiryProducts || []).map((item, i) => ({
         id: i,
@@ -67,9 +69,9 @@ export default function StatisticalOverview() {
 
     // Cột cho bảng phân bổ theo danh mục
     const categoryColumns = [
-        { key: 'stt', label: 'STT', minWidth: 60 },
-        { key: 'category', label: 'Danh mục', minWidth: 260 },
-        { key: 'totalStock', label: 'Tổng tồn kho', minWidth: 160 },
+        { key: 'stt', label: t('pages.StatisticalOverview.colSTT'), minWidth: 60 },
+        { key: 'category', label: t('pages.StatisticalOverview.colCategory'), minWidth: 260 },
+        { key: 'totalStock', label: t('pages.StatisticalOverview.colTotalStock'), minWidth: 160 },
     ];
     const categoryRows = (data?.stockByCategory || []).map((item, i) => ({
         id: i,
@@ -85,37 +87,37 @@ export default function StatisticalOverview() {
                 <StatMetricCard 
                     icon="📦" 
                     value={data?.totalSkus || 0} 
-                    label="Tổng mã hàng (SKU)" 
+                    label={t('pages.StatisticalOverview.lblTotalSkus')} 
                     circleClass="bg-blue-500 text-white" 
                 />
                 <StatMetricCard 
                     icon="📊" 
                     value={Number(data?.totalStockQuantity || 0).toLocaleString('vi-VN')} 
-                    label="Tổng tồn kho (sp)" 
+                    label={t('pages.StatisticalOverview.lblTotalStockQuantity')} 
                     circleClass="bg-green-500 text-white" 
                 />
                 <StatMetricCard 
                     icon="🏢" 
                     value={`${data?.warehouseOccupancyRate?.toFixed(1) || 0}%`} 
-                    label="Tỉ lệ lấp đầy kho" 
+                    label={t('pages.StatisticalOverview.lblWarehouseOccupancyRate')} 
                     circleClass="bg-purple-500 text-white" 
                 />
                 <StatMetricCard 
                     icon="⚠️" 
                     value={data?.lowStockCount || 0} 
-                    label="Hàng dưới định mức" 
+                    label={t('pages.StatisticalOverview.lblLowStockCount')} 
                     circleClass="bg-red-500 text-white" 
                 />
                 <StatMetricCard 
                     icon="📥" 
                     value={data?.pendingInbound || 0} 
-                    label="Đơn nhập chờ duyệt" 
+                    label={t('pages.StatisticalOverview.lblPendingInbound')} 
                     circleClass="bg-orange-400 text-white" 
                 />
                 <StatMetricCard 
                     icon="📤" 
                     value={data?.pendingOutbound || 0} 
-                    label="Đơn xuất chờ duyệt" 
+                    label={t('pages.StatisticalOverview.lblPendingOutbound')} 
                     circleClass="bg-indigo-400 text-white" 
                 />
             </div>
@@ -124,21 +126,21 @@ export default function StatisticalOverview() {
             <div className="bg-cyan-50/50 border border-cyan-100 rounded-2xl p-4 flex items-center gap-3 text-cyan-800 text-sm font-semibold shadow-sm">
                 <span className="text-xl">💡</span>
                 <p>
-                    Gợi ý tối ưu: Tỉ lệ lấp đầy kho hiện đạt <span className="font-extrabold text-cyan-600">{data?.warehouseOccupancyRate?.toFixed(1)}%</span>. 
+                    {t('pages.StatisticalOverview.lblOptimizationSuggestion')} {t('pages.StatisticalOverview.lblOccupancyCurrentlyAt')} <span className="font-extrabold text-cyan-600">{data?.warehouseOccupancyRate?.toFixed(1)}%</span>. 
                     {data?.warehouseOccupancyRate > 75 
-                        ? " Sức chứa kho đang ở mức cao. Hãy xem xét sắp xếp lại vị trí lưu kho hoặc lên kế hoạch giải phóng các mặt hàng tồn lâu ngày để tối ưu không gian." 
-                        : " Diện tích lưu trữ còn trống khá rộng rãi, kho sẵn sàng tiếp nhận thêm lượng hàng nhập mới lớn."}
+                        ? t('pages.StatisticalOverview.txtOccupancyHigh') 
+                        : t('pages.StatisticalOverview.txtOccupancyLow')}
                 </p>
             </div>
 
             {/* Chart: Dòng chảy hàng hóa 7 ngày (dữ liệu thực từ API) */}
             {chartLabels.length > 0 && (
                 <LineAreaChart
-                    title="Dòng chảy hàng hóa (Nhập vs Xuất) - 7 ngày qua"
+                    title={t('pages.StatisticalOverview.lblFlowChartTitle')}
                     labels={chartLabels}
                     series={[
-                        { label: 'Nhập kho', data: chartInbound, color: '#10b981', fill: '#d1fae5', strokeWidth: 3 },
-                        { label: 'Xuất kho', data: chartOutbound, color: '#ef4444', fill: '#fee2e2', strokeWidth: 3 },
+                        { label: t('pages.StatisticalOverview.lblInbound'), data: chartInbound, color: '#10b981', fill: '#d1fae5', strokeWidth: 3 },
+                        { label: t('pages.StatisticalOverview.lblOutbound'), data: chartOutbound, color: '#ef4444', fill: '#fee2e2', strokeWidth: 3 },
                     ]}
                 />
             )}
@@ -148,7 +150,7 @@ export default function StatisticalOverview() {
                 <PanelCard className="overflow-hidden">
                     <div className="border-b border-slate-200 px-6 py-4">
                         <h3 className="text-[17px] font-semibold text-slate-900">
-                            🏆 Top sản phẩm tồn kho nhiều nhất
+                            {t('pages.StatisticalOverview.lblTopStockTitle')}
                         </h3>
                     </div>
                     <StatisticsTable
@@ -157,14 +159,14 @@ export default function StatisticalOverview() {
                         scrollHeight="300px"
                     />
                     {topStockRows.length === 0 && (
-                        <div className="p-6 text-center text-gray-400">Chưa có dữ liệu tồn kho</div>
+                        <div className="p-6 text-center text-gray-400">{t('pages.StatisticalOverview.noStockData')}</div>
                     )}
                 </PanelCard>
 
                 <PanelCard className="overflow-hidden">
                     <div className="border-b border-slate-200 px-6 py-4">
                         <h3 className="text-[17px] font-semibold text-slate-900">
-                            ⏰ Lô hàng sắp hết hạn (30 ngày tới)
+                            {t('pages.StatisticalOverview.lblNearExpiryTitle')}
                         </h3>
                     </div>
                     <StatisticsTable
@@ -173,7 +175,7 @@ export default function StatisticalOverview() {
                         scrollHeight="300px"
                     />
                     {expiryRows.length === 0 && (
-                        <div className="p-6 text-center text-gray-400">Không có lô hàng sắp hết hạn</div>
+                        <div className="p-6 text-center text-gray-400">{t('pages.StatisticalOverview.noNearExpiryData')}</div>
                     )}
                 </PanelCard>
             </div>
@@ -182,7 +184,7 @@ export default function StatisticalOverview() {
             <PanelCard className="overflow-hidden">
                 <div className="border-b border-slate-200 px-6 py-4">
                     <h3 className="text-[17px] font-semibold text-slate-900">
-                        📁 Phân bổ tồn kho theo danh mục
+                        {t('pages.StatisticalOverview.lblStockByCategoryTitle')}
                     </h3>
                 </div>
                 <StatisticsTable
@@ -191,7 +193,7 @@ export default function StatisticalOverview() {
                     scrollHeight="300px"
                 />
                 {categoryRows.length === 0 && (
-                    <div className="p-6 text-center text-gray-400">Chưa có dữ liệu</div>
+                    <div className="p-6 text-center text-gray-400">{t('pages.StatisticalOverview.noData')}</div>
                 )}
             </PanelCard>
         </div>

@@ -16,6 +16,9 @@ axiosClient.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        
+        const lang = localStorage.getItem('i18nextLng') || 'vi';
+        config.headers['Accept-Language'] = lang.split('-')[0]; // Lấy mã ngôn ngữ chính (ví dụ 'vi' từ 'vi-VN')
         return config;
     },
     (error) => Promise.reject(error)

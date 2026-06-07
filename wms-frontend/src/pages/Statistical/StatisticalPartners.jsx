@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import SubTabNav from '../../components/statistical/SubTabNav';
 import StatisticalCustomers from './StatisticalCustomers';
 import StatisticalSuppliers from './StatisticalSuppliers';
 
-const partnerTabs = [
-    { id: 'customers', label: 'Cửa hàng / Đại lý' },
-    { id: 'suppliers', label: 'Nhà cung cấp' },
-];
-
 export default function StatisticalPartners() {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('customers');
+
+    const partnerTabs = [
+        { id: 'customers', label: t('pages.StatisticalPartners.tabCustomers') },
+        { id: 'suppliers', label: t('pages.StatisticalPartners.tabSuppliers') },
+    ];
 
     const renderContent = () => {
         switch (activeTab) {

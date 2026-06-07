@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 const CheckIcon = () => (
     <svg className="w-4 h-4 text-gray-400 mr-3 shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -6,98 +7,102 @@ const CheckIcon = () => (
     </svg>
 );
 
-const BadgeNew = () => (
-    <span className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded font-semibold ml-2 inline-block align-middle">
-    Mới
-  </span>
-);
+const BadgeNew = () => {
+    const { t } = useTranslation();
+    return (
+        <span className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded font-semibold ml-2 inline-block align-middle">
+            {t('pages.Pricing.badgeNew')}
+        </span>
+    );
+};
 
 const Pricing = ({ onEnter }) => {
+    const { t } = useTranslation();
     const plans = [
         {
             id: 'ho-tro',
-            name: 'GÓI HỖ TRỢ',
+            name: t('pages.Pricing.planSupportName'),
             price: '270.000',
             currency: 'đ',
-            subtexts: ['1 chi nhánh/tháng'],
-            buttonText: 'Dùng thử miễn phí',
+            subtexts: [t('pages.Pricing.planSupportSubtext1')],
+            buttonText: t('pages.Pricing.btnTryFree'),
             buttonStyle: 'bg-[#dcfce7] text-[#166534] hover:bg-green-200',
-            description: 'Dành cho mô hình kinh doanh nhỏ & vận hành đơn giản.',
+            description: t('pages.Pricing.planSupportDesc'),
             features: [
-                { text: '3 tài khoản truy cập' },
-                { text: 'Không giới hạn tính năng cơ bản' },
-                { text: 'Không phí khởi tạo' },
-                { text: 'Hỗ trợ qua tổng đài' },
-                { text: 'Quản lý bảo trì, bảo hành' },
-                { text: 'Quản lý hàng hóa theo lô' },
-                { text: 'Giải pháp thanh toán Napas VietQR/ Visa/ Master' },
-                { text: 'Cổng vận chuyển ' },
-                { text: 'Bán hàng online trên Shopee, TikTok Shop' },
-                { text: 'Miễn phí hóa đơn điện tử ', isNew: true },
-                { text: 'Miễn phí chữ ký số', isNew: true },
-                { text: 'Miễn phí phần mềm kế toán', isNew: true },
+                { text: t('pages.Pricing.featureAccounts3') },
+                { text: t('pages.Pricing.featureUnlimitedBasicFeatures') },
+                { text: t('pages.Pricing.featureNoSetupFee') },
+                { text: t('pages.Pricing.featureHotlineSupport') },
+                { text: t('pages.Pricing.featureMaintenanceWarranty') },
+                { text: t('pages.Pricing.featureBatchManagement') },
+                { text: t('pages.Pricing.featurePaymentSolutions') },
+                { text: t('pages.Pricing.featureShippingGateway') },
+                { text: t('pages.Pricing.featureShopeeTiktok') },
+                { text: t('pages.Pricing.featureFreeEInvoice'), isNew: true },
+                { text: t('pages.Pricing.featureFreeDigitalSignature'), isNew: true },
+                { text: t('pages.Pricing.featureFreeAccountingSoftware'), isNew: true },
             ],
         },
         {
             id: 'chuyen-nghiep',
-            name: 'GÓI CHUYÊN NGHIỆP',
-            badge: 'Phổ biến',
+            name: t('pages.Pricing.planProfessionalName'),
+            badge: t('pages.Pricing.planProfessionalBadge'),
             price: '330.000',
             currency: 'đ',
             subtexts: [
-                'Quản lý nhiều chi nhánh: 270k/ +1 chi nhánh',
-                'Quản lý nhiều kho: 150k/ +1 kho'
+                t('pages.Pricing.planProfessionalSubtext1'),
+                t('pages.Pricing.planProfessionalSubtext2')
             ],
-            buttonText: 'Dùng thử miễn phí',
+            buttonText: t('pages.Pricing.btnTryFree'),
             buttonStyle: 'bg-[#1877f2] text-white hover:bg-blue-700',
             highlight: true,
-            description: 'Dành cho mô hình kinh doanh chuyên nghiệp, chuyên môn hóa quy trình.',
+            description: t('pages.Pricing.planProfessionalDesc'),
             features: [
-                { text: 'Không giới hạn tài khoản truy cập' },
-                { text: 'Không giới hạn tính năng cơ bản' },
-                { text: 'Không phí khởi tạo' },
-                { text: 'Hỗ trợ qua tổng đài' },
-                { text: 'Quản lý bảo trì, bảo hành' },
-                { text: 'Quản lý hàng hóa theo lô' },
-                { text: 'Giải pháp thanh toán Napas VietQR/ Visa/ Master' },
-                { text: 'Hỗ trợ liên kết các hãng vận chuyển' },
-                { text: 'Bán hàng online trên sàn TMĐT, TikTok, Facebook, Instagram, Zalo' },
-                { text: 'Chấm công, tính lương 15 NV/ cửa hàng' },
-                { text: 'Tạo website bán hàng' },
-                { text: 'Phân tích kinh doanh thông minh' },
-                { text: 'Miễn phí hóa đơn điện tử ', isNew: true },
-                { text: 'Miễn phí chữ ký số', isNew: true },
-                { text: 'Miễn phí phần mềm kế toán', isNew: true },
+                { text: t('pages.Pricing.featureUnlimitedAccounts') },
+                { text: t('pages.Pricing.featureUnlimitedBasicFeatures') },
+                { text: t('pages.Pricing.featureNoSetupFee') },
+                { text: t('pages.Pricing.featureHotlineSupport') },
+                { text: t('pages.Pricing.featureMaintenanceWarranty') },
+                { text: t('pages.Pricing.featureBatchManagement') },
+                { text: t('pages.Pricing.featurePaymentSolutions') },
+                { text: t('pages.Pricing.featureShippingCarriers') },
+                { text: t('pages.Pricing.featureEcommerceSocial') },
+                { text: t('pages.Pricing.featureTimekeeping15') },
+                { text: t('pages.Pricing.featureCreateWebsite') },
+                { text: t('pages.Pricing.featureSmartAnalytics') },
+                { text: t('pages.Pricing.featureFreeEInvoice'), isNew: true },
+                { text: t('pages.Pricing.featureFreeDigitalSignature'), isNew: true },
+                { text: t('pages.Pricing.featureFreeAccountingSoftware'), isNew: true },
             ],
         },
         {
             id: 'cao-cap',
-            name: 'GÓI CAO CẤP',
+            name: t('pages.Pricing.planPremiumName'),
             price: '490.000',
             currency: 'đ',
             subtexts: [
-                'Quản lý nhiều chi nhánh: 375k/ +1 chi nhánh',
-                'Quản lý nhiều kho: 150k/ +1 kho'
+                t('pages.Pricing.planPremiumSubtext1'),
+                t('pages.Pricing.planPremiumSubtext2')
             ],
-            buttonText: 'Dùng thử miễn phí',
+            buttonText: t('pages.Pricing.btnTryFree'),
             buttonStyle: 'bg-[#ffedd5] text-[#c2410c] hover:bg-orange-200',
-            description: 'Dành cho mô hình kinh doanh lớn, phức tạp & cần dịch vụ cao cấp.',
+            description: t('pages.Pricing.planPremiumDesc'),
             features: [
-                { text: 'Không giới hạn tài khoản truy cập' },
-                { text: 'Không giới hạn tính năng cơ bản' },
-                { text: 'Không phí khởi tạo' },
-                { text: 'Quản lý bảo trì, bảo hành' },
-                { text: 'Quản lý hàng hóa theo lô' },
-                { text: 'Giải pháp thanh toán Napas VietQR/ Visa/ Master' },
-                { text: 'Liên kết các hãng vận chuyển & COD siêu tốc' },
-                { text: 'Bán hàng online trên sàn TMĐT, TikTok, Facebook, Instagram, Zalo' },
-                { text: 'Chấm công, tính lương 50 NV/ cửa hàng' },
-                { text: 'Tạo website bán hàng' },
-                { text: 'Trợ lý ảo hỗ trợ vận hành' },
-                { text: 'Hỗ trợ kết nối API' },
-                { text: 'Miễn phí hóa đơn điện tử ', isNew: true },
-                { text: 'Miễn phí chữ ký số', isNew: true },
-                { text: 'Miễn phí phần mềm kế toán', isNew: true },
+                { text: t('pages.Pricing.featureUnlimitedAccounts') },
+                { text: t('pages.Pricing.featureUnlimitedBasicFeatures') },
+                { text: t('pages.Pricing.featureNoSetupFee') },
+                { text: t('pages.Pricing.featureMaintenanceWarranty') },
+                { text: t('pages.Pricing.featureBatchManagement') },
+                { text: t('pages.Pricing.featurePaymentSolutions') },
+                { text: t('pages.Pricing.featureShippingCod') },
+                { text: t('pages.Pricing.featureEcommerceSocial') },
+                { text: t('pages.Pricing.featureTimekeeping50') },
+                { text: t('pages.Pricing.featureCreateWebsite') },
+                { text: t('pages.Pricing.featureVirtualAssistant') },
+                { text: t('pages.Pricing.featureApiSupport') },
+                { text: t('pages.Pricing.featureFreeEInvoice'), isNew: true },
+                { text: t('pages.Pricing.featureFreeDigitalSignature'), isNew: true },
+                { text: t('pages.Pricing.featureFreeAccountingSoftware'), isNew: true },
             ],
         }
     ];
@@ -107,8 +112,8 @@ const Pricing = ({ onEnter }) => {
             <div className="max-w-7xl w-full">
                 {/* Header */}
                 <div className="text-center mb-12 hidden">
-                    <h2 className="text-4xl font-black mb-4">Bảng giá dịch vụ</h2>
-                    <p className="text-gray-500">Phù hợp cho mọi quy mô doanh nghiệp</p>
+                    <h2 className="text-4xl font-black mb-4">{t('pages.Pricing.title')}</h2>
+                    <p className="text-gray-500">{t('pages.Pricing.subtitle')}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
@@ -124,8 +129,8 @@ const Pricing = ({ onEnter }) => {
                                 <h3 className="text-gray-800 font-bold uppercase text-sm">{plan.name}</h3>
                                 {plan.badge && (
                                     <span className="bg-[#1877f2] text-white text-xs font-semibold px-3 py-1 rounded-full">
-                    {plan.badge}
-                  </span>
+                                        {plan.badge}
+                                    </span>
                                 )}
                             </div>
 
@@ -161,9 +166,9 @@ const Pricing = ({ onEnter }) => {
                                     <li key={idx} className="flex items-start text-sm text-gray-700 leading-relaxed">
                                         <CheckIcon />
                                         <span>
-                      {feature.text}
+                                            {feature.text}
                                             {feature.isNew && <BadgeNew />}
-                    </span>
+                                        </span>
                                     </li>
                                 ))}
                             </ul>

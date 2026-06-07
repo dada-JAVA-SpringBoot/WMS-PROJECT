@@ -4,8 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import axiosClient from '../api/axiosClient';
 import { getAvatarSrc } from '../components/common/avatarUtils';
 import ImageCropModal from '../components/modals/ImageCropModal';
+import { useTranslation } from 'react-i18next';
 
 export default function AccountManagement() {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const canManage = user?.roles?.some(r => ['ADMIN', 'MANAGER'].includes(r));
 
@@ -43,10 +45,10 @@ export default function AccountManagement() {
             
             fetchStaff();
             setIsCropModalOpen(false);
-            alert('Cập nhật chân dung thành công!');
+            alert(t('pages.AccountManagement.avatarUpdateSuccess'));
         } catch (e) {
             console.error("Avatar update error:", e);
-            alert('Lỗi cập nhật ảnh chân dung.');
+            alert(t('pages.AccountManagement.avatarUpdateError'));
         }
     };
 
@@ -65,45 +67,45 @@ export default function AccountManagement() {
 
     // ── Quản trị ─────────────────────────────────────────────
     const resetPassword = async (staffId) => {
-        if (!newPass) return alert('Nhập mật khẩu mới!');
-        if (!window.confirm('Xác nhận đặt lại mật khẩu?')) return;
+        if (!newPass) return alert(t('pages.AccountManagement.enterNewPassword'));
+        if (!window.confirm(t('pages.AccountManagement.confirmResetPassword'))) return;
         setSaving(true);
         try {
             await axiosClient.post(`/api/staff/${staffId}/reset-password`, { newPassword: newPass });
-            setNewPass(''); alert('Đặt lại mật khẩu thành công!');
+            setNewPass(''); alert(t('pages.AccountManagement.passwordResetSuccess'));
         } catch (e) {
-            alert(e.response?.data?.message || 'Lỗi hệ thống');
+            alert(e.response?.data?.message || t('pages.AccountManagement.systemError'));
         } finally { setSaving(false); }
     };
 
     const toggleEnabled = async (staffId, currentEnabled) => {
-        if (!window.confirm(`${currentEnabled ? 'Vô hiệu hóa' : 'Kích hoạt'} tài khoản này?`)) return;
+        if (!window.confirm(t('pages.AccountManagement.confirmToggleAccount', { action: currentEnabled ? t('pages.AccountManagement.disable') : t('pages.AccountManagement.enable') }))) return;
         try {
             await axiosClient.post(`/api/staff/${staffId}/toggle-enabled`);
             fetchStaff();
         } catch (e) {
-            alert(e.response?.data?.message || 'Lỗi hệ thống');
+            alert(e.response?.data?.message || t('pages.AccountManagement.systemError'));
         }
     };
 
     // ── Helpers Việt hóa có màu ──────────────────────────────
     const getRoleLabel = (roleName, contractType) => {
         if (contractType === 'EXPIRED') {
-            return <span className="px-2 py-0.5 rounded-lg border border-red-200 text-[9px] font-black uppercase tracking-tighter bg-red-50 text-red-600">Đã nghỉ việc</span>;
+            return <span className="px-2 py-0.5 rounded-lg border border-red-200 text-[9px] font-black uppercase tracking-tighter bg-red-50 text-red-600">{t('pages.AccountManagement.resigned')}</span>;
         }
 
         const map = {
-            'ADMIN':           { text: 'Quản trị',    cls: 'bg-purple-50 text-purple-600 border-purple-100' },
-            'MANAGER':         { text: 'Quản lý',     cls: 'bg-amber-50 text-amber-600 border-amber-100' },
-            'ACCOUNTANT':      { text: 'Kế toán',     cls: 'bg-blue-50 text-blue-600 border-blue-100' },
-            'STOREKEEPER':     { text: 'Thủ kho',     cls: 'bg-teal-50 text-teal-600 border-teal-100' },
-            'WAREHOUSE_KEEPER':{ text: 'Thủ kho',     cls: 'bg-teal-50 text-teal-600 border-teal-100' },
-            'INBOUND_STAFF':   { text: 'Nhân viên nhập', cls: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-            'OUTBOUND_STAFF':  { text: 'Nhân viên xuất', cls: 'bg-orange-50 text-orange-600 border-orange-100' },
-            'QUALITY_CONTROL': { text: 'Kiểm duyệt (QC)', cls: 'bg-rose-50 text-rose-600 border-rose-100' },
-            'HANDLER':         { text: 'Điều chuyển', cls: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
-            'CHECKER':         { text: 'Kiểm kê',     cls: 'bg-slate-50 text-slate-600 border-slate-100' },
-            'INTERN':          { text: 'Thực tập sinh', cls: 'bg-gray-50 text-gray-500 border-gray-100' },
+            'ADMIN':           { text: t('pages.AccountManagement.roleAdmin'),    cls: 'bg-purple-50 text-purple-600 border-purple-100' },
+            'MANAGER':         { text: t('pages.AccountManagement.roleManager'),     cls: 'bg-amber-50 text-amber-600 border-amber-100' },
+            'ACCOUNTANT':      { text: t('pages.AccountManagement.roleAccountant'),     cls: 'bg-blue-50 text-blue-600 border-blue-100' },
+            'STOREKEEPER':     { text: t('pages.AccountManagement.roleStorekeeper'),     cls: 'bg-teal-50 text-teal-600 border-teal-100' },
+            'WAREHOUSE_KEEPER':{ text: t('pages.AccountManagement.roleStorekeeper'),     cls: 'bg-teal-50 text-teal-600 border-teal-100' },
+            'INBOUND_STAFF':   { text: t('pages.AccountManagement.roleInboundStaff'), cls: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+            'OUTBOUND_STAFF':  { text: t('pages.AccountManagement.roleOutboundStaff'), cls: 'bg-orange-50 text-orange-600 border-orange-100' },
+            'QUALITY_CONTROL': { text: t('pages.AccountManagement.roleQualityControl'), cls: 'bg-rose-50 text-rose-600 border-rose-100' },
+            'HANDLER':         { text: t('pages.AccountManagement.roleHandler'), cls: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
+            'CHECKER':         { text: t('pages.AccountManagement.roleChecker'),     cls: 'bg-slate-50 text-slate-600 border-slate-100' },
+            'INTERN':          { text: t('pages.AccountManagement.roleIntern'), cls: 'bg-gray-50 text-gray-500 border-gray-100' },
         };
         const item = map[roleName] || { text: roleName, cls: 'bg-gray-50 text-gray-500' };
         return <span className={`px-2 py-0.5 rounded-lg border text-[9px] font-black uppercase tracking-tighter ${item.cls}`}>{item.text}</span>;
@@ -111,10 +113,10 @@ export default function AccountManagement() {
 
     const getContractLabel = (type) => {
         const map = {
-            'PERMANENT': { text: 'Vô thời hạn', cls: 'text-green-600' },
-            'PART_TIME': { text: 'Bán thời gian', cls: 'text-blue-500' },
-            'SEASONAL':  { text: 'Thời vụ',      cls: 'text-amber-500' },
-            'EXPIRED':   { text: 'Đã nghỉ việc', cls: 'text-red-500 font-bold' },
+            'PERMANENT': { text: t('pages.AccountManagement.contractPermanent'), cls: 'text-green-600' },
+            'PART_TIME': { text: t('pages.AccountManagement.contractPartTime'), cls: 'text-blue-500' },
+            'SEASONAL':  { text: t('pages.AccountManagement.contractSeasonal'), cls: 'text-amber-500' },
+            'EXPIRED':   { text: t('pages.AccountManagement.contractExpired'), cls: 'text-red-500 font-bold' },
         };
         const item = map[type] || { text: type, cls: 'text-gray-400' };
         return <span className={`text-[10px] ${item.cls}`}>{item.text}</span>;
@@ -122,20 +124,20 @@ export default function AccountManagement() {
 
     return (
         <div className="p-4 lg:p-8 bg-gray-50 min-h-full text-left">
-            <h1 className="text-xl lg:text-2xl font-black text-gray-800 mb-6 uppercase tracking-tight">Quản trị nhân sự</h1>
+            <h1 className="text-xl lg:text-2xl font-black text-gray-800 mb-6 uppercase tracking-tight">{t('pages.AccountManagement.title')}</h1>
 
             <div className="bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-x-auto no-scrollbar">
                 {loading ? (
-                    <div className="flex items-center justify-center h-48 text-gray-400 font-bold uppercase tracking-widest animate-pulse">Đang tải dữ liệu...</div>
+                    <div className="flex items-center justify-center h-48 text-gray-400 font-bold uppercase tracking-widest animate-pulse">{t('pages.AccountManagement.loading')}</div>
                 ) : (
                     <table className="w-full text-left min-w-[950px]">
                         <thead className="bg-gray-50/50 border-b">
                             <tr className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                                <th className="px-6 py-5">Nhân viên & Chân dung</th>
-                                <th className="px-6 py-5">Tên đăng nhập</th>
-                                <th className="px-6 py-5">Trạng thái</th>
-                                <th className="px-6 py-5">Bảo mật</th>
-                                <th className="px-6 py-5 text-right">Hành động</th>
+                                <th className="px-6 py-5">{t('pages.AccountManagement.headerStaffAndAvatar')}</th>
+                                <th className="px-6 py-5">{t('pages.AccountManagement.headerUsername')}</th>
+                                <th className="px-6 py-5">{t('pages.AccountManagement.headerStatus')}</th>
+                                <th className="px-6 py-5">{t('pages.AccountManagement.headerSecurity')}</th>
+                                <th className="px-6 py-5 text-right">{t('pages.AccountManagement.headerActions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
@@ -148,7 +150,7 @@ export default function AccountManagement() {
                                                     <img src={getAvatarSrc(s.avatar)} alt="Profile" className="w-full h-full object-cover" />
                                                 </div>
                                                 {canManage && (
-                                                    <label className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#1192a8] text-white rounded-lg flex items-center justify-center text-[10px] shadow-lg cursor-pointer hover:scale-110 active:scale-95 transition-all" title="Thay đổi ảnh">
+                                                    <label className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#1192a8] text-white rounded-lg flex items-center justify-center text-[10px] shadow-lg cursor-pointer hover:scale-110 active:scale-95 transition-all" title={t('pages.AccountManagement.changePhoto')}>
                                                         ✎
                                                         <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, s.id)} />
                                                     </label>
@@ -171,7 +173,7 @@ export default function AccountManagement() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <p className="text-sm font-black font-mono text-[#1192a8]">
-                                            {s.username || <span className="text-gray-300 italic font-normal text-[10px]">chưa thiết lập</span>}
+                                            {s.username || <span className="text-gray-300 italic font-normal text-[10px]">{t('pages.AccountManagement.notSet')}</span>}
                                         </p>
                                     </td>
                                     <td className="px-6 py-4">
@@ -180,14 +182,14 @@ export default function AccountManagement() {
                                                 ? 'bg-green-50 text-green-600 border border-green-100'
                                                 : 'bg-red-50 text-red-600 border border-red-100'
                                         }`}>
-                                            {s.enabled ? 'Đang hoạt động' : 'Đã vô hiệu'}
+                                            {s.enabled ? t('pages.AccountManagement.active') : t('pages.AccountManagement.disabled')}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
                                         {s.username && (
                                             (!s.roles?.includes('ADMIN') || user.roles?.includes('ADMIN')) ? (
                                                 <div className="flex gap-2">
-                                                    <input type="password" placeholder="Mật khẩu mới..."
+                                                    <input type="password" placeholder={t('pages.AccountManagement.newPasswordPlaceholder')}
                                                         value={selectedId === s.id ? newPass : ''}
                                                         onFocus={() => setSelectedId(s.id)}
                                                         onChange={e => setNewPass(e.target.value)}
@@ -200,7 +202,7 @@ export default function AccountManagement() {
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <span className="text-[10px] text-gray-300 italic">Bảo vệ hệ thống</span>
+                                                <span className="text-[10px] text-gray-300 italic">{t('pages.AccountManagement.systemProtected')}</span>
                                             )
                                         )}
                                     </td>
@@ -214,7 +216,7 @@ export default function AccountManagement() {
                                                             ? 'bg-white border border-red-100 text-red-500 hover:bg-red-50'
                                                             : 'bg-[#1192a8] text-white hover:bg-teal-700 shadow-teal-500/10'
                                                     }`}>
-                                                    {s.enabled ? 'Vô hiệu hóa' : 'Kích hoạt'}
+                                                    {s.enabled ? t('pages.AccountManagement.disable') : t('pages.AccountManagement.enable')}
                                                 </button>
                                             ) : null
                                         )}

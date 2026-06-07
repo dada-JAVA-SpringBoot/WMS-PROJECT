@@ -1,9 +1,11 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function PendingTaskTable({ title, data, type }) {
+    const { t } = useTranslation();
     if (!data || data.length === 0) return (
         <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm h-full flex flex-col items-center justify-center text-gray-400">
-            <p>Không có {title.toLowerCase()} nào.</p>
+            <p>{t('pages.PendingTaskTable.noTasks', { title: title.toLowerCase() })}</p>
         </div>
     );
 
@@ -19,9 +21,9 @@ export default function PendingTaskTable({ title, data, type }) {
                 <table className="w-full text-sm text-left">
                     <thead className="bg-gray-50 text-gray-500 uppercase text-[10px] font-bold sticky top-0">
                         <tr>
-                            <th className="px-4 py-3">Mã phiếu</th>
-                            <th className="px-4 py-3">Ngày</th>
-                            <th className="px-4 py-3">Trạng thái</th>
+                            <th className="px-4 py-3">{t('pages.PendingTaskTable.ticketCode')}</th>
+                            <th className="px-4 py-3">{t('pages.PendingTaskTable.date')}</th>
+                            <th className="px-4 py-3">{t('pages.PendingTaskTable.status')}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">

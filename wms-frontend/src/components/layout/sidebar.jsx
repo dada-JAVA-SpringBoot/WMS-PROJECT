@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axiosClient from '../../api/axiosClient';
 import SystemDialog from '../modals/SystemDialog';
 
@@ -31,7 +32,7 @@ const menuItems = [
     { id: 'inbound',        path: '/admin/inbound',        label: 'Phiếu nhập',     iconSrc: inboundIcon,     roles: ['ADMIN', 'MANAGER', 'STOREKEEPER', 'INBOUND_STAFF', 'ACCOUNTANT', 'QUALITY_CONTROL'] },
     { id: 'outbound',       path: '/admin/outbound',       label: 'Phiếu xuất',     iconSrc: outboundIcon,    roles: ['ADMIN', 'MANAGER', 'STOREKEEPER', 'OUTBOUND_STAFF', 'ACCOUNTANT', 'QUALITY_CONTROL'] },
     { id: 'attendance',     path: '/admin/attendance',     label: 'Lịch sử công',   iconSrc: historyIcon,     roles: ['ADMIN', 'MANAGER', 'STOREKEEPER', 'INBOUND_STAFF', 'OUTBOUND_STAFF', 'CHECKER', 'ACCOUNTANT', 'HANDLER', 'QUALITY_CONTROL'] },
-    { id: 'attendance-m',   path: '/admin/attendance-manage', label: 'Duyệt chấm công', iconSrc: authorityIcon, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'attendance-manage', path: '/admin/attendance-manage', label: 'Duyệt chấm công', iconSrc: authorityIcon, roles: ['ADMIN', 'MANAGER'] },
     { id: 'client',         path: '/admin/client',         label: 'Khách hàng',     iconSrc: clientIcon,      roles: ['ADMIN', 'MANAGER', 'OUTBOUND_STAFF', 'ACCOUNTANT'] },
     { id: 'supplier',       path: '/admin/supplier',       label: 'Nhà cung cấp',   iconSrc: supplierIcon,    roles: ['ADMIN', 'MANAGER', 'STOREKEEPER', 'INBOUND_STAFF', 'ACCOUNTANT'] },
     { id: 'staff',          path: '/admin/staff',          label: 'Nhân viên',      iconSrc: staffIcon,       roles: ['ADMIN', 'MANAGER'] },
@@ -43,6 +44,7 @@ const menuItems = [
 ];
 
 export default function Sidebar({ user, onLogout, isOpen, onClose }) {
+    const { t, i18n } = useTranslation();
     const [attendance, setAttendance] = useState(null);
     const [loadingAt, setLoadingAt] = useState(false);
     const [dialog, setDialog] = useState({ isOpen: false, title: '', message: '' });
@@ -108,7 +110,7 @@ export default function Sidebar({ user, onLogout, isOpen, onClose }) {
                     </div>
                     <div className="overflow-hidden text-left">
                         <h1 className="font-black text-lg tracking-tighter leading-none uppercase">WMS</h1>
-                        <p className="text-[9px] font-bold opacity-80 uppercase tracking-widest mt-0.5 truncate">Hệ thống kho</p>
+                        <p className="text-[9px] font-bold opacity-80 uppercase tracking-widest mt-0.5 truncate">{t('sidebar.system_name')}</p>
                     </div>
                 </div>
 
@@ -131,7 +133,7 @@ export default function Sidebar({ user, onLogout, isOpen, onClose }) {
                     {user && !user.roles.includes('ADMIN') && (
                         <div className="bg-white p-2.5 rounded-2xl border border-blue-100 shadow-sm">
                             <div className="flex items-center justify-between mb-1">
-                                <span className="text-[7px] font-bold text-gray-400 uppercase tracking-widest">Ca làm việc</span>
+                                <span className="text-[7px] font-bold text-gray-400 uppercase tracking-widest">{t('sidebar.shift')}</span>
                                 {attendance?.checkInTime && !attendance?.checkOutTime && (
                                     <span className="flex items-center gap-1">
                                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping" />
@@ -141,8 +143,8 @@ export default function Sidebar({ user, onLogout, isOpen, onClose }) {
                             </div>
                             <p className="text-[10px] font-bold text-gray-700 text-center mb-1">
                                 {attendance?.checkInTime 
-                                    ? (attendance.checkOutTime ? 'ĐÃ KẾT THÚC' : 'ĐANG LÀM')
-                                    : 'CHƯA VÀO CA'}
+                                    ? (attendance.checkOutTime ? t('sidebar.shift_status_out') : t('sidebar.shift_status_in'))
+                                    : t('sidebar.shift_status_none')}
                             </p>
                             {attendance?.checkInTime && !attendance?.checkOutTime && (
                                 <button 
@@ -150,7 +152,7 @@ export default function Sidebar({ user, onLogout, isOpen, onClose }) {
                                     disabled={loadingAt}
                                     className="w-full py-2 rounded-xl text-[9px] font-black transition-all active:scale-95 bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200 uppercase tracking-wider"
                                 >
-                                    {loadingAt ? '...' : 'KẾT THÚC CA'}
+                                    {loadingAt ? '...' : t('sidebar.btn_end_shift')}
                                 </button>
                             )}
                         </div>
@@ -159,27 +161,57 @@ export default function Sidebar({ user, onLogout, isOpen, onClose }) {
 
                 {/* Navigation Menu */}
                 <nav className="flex-1 overflow-y-auto p-1.5 space-y-1 no-scrollbar">
-                    {filteredMenu.map((item) => (
-                        <NavLink
-                            key={item.id}
-                            to={item.path}
-                            onClick={() => { if (window.innerWidth < 1024) onClose(); }}
-                            className={({ isActive }) => `
-                                w-full flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition-all duration-200
-                                ${isActive 
-                                    ? 'bg-[#1192a8] text-white font-black shadow-lg shadow-teal-500/30 scale-[1.02]' 
-                                    : 'hover:bg-gray-100 text-gray-600 hover:text-[#1192a8]'}
-                            `}
-                        >
-                            <img
-                                src={item.iconSrc}
-                                alt={item.label}
-                                className={`w-5 h-5 object-contain ${item.path === window.location.pathname ? 'brightness-200' : ''}`}
-                            />
-                            <span className="text-[14px] font-bold tracking-tight">{item.label}</span>
+                    {filteredMenu.map((item) => {
+                        const translatedLabel = t(`sidebar.${item.id.replace(/-/g, '_')}`);
+                        return (
+                            <NavLink
+                                key={item.id}
+                                to={item.path}
+                                onClick={() => { if (window.innerWidth < 1024) onClose(); }}
+                                className={({ isActive }) => `
+                                    w-full flex items-center gap-3.5 px-3 py-2.5 rounded-2xl transition-all duration-200
+                                    ${isActive 
+                                        ? 'bg-[#1192a8] text-white font-black shadow-lg shadow-teal-500/30 scale-[1.02]' 
+                                        : 'hover:bg-gray-100 text-gray-600 hover:text-[#1192a8]'}
+                                `}
+                            >
+                                <img
+                                    src={item.iconSrc}
+                                    alt={translatedLabel}
+                                    className={`w-5 h-5 object-contain ${item.path === window.location.pathname ? 'brightness-200' : ''}`}
+                                />
+                                <span className="text-[14px] font-bold tracking-tight">{translatedLabel}</span>
                             </NavLink>
-                    ))}
+                        );
+                    })}
                 </nav>
+
+                {/* Language Switcher */}
+                <div className="p-2 border-t bg-gray-50 shrink-0 flex items-center justify-between">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest pl-1">Language</span>
+                    <div className="flex bg-gray-200 p-0.5 rounded-lg border border-gray-300">
+                        <button
+                            onClick={() => i18n.changeLanguage('vi')}
+                            className={`px-2 py-0.5 rounded-md text-[9px] font-black transition-all ${
+                                i18n.language?.startsWith('vi') 
+                                ? 'bg-[#1192a8] text-white shadow-sm' 
+                                : 'text-gray-600 hover:text-[#1192a8]'
+                            }`}
+                        >
+                            VI
+                        </button>
+                        <button
+                            onClick={() => i18n.changeLanguage('en')}
+                            className={`px-2 py-0.5 rounded-md text-[9px] font-black transition-all ${
+                                i18n.language?.startsWith('en') 
+                                ? 'bg-[#1192a8] text-white shadow-sm' 
+                                : 'text-gray-600 hover:text-[#1192a8]'
+                            }`}
+                        >
+                            EN
+                        </button>
+                    </div>
+                </div>
 
                 {/* Logout Button */}
                 <div className="p-2 border-t bg-gray-50 shrink-0">
@@ -188,9 +220,9 @@ export default function Sidebar({ user, onLogout, isOpen, onClose }) {
                         className="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-red-500 hover:bg-red-50 transition-all font-bold w-full text-sm group"
                     >
                         <div className="w-8 h-8 flex items-center justify-center rounded-lg group-hover:bg-red-100 transition">
-                            <img src={logoutIcon} alt="Đăng xuất" className="w-5 h-5 object-contain" />
+                            <img src={logoutIcon} alt={t('sidebar.logout')} className="w-5 h-5 object-contain" />
                         </div>
-                        <span>Đăng xuất</span>
+                        <span>{t('sidebar.logout')}</span>
                     </button>
                 </div>
             </aside>

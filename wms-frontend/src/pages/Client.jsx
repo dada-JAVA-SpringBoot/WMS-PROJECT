@@ -2,6 +2,7 @@
 // 1. Client.jsx — thay fetch → axiosClient
 // ================================================================
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import ClientModal from '../components/modals/ClientModal';
 import ExportExcelModal from '../components/modals/ExportExcelModal';
 import axiosClient from '../api/axiosClient';
@@ -18,6 +19,7 @@ import * as XLSX from 'xlsx';
 const BASE = '/api/customers';
 
 export default function Client({ onCreateOutbound }) {
+    const { t } = useTranslation();
     const [data, setData]         = useState([]);
     const [loading, setLoading]   = useState(true);
     const [search, setSearch]     = useState('');
@@ -81,14 +83,14 @@ export default function Client({ onCreateOutbound }) {
 
     const handleAdd    = () => { setEditData(null); setModalOpen(true); };
     const handleEdit   = () => {
-        if (selectedIds.length !== 1) return alert('Vui lòng chọn duy nhất một khách hàng để chỉnh sửa!');
+        if (selectedIds.length !== 1) return alert(t('pages.Client.alertSelectOneToEdit'));
         setEditData(selectedItems[0]); setModalOpen(true);
     };
     
     const handleDelete = async () => {
-        if (selectedIds.length === 0) return alert('Vui lòng chọn ít nhất một khách hàng để xóa!');
+        if (selectedIds.length === 0) return alert(t('pages.Client.alertSelectAtLeastOneToDelete'));
         const names = selectedItems.map(i => i.name).join(', ');
-        if (!window.confirm(`Xác nhận xóa các khách hàng: "${names}"?`)) return;
+        if (!window.confirm(t('pages.Client.confirmDelete', { names }))) return;
         try {
             for (const item of selectedItems) {
                 await axiosClient.delete(`${BASE}/${item.id}`);
@@ -96,12 +98,12 @@ export default function Client({ onCreateOutbound }) {
             clearSelection();
             fetchData(search);
         } catch { 
-            alert('Xóa thất bại, vui lòng thử lại!'); 
+            alert(t('pages.Client.alertDeleteFailed')); 
         }
     };
 
     const handleCreateOutbound = () => {
-        if (selectedIds.length !== 1) return alert('Vui lòng chọn duy nhất một khách hàng để lập phiếu xuất!');
+        if (selectedIds.length !== 1) return alert(t('pages.Client.alertSelectOneToCreateOutbound'));
         onCreateOutbound?.({
             kind: 'outbound',
             source: 'customer',
@@ -112,7 +114,7 @@ export default function Client({ onCreateOutbound }) {
 
     const handleExportExcel = async () => {
         const source = selectedItems.length > 0 ? selectedItems : filtered;
-        if (!source.length) return alert('Không có dữ liệu để xuất!');
+        if (!source.length) return alert(t('pages.Client.alertNoDataToExport'));
 
         const sheetData = source.map((row, idx) => ({
             "STT": idx + 1,
@@ -133,17 +135,17 @@ export default function Client({ onCreateOutbound }) {
 
     // ── Toolbar actions ─────────────────────────────────────
     const toolbarActions = [
-        { label: 'Thêm',       iconSrc: addIcon,    onClick: handleAdd },
-        { label: 'Chỉnh sửa',  iconSrc: fixIcon,    onClick: handleEdit },
-        { label: 'Xóa',        iconSrc: deleteIcon, onClick: handleDelete },
-        { label: 'Phiếu xuất', iconSrc: outboundIcon, onClick: handleCreateOutbound },
-        { label: 'Nhập Excel', iconSrc: excelIcon,  onClick: () => {} },
-        { label: 'Xuất Excel', iconSrc: excel1Icon, onClick: () => openExportModal() },
+        { label: t('pages.Client.add'),       iconSrc: addIcon,    onClick: handleAdd },
+        { label: t('pages.Client.edit'),  iconSrc: fixIcon,    onClick: handleEdit },
+        { label: t('pages.Client.delete'),        iconSrc: deleteIcon, onClick: handleDelete },
+        { label: t('pages.Client.outboundReceipt'), iconSrc: outboundIcon, onClick: handleCreateOutbound },
+        { label: t('pages.Client.importExcel'), iconSrc: excelIcon,  onClick: () => {} },
+        { label: t('pages.Client.exportExcel'), iconSrc: excel1Icon, onClick: () => openExportModal() },
     ];
 
     return (
         <div className="p-4 md:p-8 bg-[#f8f9fa] h-full flex flex-col no-scrollbar">
-            <h1 className="text-xl md:text-2xl font-black text-gray-800 mb-4 md:mb-6 uppercase tracking-tight">Quản lý khách hàng</h1>
+            <h1 className="text-xl md:text-2xl font-black text-gray-800 mb-4 md:mb-6 uppercase tracking-tight">{t('pages.Client.title')}</h1>
             
             {/* Toolbar: Action Buttons */}
             <div className="sticky top-0 z-20 flex items-center justify-between bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 mb-4 md:mb-6">
@@ -158,7 +160,7 @@ export default function Client({ onCreateOutbound }) {
                         </button>
                     ))}
                 </div>
-                <div className="text-xs font-black text-gray-300 uppercase tracking-widest hidden lg:block ml-4">Danh mục đối tác</div>
+                <div className="text-xs font-black text-gray-300 uppercase tracking-widest hidden lg:block ml-4">{t("pages.Client.partnerCategory")}</div>
             </div>
 
             {/* Filter Bar: Moved below toolbar for mobile */}
@@ -166,20 +168,20 @@ export default function Client({ onCreateOutbound }) {
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                     <select value={searchBy} onChange={e => setSearchBy(e.target.value)}
                         className="wms-select w-full sm:w-48 !text-sm !py-2.5 md:!py-3 bg-white">
-                        <option value="all">Tất cả kiểu tìm</option>
-                        <option value="name">Theo tên</option>
-                        <option value="code">Theo mã</option>
-                        <option value="phone">Theo SĐT</option>
-                        <option value="address">Theo địa chỉ</option>
+                        <option value="all">{t('pages.Client.searchAll')}</option>
+                        <option value="name">{t('pages.Client.searchByName')}</option>
+                        <option value="code">{t('pages.Client.searchByCode')}</option>
+                        <option value="phone">{t('pages.Client.searchByPhone')}</option>
+                        <option value="address">{t('pages.Client.searchByAddress')}</option>
                     </select>
                     <div className="relative flex-1">
                         <input type="text" value={search} onChange={e => handleSearchChange(e.target.value)}
                             className="w-full border-2 border-gray-100 rounded-xl px-4 py-2.5 md:py-3 text-sm outline-none focus:border-[#1192a8] transition-all bg-white"
-                            placeholder="Nhập nội dung tìm kiếm khách hàng..." />
+                            placeholder={t('pages.Client.searchPlaceholder')} />
                     </div>
                     <button onClick={() => { setSearch(''); fetchData(''); clearSelection(); }}
                         className="bg-[#1192a8] text-white px-6 py-2.5 md:py-3 rounded-xl font-black text-sm hover:bg-teal-700 shadow-lg shadow-teal-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
-                        <span className="text-lg leading-none">↻</span> Làm mới
+                        <span className="text-lg leading-none">↻</span> {t("pages.Client.refresh")}
                     </button>
                 </div>
             </div>
@@ -189,18 +191,18 @@ export default function Client({ onCreateOutbound }) {
                     <table className="w-full text-left border-collapse min-w-[800px] md:min-w-[1000px]">
                         <thead className="bg-gray-50/80 border-b sticky top-0 z-10 backdrop-blur-sm">
                             <tr className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                <th className="px-5 md:px-6 py-4 text-center w-16">STT</th>
-                                <th className="px-5 md:px-6 py-4 w-40">Mã khách hàng</th>
-                                <th className="px-5 md:px-6 py-4">Tên khách hàng</th>
-                                <th className="px-5 md:px-6 py-4 w-48">Số điện thoại</th>
-                                <th className="px-5 md:px-6 py-4">Địa chỉ liên hệ</th>
+                                <th className="px-5 md:px-6 py-4 text-center w-16">{t('pages.Client.no')}</th>
+                                <th className="px-5 md:px-6 py-4 w-40">{t('pages.Client.customerCode')}</th>
+                                <th className="px-5 md:px-6 py-4">{t('pages.Client.customerName')}</th>
+                                <th className="px-5 md:px-6 py-4 w-48">{t('pages.Client.phoneNumber')}</th>
+                                <th className="px-5 md:px-6 py-4">{t('pages.Client.contactAddress')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {loading ? (
-                                <tr><td colSpan={5} className="px-6 py-20 text-center text-[#1192a8] font-bold animate-pulse uppercase text-xs tracking-widest">Đang tải dữ liệu...</td></tr>
+                                <tr><td colSpan={5} className="px-6 py-20 text-center text-[#1192a8] font-bold animate-pulse uppercase text-xs tracking-widest">{t('pages.Client.loadingData')}</td></tr>
                             ) : filtered.length === 0 ? (
-                                <tr><td colSpan={5} className="px-6 py-20 text-center text-gray-400 italic font-medium">Không tìm thấy khách hàng phù hợp.</td></tr>
+                                <tr><td colSpan={5} className="px-6 py-20 text-center text-gray-400 italic font-medium">{t('pages.Client.noCustomerFound')}</td></tr>
                             ) : filtered.map((row, idx) => (
                                 <tr key={row.id}
                                     onClick={(e) => handleRowClick(row, idx, e)}
@@ -219,8 +221,15 @@ export default function Client({ onCreateOutbound }) {
             </div>
             {selectedIds.length > 0 && (
                 <div className="mt-4 flex justify-between items-center bg-[#1192a8]/5 px-4 py-2 rounded-xl border border-[#1192a8]/10 animate-in slide-in-from-bottom-2 duration-300">
-                    <span className="text-[10px] md:text-xs text-gray-500 font-bold uppercase">Trình trạng: <span className="text-[#1192a8] font-black">{selectedIds.length} khách hàng được chọn</span></span>
-                    <span className="text-[9px] md:text-[10px] text-[#1192a8] font-black uppercase italic animate-pulse">Chạm 2 lần để sửa nhanh</span>
+                    <span className="text-[10px] md:text-xs text-gray-500 font-bold uppercase">
+                        {t('pages.Client.status')}{' '}
+                        <span className="text-[#1192a8] font-black">
+                            {selectedIds.length} {t('pages.Client.customersSelected')}
+                        </span>
+                    </span>
+                    <span className="text-[9px] md:text-[10px] text-[#1192a8] font-black uppercase italic animate-pulse">
+                        {t('pages.Client.doubleClickToEdit')}
+                    </span>
                 </div>
             )}
             <ClientModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSaved={() => fetchData(search)} editData={editData} />

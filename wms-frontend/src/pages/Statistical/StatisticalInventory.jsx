@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import axiosClient from '../../api/axiosClient';
 import PanelCard from '../../components/statistical/PanelCard';
 import StatisticsTable from '../../components/statistical/StatisticsTable';
@@ -6,40 +7,41 @@ import StatMetricCard from '../../components/statistical/StatMetricCard';
 import FilterBar, { FilterButton, FilterDateInput } from '../../components/statistical/FilterBar';
 import { formatCurrencyShort, formatCurrencyVN } from '../../components/statistical/charts/chartUtils';
 
-// ── Cột cho bảng tồn kho ──────────────────────────────────────────────
-const inventoryColumns = [
-    { key: 'stt', label: 'STT', minWidth: 60 },
-    { key: 'sku', label: 'Mã SP', minWidth: 110 },
-    { key: 'name', label: 'Tên sản phẩm', minWidth: 260 },
-    { key: 'opening', label: 'Tồn đầu kỳ', minWidth: 130 },
-    { key: 'inbound', label: 'Nhập trong kỳ', minWidth: 140 },
-    { key: 'outbound', label: 'Xuất trong kỳ', minWidth: 140 },
-    { key: 'ending', label: 'Tồn cuối kỳ', minWidth: 130 },
-    { key: 'abcClass', label: 'ABC', minWidth: 70 },
-];
-
-// ── Cột cho bảng ABC ──────────────────────────────────────────────────
-const abcColumns = [
-    { key: 'className', label: 'Nhóm', minWidth: 80 },
-    { key: 'productCount', label: 'Số SP', minWidth: 100 },
-    { key: 'totalValue', label: 'Tổng giá trị tồn', minWidth: 160 },
-    { key: 'percentage', label: 'Tỉ lệ (%)', minWidth: 120 },
-];
-
-// ── Cột cho bảng hao hụt ──────────────────────────────────────────────
-const lossColumns = [
-    { key: 'date', label: 'Ngày ghi nhận', minWidth: 120 },
-    { key: 'type', label: 'Loại hình', minWidth: 160 },
-    { key: 'product', label: 'Sản phẩm', minWidth: 220 },
-    { key: 'quantity', label: 'SL Hao hụt', minWidth: 100 },
-    { key: 'reason', label: 'Lý do cụ thể', minWidth: 300 },
-    { key: 'reference', label: 'Mã tham chiếu', minWidth: 140 },
-];
-
 export default function StatisticalInventory() {
+    const { t } = useTranslation();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // ── Cột cho bảng tồn kho ──────────────────────────────────────────────
+    const inventoryColumns = useMemo(() => [
+        { key: 'stt', label: t('pages.StatisticalInventory.colSTT'), minWidth: 60 },
+        { key: 'sku', label: t('pages.StatisticalInventory.colSKU'), minWidth: 110 },
+        { key: 'name', label: t('pages.StatisticalInventory.colProductName'), minWidth: 260 },
+        { key: 'opening', label: t('pages.StatisticalInventory.colOpening'), minWidth: 130 },
+        { key: 'inbound', label: t('pages.StatisticalInventory.colInbound'), minWidth: 140 },
+        { key: 'outbound', label: t('pages.StatisticalInventory.colOutbound'), minWidth: 140 },
+        { key: 'ending', label: t('pages.StatisticalInventory.colEnding'), minWidth: 130 },
+        { key: 'abcClass', label: t('pages.StatisticalInventory.colABC'), minWidth: 70 },
+    ], [t]);
+
+    // ── Cột cho bảng ABC ──────────────────────────────────────────────────
+    const abcColumns = useMemo(() => [
+        { key: 'className', label: t('pages.StatisticalInventory.colABCGroup'), minWidth: 80 },
+        { key: 'productCount', label: t('pages.StatisticalInventory.colABCCount'), minWidth: 100 },
+        { key: 'totalValue', label: t('pages.StatisticalInventory.colABCTotalValue'), minWidth: 160 },
+        { key: 'percentage', label: t('pages.StatisticalInventory.colABCPercentage'), minWidth: 120 },
+    ], [t]);
+
+    // ── Cột cho bảng hao hụt ──────────────────────────────────────────────
+    const lossColumns = useMemo(() => [
+        { key: 'date', label: t('pages.StatisticalInventory.colLossDate'), minWidth: 120 },
+        { key: 'type', label: t('pages.StatisticalInventory.colLossType'), minWidth: 160 },
+        { key: 'product', label: t('pages.StatisticalInventory.colLossProduct'), minWidth: 220 },
+        { key: 'quantity', label: t('pages.StatisticalInventory.colLossQuantity'), minWidth: 100 },
+        { key: 'reason', label: t('pages.StatisticalInventory.colLossReason'), minWidth: 300 },
+        { key: 'reference', label: t('pages.StatisticalInventory.colLossReference'), minWidth: 140 },
+    ], [t]);
 
     // Date range state — mặc định tháng hiện tại
     const today = new Date();
@@ -57,7 +59,7 @@ export default function StatisticalInventory() {
             setData(res.data);
         } catch (err) {
             console.error('Không tải được dữ liệu tồn kho:', err);
-            setError('Không thể tải dữ liệu. Vui lòng thử lại.');
+            setError(t('pages.StatisticalInventory.loadError'));
         } finally {
             setLoading(false);
         }
@@ -125,24 +127,24 @@ export default function StatisticalInventory() {
         <div className="min-h-[calc(100vh-120px)] p-5 space-y-5">
             {/* Filter Bar */}
             <FilterBar>
-                <span className="text-[16px] text-slate-800 font-bold uppercase tracking-wider">Kỳ thống kê:</span>
-                <span className="text-[15px] text-slate-700">Từ ngày</span>
+                <span className="text-[16px] text-slate-800 font-bold uppercase tracking-wider">{t('pages.StatisticalInventory.lblPeriod')}</span>
+                <span className="text-[15px] text-slate-700">{t('pages.StatisticalInventory.lblFromDate')}</span>
                 <FilterDateInput
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     className="w-[170px] rounded-lg border-slate-300"
                 />
-                <span className="text-[15px] text-slate-700">Đến ngày</span>
+                <span className="text-[15px] text-slate-700">{t('pages.StatisticalInventory.lblToDate')}</span>
                 <FilterDateInput
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     className="w-[170px] rounded-lg border-slate-300"
                 />
                 <FilterButton variant="primary" onClick={handleSearch} className="rounded-lg font-bold">
-                    Lọc dữ liệu
+                    {t('pages.StatisticalInventory.btnFilter')}
                 </FilterButton>
                 <FilterButton onClick={handleReset} className="rounded-lg font-bold">
-                    Làm mới
+                    {t('pages.StatisticalInventory.btnReset')}
                 </FilterButton>
             </FilterBar>
 
@@ -152,25 +154,25 @@ export default function StatisticalInventory() {
                     <StatMetricCard
                         icon="📦"
                         value={data.totalProducts || 0}
-                        label="Tổng sản phẩm"
+                        label={t('pages.StatisticalInventory.lblTotalProducts')}
                         circleClass="bg-blue-500 text-white"
                     />
                     <StatMetricCard
                         icon="📊"
                         value={Number(data.totalStockValue || 0).toLocaleString('vi-VN')}
-                        label="Tổng lượng tồn kho (sản phẩm)"
+                        label={t('pages.StatisticalInventory.lblTotalStockValue')}
                         circleClass="bg-green-500 text-white"
                     />
                     <StatMetricCard
                         icon="⚠️"
                         value={data.lowStockProducts || 0}
-                        label="SP dưới định mức"
+                        label={t('pages.StatisticalInventory.lblLowStockProducts')}
                         circleClass="bg-orange-400 text-white"
                     />
                     <StatMetricCard
                         icon="🚫"
                         value={data.zeroStockProducts || 0}
-                        label="SP hết hàng"
+                        label={t('pages.StatisticalInventory.lblZeroStockProducts')}
                         circleClass="bg-red-500 text-white"
                     />
                 </div>
@@ -181,7 +183,7 @@ export default function StatisticalInventory() {
                 <PanelCard className="overflow-hidden">
                     <div className="border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <h3 className="text-[17px] font-black text-slate-900 uppercase tracking-tight">
-                            Bảng đối soát tồn kho
+                            {t('pages.StatisticalInventory.tblTitleInventory')}
                         </h3>
                         <span className="text-[12px] font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
                             {startDate} ➜ {endDate}
@@ -189,11 +191,11 @@ export default function StatisticalInventory() {
                     </div>
 
                     {loading ? (
-                        <div className="p-20 text-center text-[#1192a8] font-bold animate-pulse">ĐANG TẢI DỮ LIỆU...</div>
+                        <div className="p-20 text-center text-[#1192a8] font-bold animate-pulse">{t('pages.StatisticalInventory.loadingInventory')}</div>
                     ) : error ? (
                         <div className="p-20 text-center text-red-400 font-bold">{error}</div>
                     ) : inventoryRows.length === 0 ? (
-                        <div className="p-20 text-center text-gray-400 italic">Không tìm thấy sản phẩm nào trong kỳ.</div>
+                        <div className="p-20 text-center text-gray-400 italic">{t('pages.StatisticalInventory.noInventoryData')}</div>
                     ) : (
                         <StatisticsTable
                             columns={inventoryColumns}
@@ -210,14 +212,14 @@ export default function StatisticalInventory() {
                         <div className="border-b border-slate-200 px-6 py-4 flex items-center gap-2">
                             <span className="w-1 h-4 bg-orange-400"></span>
                             <h3 className="text-[17px] font-black text-slate-900 uppercase tracking-tight">
-                                Phân tích phân lớp ABC
+                                {t('pages.StatisticalInventory.tblTitleABC')}
                             </h3>
                         </div>
                         <div className="p-6">
                             {loading ? (
-                                <div className="p-10 text-center text-orange-300 font-bold animate-pulse">ĐANG TẢI PHÂN TÍCH...</div>
+                                <div className="p-10 text-center text-orange-300 font-bold animate-pulse">{t('pages.StatisticalInventory.loadingABC')}</div>
                             ) : abcRows.length === 0 ? (
-                                <div className="p-10 text-center text-gray-400 italic">Không có dữ liệu phân tích ABC.</div>
+                                <div className="p-10 text-center text-gray-400 italic">{t('pages.StatisticalInventory.noABCData')}</div>
                             ) : (
                                 <StatisticsTable
                                     columns={abcColumns}
@@ -234,15 +236,15 @@ export default function StatisticalInventory() {
                         <div className="border-b border-rose-100 px-6 py-4 bg-rose-50/30 flex items-center gap-3">
                             <span className="text-xl">📉</span>
                             <h3 className="text-[17px] font-black text-rose-800 uppercase tracking-tight">
-                                Nhật ký hao tổn & Thất thoát hàng hóa
+                                {t('pages.StatisticalInventory.tblTitleLoss')}
                             </h3>
                         </div>
 
                         {loading ? (
-                            <div className="p-10 text-center text-rose-300 font-bold">ĐANG KIỂM TRA SỔ SÁCH...</div>
+                            <div className="p-10 text-center text-rose-300 font-bold">{t('pages.StatisticalInventory.loadingLoss')}</div>
                         ) : lossRows.length === 0 ? (
                             <div className="p-16 text-center text-gray-400 italic font-medium">
-                                Tuyệt vời! Không ghi nhận bất kỳ khoản hao tổn nào trong kỳ này.
+                                {t('pages.StatisticalInventory.noLossData')}
                             </div>
                         ) : (
                             <StatisticsTable
@@ -252,7 +254,7 @@ export default function StatisticalInventory() {
                             />
                         )}
                         <div className="px-6 py-3 bg-white border-t border-rose-50 text-[10px] text-rose-400 italic font-bold">
-                            * Dữ liệu bao gồm hàng hỏng từ khâu QC và sai lệch âm từ các đợt kiểm kê thực tế.
+                            {t('pages.StatisticalInventory.lossFootnote')}
                         </div>
                     </PanelCard>
                 </div>

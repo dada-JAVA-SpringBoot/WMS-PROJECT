@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
 import historyIcon from '../components/common/icons/history.png';
 import excelIcon  from '../components/common/icons/excel.png';
@@ -7,14 +8,15 @@ import * as XLSX from 'xlsx';
 import { ActionButton } from '../components/common/SharedUI';
 
 const TRANSACTION_TYPES = {
-    INBOUND: { label: 'Nhập kho', color: 'text-green-600 bg-green-50 border-green-100' },
-    OUTBOUND: { label: 'Xuất kho', color: 'text-red-600 bg-red-50 border-red-100' },
-    TRANSFER_IN: { label: 'Điều chuyển đến', color: 'text-blue-600 bg-blue-50 border-blue-100' },
-    TRANSFER_OUT: { label: 'Điều chuyển đi', color: 'text-orange-600 bg-orange-50 border-orange-100' },
-    ADJUSTMENT: { label: 'Điều chỉnh', color: 'text-purple-600 bg-purple-50 border-purple-100' }
+    INBOUND: { labelKey: 'pages.TransactionHistory.types.inbound', color: 'text-green-600 bg-green-50 border-green-100' },
+    OUTBOUND: { labelKey: 'pages.TransactionHistory.types.outbound', color: 'text-red-600 bg-red-50 border-red-100' },
+    TRANSFER_IN: { labelKey: 'pages.TransactionHistory.types.transferIn', color: 'text-blue-600 bg-blue-50 border-blue-100' },
+    TRANSFER_OUT: { labelKey: 'pages.TransactionHistory.types.transferOut', color: 'text-orange-600 bg-orange-50 border-orange-100' },
+    ADJUSTMENT: { labelKey: 'pages.TransactionHistory.types.adjustment', color: 'text-purple-600 bg-purple-50 border-purple-100' }
 };
 
 export default function TransactionHistory() {
+    const { t } = useTranslation();
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filterKeyword, setFilterKeyword] = useState("");
@@ -64,17 +66,17 @@ export default function TransactionHistory() {
 
     const handleExportExcel = () => {
         if (!filteredData.length) return;
-        const sheetData = filteredData.map((t, idx) => ({
-            "STT": idx + 1,
-            "Thời gian": new Date(t.createdAt).toLocaleString('vi-VN'),
-            "Sản phẩm": t.productName,
-            "SKU": t.productSku,
-            "Loại giao dịch": TRANSACTION_TYPES[t.transactionType]?.label || t.transactionType,
-            "Thay đổi": t.quantityChange,
-            "Lô hàng": t.batchCode,
-            "Vị trí": t.binCode,
-            "Khu vực": t.zone,
-            "Người thực hiện": t.staffName || `NV #${t.createdBy}`
+        const sheetData = filteredData.map((row, idx) => ({
+            [t('pages.TransactionHistory.excel.stt')]: idx + 1,
+            [t('pages.TransactionHistory.excel.time')]: new Date(row.createdAt).toLocaleString('vi-VN'),
+            [t('pages.TransactionHistory.excel.product')]: row.productName,
+            [t('pages.TransactionHistory.excel.sku')]: row.productSku,
+            [t('pages.TransactionHistory.excel.type')]: TRANSACTION_TYPES[row.transactionType]?.labelKey ? t(TRANSACTION_TYPES[row.transactionType].labelKey) : row.transactionType,
+            [t('pages.TransactionHistory.excel.change')]: row.quantityChange,
+            [t('pages.TransactionHistory.excel.batch')]: row.batchCode,
+            [t('pages.TransactionHistory.excel.bin')]: row.binCode,
+            [t('pages.TransactionHistory.excel.zone')]: row.zone,
+            [t('pages.TransactionHistory.excel.staff')]: row.staffName || `${t('pages.TransactionHistory.excel.staffDefault')} #${row.createdBy}`
         }));
         const ws = XLSX.utils.json_to_sheet(sheetData);
         const wb = XLSX.utils.book_new();
@@ -98,12 +100,12 @@ export default function TransactionHistory() {
             {/* Header Toolbar */}
             <div className="sticky top-0 z-20 flex items-center justify-between bg-white p-5 rounded-3xl shadow-sm border border-gray-100 mb-6">
                 <div className="flex gap-4">
-                    <ActionButton label="XUẤT EXCEL" iconSrc={excelIcon} onClick={handleExportExcel} />
-                    <ActionButton label="LÀM MỚI" iconSrc={excel1Icon} onClick={fetchData} />
+                    <ActionButton label={t('pages.TransactionHistory.actions.exportExcel')} iconSrc={excelIcon} onClick={handleExportExcel} />
+                    <ActionButton label={t('pages.TransactionHistory.actions.refresh')} iconSrc={excel1Icon} onClick={fetchData} />
                 </div>
                 <div className="flex items-center gap-3">
                     <img src={historyIcon} className="w-6 h-6 object-contain opacity-40" alt="History" />
-                    <h1 className="text-sm font-black text-gray-400 uppercase tracking-widest">Nhật ký biến động kho (Audit Trail)</h1>
+                    <h1 className="text-sm font-black text-gray-400 uppercase tracking-widest">{t('pages.TransactionHistory.title')}</h1>
                 </div>
             </div>
 
@@ -114,19 +116,19 @@ export default function TransactionHistory() {
                         type="text" 
                         value={filterKeyword} 
                         onChange={e => setFilterKeyword(e.target.value)} 
-                        placeholder="Tìm theo sản phẩm, SKU, vị trí hoặc số lô..." 
+                        placeholder={t('pages.TransactionHistory.searchPlaceholder')} 
                         className="flex-1 border-2 border-gray-100 rounded-xl px-5 py-3 text-sm outline-none focus:border-[#1192a8] transition-all" 
                     />
                     <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-gray-400 uppercase">Loại giao dịch:</span>
+                        <span className="text-[10px] font-black text-gray-400 uppercase">{t('pages.TransactionHistory.typeLabel')}</span>
                         <select 
                             value={filterType} 
                             onChange={e => setFilterType(e.target.value)} 
                             className="wms-select !py-2 !px-4 min-w-[180px]"
                         >
-                            <option value="ALL">Tất cả các loại</option>
+                            <option value="ALL">{t('pages.TransactionHistory.allTypes')}</option>
                             {Object.entries(TRANSACTION_TYPES).map(([val, meta]) => (
-                                <option key={val} value={val}>{meta.label}</option>
+                                <option key={val} value={val}>{t(meta.labelKey)}</option>
                             ))}
                         </select>
                     </div>
@@ -140,61 +142,61 @@ export default function TransactionHistory() {
                         <thead className="bg-gray-50 border-b text-[10px] font-black text-gray-400 uppercase sticky top-0 z-10">
                             <tr>
                                 <th className="p-5 w-16">#</th>
-                                <th className="p-5 cursor-pointer hover:text-[#1192a8]" onClick={() => requestSort('createdAt')}>Thời gian <SortIcon col="createdAt" /></th>
-                                <th className="p-5">Sản phẩm / SKU</th>
-                                <th className="p-5">Loại giao dịch</th>
-                                <th className="p-5 text-right cursor-pointer hover:text-[#1192a8]" onClick={() => requestSort('quantityChange')}>Thay đổi <SortIcon col="quantityChange" /></th>
-                                <th className="p-5">Lô & Vị trí</th>
-                                <th className="p-5">Người thực hiện</th>
+                                <th className="p-5 cursor-pointer hover:text-[#1192a8]" onClick={() => requestSort('createdAt')}>{t('pages.TransactionHistory.headers.time')} <SortIcon col="createdAt" /></th>
+                                <th className="p-5">{t('pages.TransactionHistory.headers.productSku')}</th>
+                                <th className="p-5">{t('pages.TransactionHistory.headers.type')}</th>
+                                <th className="p-5 text-right cursor-pointer hover:text-[#1192a8]" onClick={() => requestSort('quantityChange')}>{t('pages.TransactionHistory.headers.change')} <SortIcon col="quantityChange" /></th>
+                                <th className="p-5">{t('pages.TransactionHistory.headers.batchBin')}</th>
+                                <th className="p-5">{t('pages.TransactionHistory.headers.staff')}</th>
                             </tr>
                         </thead>
                         <tbody className="text-sm">
                             {loading ? (
-                                <tr><td colSpan="7" className="py-20 text-center animate-pulse text-[#1192a8] font-black uppercase tracking-widest">Đang truy vấn dữ liệu giao dịch...</td></tr>
+                                <tr><td colSpan="7" className="py-20 text-center animate-pulse text-[#1192a8] font-black uppercase tracking-widest">{t('pages.TransactionHistory.loading')}</td></tr>
                             ) : filteredData.length === 0 ? (
-                                <tr><td colSpan="7" className="py-20 text-center text-gray-400 italic">Không tìm thấy dữ liệu giao dịch phù hợp.</td></tr>
-                            ) : filteredData.map((t, idx) => {
-                                const typeMeta = TRANSACTION_TYPES[t.transactionType] || { label: t.transactionType, color: 'bg-gray-100 text-gray-500' };
+                                <tr><td colSpan="7" className="py-20 text-center text-gray-400 italic">{t('pages.TransactionHistory.noData')}</td></tr>
+                            ) : filteredData.map((row, idx) => {
+                                const typeMeta = TRANSACTION_TYPES[row.transactionType] || { labelKey: null, color: 'bg-gray-100 text-gray-500' };
                                 return (
-                                    <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                                    <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                                         <td className="p-5 text-gray-300 font-bold">{idx + 1}</td>
                                         <td className="p-5">
-                                            <div className="font-bold text-gray-700">{new Date(t.createdAt).toLocaleDateString('vi-VN')}</div>
-                                            <div className="text-[10px] text-gray-400 font-mono">{new Date(t.createdAt).toLocaleTimeString('vi-VN')}</div>
+                                            <div className="font-bold text-gray-700">{new Date(row.createdAt).toLocaleDateString('vi-VN')}</div>
+                                            <div className="text-[10px] text-gray-400 font-mono">{new Date(row.createdAt).toLocaleTimeString('vi-VN')}</div>
                                         </td>
                                         <td className="p-5">
-                                            <div className="font-black text-gray-800 uppercase truncate max-w-[200px]" title={t.productName}>{t.productName}</div>
-                                            <div className="text-[10px] font-bold text-[#1192a8] font-mono">{t.productSku}</div>
+                                            <div className="font-black text-gray-800 uppercase truncate max-w-[200px]" title={row.productName}>{row.productName}</div>
+                                            <div className="text-[10px] font-bold text-[#1192a8] font-mono">{row.productSku}</div>
                                         </td>
                                         <td className="p-5">
                                             <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${typeMeta.color}`}>
-                                                {typeMeta.label}
+                                                {typeMeta.labelKey ? t(typeMeta.labelKey) : row.transactionType}
                                             </span>
                                         </td>
                                         <td className="p-5 text-right font-black text-lg">
-                                            <span className={t.quantityChange > 0 ? 'text-green-600' : 'text-red-600'}>
-                                                {t.quantityChange > 0 ? `+${t.quantityChange}` : t.quantityChange}
+                                            <span className={row.quantityChange > 0 ? 'text-green-600' : 'text-red-600'}>
+                                                {row.quantityChange > 0 ? `+${row.quantityChange}` : row.quantityChange}
                                             </span>
                                         </td>
                                         <td className="p-5">
                                             <div className="flex flex-col gap-0.5">
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className="text-[9px] font-bold text-gray-400 uppercase">Lô:</span>
-                                                    <span className="text-[11px] font-black text-gray-700 font-mono">{t.batchCode}</span>
+                                                    <span className="text-[9px] font-bold text-gray-400 uppercase">{t('pages.TransactionHistory.batchLabel')}</span>
+                                                    <span className="text-[11px] font-black text-gray-700 font-mono">{row.batchCode}</span>
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className="text-[9px] font-bold text-gray-400 uppercase">Vị trí:</span>
-                                                    <span className="text-[11px] font-black text-[#1192a8]">{t.binCode}</span>
-                                                    <span className="text-[9px] text-gray-400">({t.zone})</span>
+                                                    <span className="text-[9px] font-bold text-gray-400 uppercase">{t('pages.TransactionHistory.binLabel')}</span>
+                                                    <span className="text-[11px] font-black text-[#1192a8]">{row.binCode}</span>
+                                                    <span className="text-[9px] text-gray-400">({row.zone})</span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="p-5">
                                             <div className="flex items-center gap-2">
                                                 <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-[10px] font-black text-gray-400">
-                                                    {(t.staffName || 'U').charAt(0).toUpperCase()}
+                                                    {(row.staffName || 'U').charAt(0).toUpperCase()}
                                                 </div>
-                                                <span className="font-bold text-gray-600">{t.staffName || `NV #${t.createdBy}`}</span>
+                                                <span className="font-bold text-gray-600">{row.staffName || t('pages.TransactionHistory.staffDefault', { id: row.createdBy })}</span>
                                             </div>
                                         </td>
                                     </tr>

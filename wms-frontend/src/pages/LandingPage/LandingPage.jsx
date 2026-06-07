@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 
 import Hero from './Sections/Hero';
@@ -7,7 +8,7 @@ import Pricing from './Sections/Pricing';
 import About from './Sections/About';
 
 export default function LandingPage({ onEnter, onLogin }) {
-
+    const { t, i18n } = useTranslation();
     const [view, setView] = useState('home');
 
 
@@ -38,20 +39,44 @@ export default function LandingPage({ onEnter, onLogin }) {
 
 
                         <nav className="hidden lg:flex gap-8 text-[15px] font-bold text-gray-500">
-                            <button onClick={() => setView('home')} className={`transition-colors ${view === 'home' ? 'text-[#149ca8]' : 'hover:text-[#149ca8]'}`}>Trang chủ</button>
-                            <button onClick={() => setView('features')} className={`transition-colors ${view === 'features' ? 'text-[#149ca8]' : 'hover:text-[#149ca8]'}`}>Tính năng</button>
-                            <button onClick={() => setView('pricing')} className={`transition-colors ${view === 'pricing' ? 'text-[#149ca8]' : 'hover:text-[#149ca8]'}`}>Bảng giá</button>
-                            <button onClick={() => setView('about')} className={`transition-colors ${view === 'about' ? 'text-[#149ca8]' : 'hover:text-[#149ca8]'}`}>Giới thiệu</button>
+                            <button onClick={() => setView('home')} className={`transition-colors ${view === 'home' ? 'text-[#149ca8]' : 'hover:text-[#149ca8]'}`}>{t('landing.home')}</button>
+                            <button onClick={() => setView('features')} className={`transition-colors ${view === 'features' ? 'text-[#149ca8]' : 'hover:text-[#149ca8]'}`}>{t('landing.features')}</button>
+                            <button onClick={() => setView('pricing')} className={`transition-colors ${view === 'pricing' ? 'text-[#149ca8]' : 'hover:text-[#149ca8]'}`}>{t('landing.pricing')}</button>
+                            <button onClick={() => setView('about')} className={`transition-colors ${view === 'about' ? 'text-[#149ca8]' : 'hover:text-[#149ca8]'}`}>{t('landing.about')}</button>
                         </nav>
                     </div>
 
 
                     <div className="hidden md:flex items-center gap-4">
+                        {/* Language Switcher */}
+                        <div className="flex bg-gray-100 p-0.5 rounded-full border border-gray-200 mr-2 shadow-inner">
+                            <button
+                                onClick={() => i18n.changeLanguage('vi')}
+                                className={`px-2.5 py-1 rounded-full text-xs font-black transition-all ${
+                                    i18n.language?.startsWith('vi')
+                                    ? 'bg-[#149ca8] text-white shadow-sm'
+                                    : 'text-gray-500 hover:text-[#149ca8]'
+                                }`}
+                            >
+                                VI
+                            </button>
+                            <button
+                                onClick={() => i18n.changeLanguage('en')}
+                                className={`px-2.5 py-1 rounded-full text-xs font-black transition-all ${
+                                    i18n.language?.startsWith('en')
+                                    ? 'bg-[#149ca8] text-white shadow-sm'
+                                    : 'text-gray-500 hover:text-[#149ca8]'
+                                }`}
+                            >
+                                EN
+                            </button>
+                        </div>
+
                         <button onClick={onLogin ?? onEnter} className="px-6 py-2 border-2 border-[#149ca8] text-[#149ca8] rounded-full font-bold hover:bg-blue-50 transition active:scale-95">
-                            Đăng nhập
+                            {t('landing.login')}
                         </button>
                         <button onClick={onEnter} className="px-6 py-2 bg-[#149ca8] text-white rounded-full font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 active:scale-95">
-                            Dùng thử miễn phí
+                            {t('landing.try_free')}
                         </button>
                     </div>
                 </div>
@@ -69,22 +94,22 @@ export default function LandingPage({ onEnter, onLogin }) {
                         <div className="text-2xl font-black text-gray-800 flex items-center gap-2 mb-6">
                             <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-yellow-400 to-blue-500"></div> AUTO HOME
                         </div>
-                        <p><strong>Trụ sở chính:</strong> Tầng 9, tòa nhà Technosoft, phố Duy Tân, Cầu Giấy, Hà Nội</p>
+                        <p><strong>{t('landing.head_office')}:</strong> {t('landing.address')}</p>
                         <p>✉️ contact@autohome.com.vn</p>
-                        <p>📞 Tư vấn bán hàng: <strong>0904 885 833</strong></p>
+                        <p>📞 {t('landing.sales_call')}: <strong>0904 885 833</strong></p>
                     </div>
                     <div>
-                        <h4 className="font-bold text-gray-900 mb-4">Sản phẩm</h4>
+                        <h4 className="font-bold text-gray-900 mb-4">{t('landing.product')}</h4>
                         <ul className="space-y-3">
-                            <li><button onClick={() => setView('features')} className="hover:text-blue-600 transition-colors">Tính năng nổi bật</button></li>
-                            <li><button onClick={() => setView('pricing')} className="hover:text-blue-600 transition-colors">Bảng giá dịch vụ</button></li>
+                            <li><button onClick={() => setView('features')} className="hover:text-blue-600 transition-colors">{t('landing.key_features')}</button></li>
+                            <li><button onClick={() => setView('pricing')} className="hover:text-blue-600 transition-colors">{t('landing.pricing_plans')}</button></li>
                         </ul>
                     </div>
                     <div>
-                        <h4 className="font-bold text-gray-900 mb-4">Hỗ trợ</h4>
+                        <h4 className="font-bold text-gray-900 mb-4">{t('landing.support')}</h4>
                         <ul className="space-y-3">
-                            <li><a href="#" className="hover:text-blue-600 transition-colors">Tài liệu sử dụng</a></li>
-                            <li><a href="#" className="hover:text-blue-600 transition-colors">Chính sách bảo mật</a></li>
+                            <li><a href="#" className="hover:text-blue-600 transition-colors">{t('landing.docs')}</a></li>
+                            <li><a href="#" className="hover:text-blue-600 transition-colors">{t('landing.privacy')}</a></li>
                         </ul>
                     </div>
                 </div>

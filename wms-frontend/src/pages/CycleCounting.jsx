@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
 import { ActionButton } from '../components/common/SharedUI';
 import SystemDialog from '../components/modals/SystemDialog';
@@ -8,6 +9,7 @@ import storageIcon from '../components/common/icons/storage-stacks.png';
 import { useAuth } from '../context/AuthContext';
 
 export default function CycleCounting() {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -51,19 +53,19 @@ export default function CycleCounting() {
     }, [fetchData]);
 
     const handleCreatePlan = async () => {
-        if (!assignedTo) return showMsg("Yêu cầu", "Vui lòng chọn nhân viên phụ trách kiểm kê.", "info");
+        if (!assignedTo) return showMsg(t('pages.CycleCounting.dialogRequire'), t('pages.CycleCounting.alertSelectStaff'), "info");
         try {
             await axiosClient.post('/api/cycle-counts', { 
                 zone: newPlanZone, 
                 assignedTo: parseInt(assignedTo),
-                note: `Kiểm kê khu vực ${newPlanZone === 'ALL' ? 'Toàn kho' : newPlanZone}`
+                note: t('pages.CycleCounting.noteTemplate', { zone: newPlanZone === 'ALL' ? t('pages.CycleCounting.entireWarehouse') : newPlanZone })
             });
-            showMsg("Thành công", "Đã tạo kế hoạch kiểm kê và thông báo tới nhân viên!", "info");
+            showMsg(t('pages.CycleCounting.dialogSuccess'), t('pages.CycleCounting.alertPlanCreated'), "info");
             setIsCreateOpen(false);
             setAssignedTo("");
             fetchData();
         } catch (error) {
-            showMsg("Lỗi", "Không thể tạo kế hoạch: " + (error.response?.data?.message || error.message), "info");
+            showMsg(t('pages.CycleCounting.dialogError'), t('pages.CycleCounting.alertCreateFailed') + (error.response?.data?.message || error.message), "info");
         }
     };
 
@@ -73,7 +75,7 @@ export default function CycleCounting() {
             setDetails(res.data);
             setActivePlan(plan);
         } catch (error) {
-            showMsg("Lỗi", "Không thể tải chi tiết kiểm kê.", "info");
+            showMsg(t('pages.CycleCounting.dialogError'), t('pages.CycleCounting.alertLoadDetailsFailed'), "info");
         }
     };
 
@@ -89,16 +91,16 @@ export default function CycleCounting() {
     const handleCompletePlan = async (planId) => {
         try {
             await axiosClient.post(`/api/cycle-counts/${planId}/complete`);
-            showMsg("Thành công", "Đã chốt kết quả kiểm kê và cập nhật tồn kho thực tế!", "info");
+            showMsg(t('pages.CycleCounting.dialogSuccess'), t('pages.CycleCounting.alertPlanCompleted'), "info");
             setActivePlan(null);
             setDetails([]);
             fetchData();
         } catch (error) {
-            showMsg("Lỗi", "Không thể hoàn tất kiểm kê: " + (error.response?.data?.message || error.message));
+            showMsg(t('pages.CycleCounting.dialogError'), t('pages.CycleCounting.alertCompleteFailed') + (error.response?.data?.message || error.message));
         }
     };
 
-    const getStaffFullName = (id) => staffs.find(s => s.id === id)?.fullName || `NV #${id}`;
+    const getStaffFullName = (id) => staffs.find(s => s.id === id)?.fullName || `${t('pages.CycleCounting.staffShort')} #${id}`;
 
     return (
         <div className="p-4 md:p-6 bg-[#f8f9fa] min-h-full flex flex-col text-left font-sans text-gray-800 no-scrollbar">
@@ -107,11 +109,11 @@ export default function CycleCounting() {
             <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6 md:mb-8 transition-all">
                 <div>
                     <h1 className="text-xl md:text-2xl font-black text-gray-800 uppercase tracking-tight">Cycle Counting</h1>
-                    <p className="text-gray-500 text-xs md:text-sm font-medium">Đối soát thực tế và hệ thống để đảm bảo độ chính xác kho hàng.</p>
+                    <p className="text-gray-500 text-xs md:text-sm font-medium">{t('pages.CycleCounting.subtitle')}</p>
                 </div>
                 <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-4 shrink-0">
-                    {canCreate && <ActionButton label="TẠO KẾ HOẠCH" iconSrc={addIcon} onClick={() => setIsCreateOpen(true)} />}
-                    <ActionButton label="LÀM MỚI" iconSrc={excel1Icon} onClick={fetchData} />
+                    {canCreate && <ActionButton label={t('pages.CycleCounting.btnCreatePlan')} iconSrc={addIcon} onClick={() => setIsCreateOpen(true)} />}
+                    <ActionButton label={t('pages.CycleCounting.btnRefresh')} iconSrc={excel1Icon} onClick={fetchData} />
                 </div>
             </div>
 
@@ -120,7 +122,7 @@ export default function CycleCounting() {
                 <div className="xl:col-span-1 bg-white rounded-2xl md:rounded-3xl border border-gray-100 shadow-sm flex flex-col h-[500px] md:h-[700px]">
                     <div className="p-4 md:p-6 border-b border-gray-50 bg-gray-50/50 rounded-t-2xl md:rounded-t-3xl">
                         <h3 className="font-black text-gray-800 uppercase text-[10px] md:text-xs tracking-widest flex items-center gap-2">
-                            <span>📋</span> Kế hoạch kiểm kê ({plans.length})
+                            <span>📋</span> {t('pages.CycleCounting.sidebarTitle')} ({plans.length})
                         </h3>
                     </div>
                     <div className="flex-1 overflow-y-auto no-scrollbar p-3 md:p-4 space-y-3">
@@ -133,18 +135,18 @@ export default function CycleCounting() {
                                 <div className="flex justify-between items-start mb-2">
                                     <span className="font-black text-[#1192a8] text-sm">{plan.planCode}</span>
                                     <span className={`px-2 py-0.5 rounded-full text-[8px] md:text-[9px] font-black uppercase border ${plan.status === 'COMPLETED' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
-                                        {plan.status === 'COMPLETED' ? 'Đã chốt' : 'Đang đếm'}
+                                        {plan.status === 'COMPLETED' ? t('pages.CycleCounting.statusCompleted') : t('pages.CycleCounting.statusCounting')}
                                     </span>
                                 </div>
                                 <div className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase">{new Date(plan.createdAt).toLocaleString('vi-VN')}</div>
                                 <div className="mt-2 flex items-center gap-2">
-                                    <span className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase">Phụ trách:</span>
+                                    <span className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase">{t('pages.CycleCounting.assignedLabel')}</span>
                                     <span className="text-[10px] font-black text-gray-600 uppercase truncate">{getStaffFullName(plan.assignedTo)}</span>
                                 </div>
                                 <div className="text-[11px] md:text-xs text-gray-600 mt-2 italic truncate border-t border-gray-50 pt-2">"{plan.note}"</div>
                             </div>
                         ))}
-                        {plans.length === 0 && <div className="py-20 text-center text-gray-300 italic px-4 text-sm">Chưa có kế hoạch kiểm kê nào.</div>}
+                        {plans.length === 0 && <div className="py-20 text-center text-gray-300 italic px-4 text-sm">{t('pages.CycleCounting.noPlans')}</div>}
                     </div>
                 </div>
 
@@ -155,21 +157,21 @@ export default function CycleCounting() {
                             <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-50 rounded-full flex items-center justify-center">
                                 <img src={storageIcon} className="w-8 h-8 md:w-10 md:h-10 opacity-20" alt="Select plan" />
                             </div>
-                            <p className="italic font-medium text-sm md:text-base">Chọn một kế hoạch bên trái để bắt đầu kiểm đếm.</p>
+                            <p className="italic font-medium text-sm md:text-base">{t('pages.CycleCounting.selectPlanInstruction')}</p>
                         </div>
                     ) : (
                         <>
                             <div className="p-4 md:p-6 border-b border-gray-50 bg-gradient-to-r from-cyan-50 to-white flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 shrink-0">
                                 <div className="min-w-0">
-                                    <h3 className="font-black text-gray-800 uppercase tracking-tight text-xs md:text-sm truncate">Phiếu kiểm: {activePlan.planCode}</h3>
-                                    <p className="text-[9px] md:text-[10px] text-gray-500 font-bold uppercase">Nhập số lượng thực tế tại mỗi vị trí</p>
+                                    <h3 className="font-black text-gray-800 uppercase tracking-tight text-xs md:text-sm truncate">{t('pages.CycleCounting.worksheetTitle', { code: activePlan.planCode })}</h3>
+                                    <p className="text-[9px] md:text-[10px] text-gray-500 font-bold uppercase">{t('pages.CycleCounting.worksheetSubtitle')}</p>
                                 </div>
                                 {activePlan.status !== 'COMPLETED' && roles.some(r => ['ADMIN', 'MANAGER'].includes(r)) && (
                                     <button 
                                         onClick={() => handleCompletePlan(activePlan.id)}
                                         className="px-4 py-2 bg-[#1192a8] text-white rounded-xl text-[10px] md:text-xs font-black shadow-lg shadow-teal-100 hover:bg-teal-700 transition-all active:scale-95 uppercase tracking-tighter"
                                     >
-                                        Chốt kết quả & Cập nhật
+                                        {t('pages.CycleCounting.btnFinalize')}
                                     </button>
                                 )}
                             </div>
@@ -177,12 +179,12 @@ export default function CycleCounting() {
                                 <table className="w-full text-left min-w-[700px]">
                                     <thead className="bg-gray-50 text-[9px] md:text-[10px] font-black text-gray-400 uppercase sticky top-0 z-10">
                                         <tr>
-                                            <th className="p-4">Vị trí</th>
-                                            <th className="p-4">Sản phẩm</th>
-                                            <th className="p-4">Lô</th>
-                                            <th className="p-4 text-center">Hệ thống</th>
-                                            <th className="p-4 text-center w-28 md:w-32">Thực tế</th>
-                                            <th className="p-4 text-right">Lệch</th>
+                                            <th className="p-4">{t('pages.CycleCounting.colBin')}</th>
+                                            <th className="p-4">{t('pages.CycleCounting.colProduct')}</th>
+                                            <th className="p-4">{t('pages.CycleCounting.colBatch')}</th>
+                                            <th className="p-4 text-center">{t('pages.CycleCounting.colSystem')}</th>
+                                            <th className="p-4 text-center w-28 md:w-32">{t('pages.CycleCounting.colActual')}</th>
+                                            <th className="p-4 text-right">{t('pages.CycleCounting.colVariance')}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="text-xs md:text-sm">
@@ -209,7 +211,7 @@ export default function CycleCounting() {
                                                 </td>
                                                 <td className="p-4 text-right">
                                                     {d.variance === 0 ? (
-                                                        <span className="text-green-500 font-bold text-[10px] md:text-xs">✓ Khớp</span>
+                                                        <span className="text-green-500 font-bold text-[10px] md:text-xs">{t('pages.CycleCounting.statusMatch')}</span>
                                                     ) : (
                                                         <span className={`font-black text-sm md:text-base ${d.variance > 0 ? 'text-blue-600' : 'text-red-600'}`}>
                                                             {d.variance > 0 ? `+${d.variance.toLocaleString()}` : d.variance.toLocaleString()}
@@ -231,30 +233,30 @@ export default function CycleCounting() {
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[100] flex justify-center items-center p-2 md:p-4">
                     <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in duration-200 flex flex-col max-h-[98vh]">
                         <div className="p-5 md:p-6 bg-[#1192a8] text-white shrink-0 text-center">
-                            <h2 className="text-base md:text-xl font-black uppercase tracking-tight">Tạo kế hoạch kiểm kê</h2>
-                            <p className="text-[10px] md:text-xs opacity-80 uppercase font-bold mt-1">Giao nhiệm vụ cho nhân viên kho</p>
+                            <h2 className="text-base md:text-xl font-black uppercase tracking-tight">{t('pages.CycleCounting.modalTitle')}</h2>
+                            <p className="text-[10px] md:text-xs opacity-80 uppercase font-bold mt-1">{t('pages.CycleCounting.modalSubtitle')}</p>
                         </div>
                         <div className="p-5 md:p-8 space-y-6 text-left overflow-y-auto flex-1">
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Khu vực kiểm kê</label>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase ml-1">{t('pages.CycleCounting.labelZone')}</label>
                                     <select 
                                         value={newPlanZone} 
                                         onChange={e => setNewPlanZone(e.target.value)}
                                         className="wms-select w-full !py-2.5 md:!py-3 !text-sm"
                                     >
-                                        <option value="ALL">Toàn bộ kho hàng</option>
-                                        {zones.map(z => <option key={z} value={z}>Khu vực: {z}</option>)}
+                                        <option value="ALL">{t('pages.CycleCounting.optionAllZones')}</option>
+                                        {zones.map(z => <option key={z} value={z}>{t('pages.CycleCounting.optionZone', { zone: z })}</option>)}
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Người phụ trách *</label>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase ml-1">{t('pages.CycleCounting.labelStaff')}</label>
                                     <select 
                                         value={assignedTo} 
                                         onChange={e => setAssignedTo(e.target.value)}
                                         className="wms-select w-full !py-2.5 md:!py-3 !text-sm"
                                     >
-                                        <option value="">-- Chọn nhân viên --</option>
+                                        <option value="">{t('pages.CycleCounting.selectStaffPlaceholder')}</option>
                                         {staffs.filter(s => s.roles?.some(r => ['STOREKEEPER', 'WAREHOUSE_KEEPER', 'CHECKER'].includes(r))).map(s => (
                                             <option key={s.id} value={s.id}>{s.fullName} ({s.username})</option>
                                         ))}
@@ -263,13 +265,13 @@ export default function CycleCounting() {
                             </div>
                             <div className="bg-orange-50 p-4 rounded-xl md:rounded-2xl border border-orange-100 shadow-sm">
                                 <p className="text-[10px] md:text-[11px] text-orange-700 leading-relaxed italic font-medium">
-                                    * Sau khi xác nhận, nhiệm vụ sẽ được gửi trực tiếp tới tài khoản của nhân viên được chọn.
+                                    {t('pages.CycleCounting.modalWarning')}
                                 </p>
                             </div>
                         </div>
                         <div className="p-4 md:p-6 border-t bg-gray-50 flex justify-end gap-4 shrink-0">
-                            <button onClick={() => setIsCreateOpen(false)} className="text-[10px] md:text-xs font-black text-gray-400 uppercase hover:text-gray-600 transition-colors">Hủy bỏ</button>
-                            <button onClick={handleCreatePlan} className="px-6 md:px-8 py-2.5 md:py-3 bg-[#1192a8] text-white rounded-xl text-[10px] md:text-xs font-black shadow-lg hover:bg-teal-700 transition-all active:scale-95 uppercase tracking-widest">Bắt đầu</button>
+                            <button onClick={() => setIsCreateOpen(false)} className="text-[10px] md:text-xs font-black text-gray-400 uppercase hover:text-gray-600 transition-colors">{t('pages.CycleCounting.btnCancel')}</button>
+                            <button onClick={handleCreatePlan} className="px-6 md:px-8 py-2.5 md:py-3 bg-[#1192a8] text-white rounded-xl text-[10px] md:text-xs font-black shadow-lg hover:bg-teal-700 transition-all active:scale-95 uppercase tracking-widest">{t('pages.CycleCounting.btnStart')}</button>
                         </div>
                     </div>
                 </div>

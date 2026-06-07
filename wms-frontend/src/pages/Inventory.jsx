@@ -2,6 +2,7 @@
 // 4. Inventory.jsx — thay fetch → axiosClient
 // ================================================================
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import Barcode from 'react-barcode';
 import * as XLSX from 'xlsx';
 import axiosClient from '../api/axiosClient';
@@ -30,6 +31,7 @@ import scanIcon from '../components/common/icons/scan.png';
 import { useExcelExport } from '../hooks/useExcelExport';
 
 export default function Inventory({ onCreateInbound, onCreateOutbound }) {
+    const { t } = useTranslation();
     // 1. Quản lý State Modal
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -81,15 +83,17 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
             'V?i': 'Vỉ',
             'Pallet': 'Pallet'
         };
-        return map[value] || value;
+        const resolved = map[value] || value;
+        return t(`pages.Inventory.units.${resolved}`, { defaultValue: resolved });
     };
 
     const normalizeStorageTemp = (value) => {
         if (!value) return '';
-        if (value.includes('Kho Mát')) return 'Kho Mát';
-        if (value.includes('Kho Lạnh')) return 'Kho Lạnh';
-        if (value.includes('Tránh ánh sáng')) return 'Tránh ánh sáng trực tiếp';
-        return 'Bình thường';
+        let resolved = 'Bình thường';
+        if (value.includes('Kho Mát')) resolved = 'Kho Mát';
+        else if (value.includes('Kho Lạnh')) resolved = 'Kho Lạnh';
+        else if (value.includes('Tránh ánh sáng')) resolved = 'Tránh ánh sáng trực tiếp';
+        return t(`pages.Inventory.storageTemps.${resolved}`, { defaultValue: resolved });
     };
 
     const parseDateValue = (value) => {
@@ -342,11 +346,11 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         // Nếu không có (ví dụ vừa update ở FE), dùng Map
         const category = categoryMap.get(String(product?.categoryId));
         if (!category) {
-            return { name: 'Chưa gán', code: '' };
+            return { name: t('pages.Inventory.category.unassigned'), code: '' };
         }
 
         return {
-            name: category.name || 'Chưa gán',
+            name: category.name || t('pages.Inventory.category.unassigned'),
             code: category.categoryCode || ''
         };
     };
@@ -359,10 +363,10 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
             const category = categoryMap.get(String(product?.categoryId));
             const categoryDisplay = category
                 ? {
-                    name: category.name || 'Chưa gán',
+                    name: category.name || t('pages.Inventory.category.unassigned'),
                     code: category.categoryCode || ''
                 }
-                : { name: 'Chưa gán', code: '' };
+                : { name: t('pages.Inventory.category.unassigned'), code: '' };
             const categoryKey = `${categoryDisplay.code || ''}|${categoryDisplay.name || ''}`;
 
             if (!groupIndexMap.has(categoryKey)) {
@@ -381,7 +385,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         });
 
         return groups;
-    }, [filteredProducts, categoryMap]);
+    }, [filteredProducts, categoryMap, t]);
 
     const resolveCategoryLabel = (product) => {
         if (!product) return '';
@@ -569,7 +573,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
 
     const handleOpenDetail = (productsForAction = selectedProducts) => {
         if (productsForAction.length !== 1) {
-            showMessage("Không thể mở chi tiết", "Chi tiết chỉ khả dụng với 1 sản phẩm.");
+            showMessage(t('pages.Inventory.dialog.cannotOpenDetailTitle'), t('pages.Inventory.dialog.cannotOpenDetailMessage'));
             return;
         }
         setSelectedProduct(productsForAction[0]);
@@ -577,7 +581,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
 
     const handleOpenEdit = (productsForAction = selectedProducts) => {
         if (productsForAction.length === 0) {
-            showMessage("Thiếu lựa chọn", "Vui lòng chọn ít nhất một sản phẩm trong bảng trước.");
+            showMessage(t('pages.Inventory.dialog.missingSelectionTitle'), t('pages.Inventory.dialog.missingSelectionMessage'));
             return;
         }
 
@@ -593,15 +597,15 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
     // --- CẬP NHẬT GỌI AXIOS KHI XÓA SẢN PHẨM ---
     const handleDeleteProduct = async (productsToDelete = selectedProducts) => {
         if (!productsToDelete.length) {
-            showMessage("Thiếu lựa chọn", "Vui lòng chọn ít nhất một sản phẩm trong bảng trước.");
+            showMessage(t('pages.Inventory.dialog.missingSelectionTitle'), t('pages.Inventory.dialog.missingSelectionMessage'));
             return;
         }
 
         const label = productsToDelete.length === 1
-            ? `Xóa sản phẩm "${productsToDelete[0].name}" (${productsToDelete[0].sku})?`
-            : `Xóa ${productsToDelete.length} sản phẩm đã chọn?`;
+            ? t('pages.Inventory.dialog.confirmDeleteSingle', { name: productsToDelete[0].name, sku: productsToDelete[0].sku })
+            : t('pages.Inventory.dialog.confirmDeletePlural', { count: productsToDelete.length });
 
-        showConfirm("Xác nhận xóa", label, async () => {
+        showConfirm(t('pages.Inventory.dialog.confirmTitle'), label, async () => {
             try {
                 for (const product of productsToDelete) {
                     await axiosClient.delete(`/api/products/${product.id}`);
@@ -614,7 +618,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                 setSystemDialog(null);
             } catch (error) {
                 console.warn("Không thể xóa sản phẩm", error);
-                showMessage("Không thể xóa", "Không thể xóa sản phẩm này do có thể đang liên kết với phiếu xuất/nhập.");
+                showMessage(t('pages.Inventory.dialog.cannotDeleteTitle'), t('pages.Inventory.dialog.cannotDeleteMessage'));
             }
         });
     };
@@ -622,7 +626,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
     const handleCopyClipboard = async (lines) => {
         const text = lines.join('\n');
         if (!text.trim()) {
-            showMessage("Thiếu dữ liệu", "Vui lòng chọn ít nhất một trường để sao chép.");
+            showMessage(t('pages.Inventory.dialog.missingDataTitle'), t('pages.Inventory.dialog.missingDataCopyMessage'));
             return;
         }
 
@@ -630,10 +634,10 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
             await navigator.clipboard.writeText(text);
             setIsCopyModalOpen(false);
             setCopyTargetProducts([]);
-            showMessage("Đã sao chép", "Dữ liệu đã được đưa vào clipboard.");
+            showMessage(t('pages.Inventory.dialog.copiedTitle'), t('pages.Inventory.dialog.copiedMessage'));
         } catch (error) {
             console.warn("Không thể sao chép vào clipboard", error);
-            showMessage("Không thể sao chép", "Trình duyệt không cho phép ghi clipboard.");
+            showMessage(t('pages.Inventory.dialog.cannotCopyTitle'), t('pages.Inventory.dialog.cannotCopyMessage'));
         }
     };
 
@@ -642,55 +646,52 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
             const stockState = getInventoryStockState(item);
 
             return {
-                STT: index + 1,
-                SKU: item.sku || '',
-                'Tên sản phẩm': item.name || '',
-                'Mã vạch': item.barcode || '',
-                'Phân loại': resolveCategoryLabel(item),
-                'Đơn vị tính': resolveUnitLabel(item),
-                'Điều kiện lưu kho': normalizeStorageTemp(item.storageTemp),
-                'Trạng thái': item.status === 'ACTIVE' ? 'Đang kinh doanh' : 'Ngừng kinh doanh',
-                'Tổng tồn kho': stockState.totalStock,
-                'Đã phân bổ': stockState.allocatedStock,
-                'Tồn khả dụng': stockState.availableStock,
-                'Đang về kho': stockState.incomingStock,
-                'Tồn an toàn': item.safetyStock ?? '',
-                'Cảnh báo tồn': stockState.isBelowSafety ? 'Dưới tồn an toàn' : '',
-                'Nhà cung cấp': item.supplierCodes || '',
-                'Trọng lượng (kg)': item.weight ?? '',
-                'Dài (cm)': item.length ?? '',
-                'Rộng (cm)': item.width ?? '',
-                'Cao (cm)': item.height ?? '',
-                'CBM': item.length && item.width && item.height
-                    ? ((Number(item.length) * Number(item.width) * Number(item.height)) / 1000000).toFixed(6)
-                    : ''
+                [t('pages.Inventory.excel.stt')]: index + 1,
+                [t('pages.Inventory.excel.sku')]: item.sku || '',
+                [t('pages.Inventory.excel.name')]: item.name || '',
+                [t('pages.Inventory.excel.barcode')]: item.barcode || '',
+                [t('pages.Inventory.excel.category')]: resolveCategoryLabel(item),
+                [t('pages.Inventory.excel.unit')]: resolveUnitLabel(item),
+                [t('pages.Inventory.excel.storageCondition')]: normalizeStorageTemp(item.storageTemp),
+                [t('pages.Inventory.excel.status')]: item.status === 'ACTIVE' ? t('pages.Inventory.excel.statusActive') : t('pages.Inventory.excel.statusInactive'),
+                [t('pages.Inventory.excel.totalStock')]: stockState.totalStock,
+                [t('pages.Inventory.excel.allocatedStock')]: stockState.allocatedStock,
+                [t('pages.Inventory.excel.availableStock')]: stockState.availableStock,
+                [t('pages.Inventory.excel.incomingStock')]: stockState.incomingStock,
+                [t('pages.Inventory.excel.safetyStock')]: item.safetyStock ?? '',
+                [t('pages.Inventory.excel.stockWarning')]: stockState.isBelowSafety ? t('pages.Inventory.excel.belowSafety') : '',
+                [t('pages.Inventory.excel.supplier')]: item.supplierCodes || '',
+                [t('pages.Inventory.excel.weight')]: item.weight ?? '',
+                [t('pages.Inventory.excel.length')]: item.length ?? '',
+                [t('pages.Inventory.excel.width')]: item.width ?? '',
+                [t('pages.Inventory.excel.height')]: item.height ?? '',
             };
         });
 
         const workbook = XLSX.utils.book_new();
         const dataSheet = XLSX.utils.json_to_sheet(rows);
-        XLSX.utils.book_append_sheet(workbook, dataSheet, 'Danh sách tồn kho');
+        XLSX.utils.book_append_sheet(workbook, dataSheet, t('pages.Inventory.excel.sheetNameInventory'));
 
         const summaryRows = [
-            { 'Chỉ tiêu': 'Tổng số sản phẩm', 'Giá trị': exportSource.length },
-            { 'Chỉ tiêu': 'Đã chọn', 'Giá trị': selectedProducts.length },
-            { 'Chỉ tiêu': 'Có barcode', 'Giá trị': exportSource.filter(item => !!item.barcode).length },
-            { 'Chỉ tiêu': 'Không barcode', 'Giá trị': exportSource.filter(item => !item.barcode).length },
-            { 'Chỉ tiêu': 'Tồn > 0', 'Giá trị': exportSource.filter(item => Number(item.totalStock || 0) > 0).length },
-            { 'Chỉ tiêu': 'Tồn = 0', 'Giá trị': exportSource.filter(item => Number(item.totalStock || 0) === 0).length },
-            { 'Chỉ tiêu': 'Dưới tồn an toàn', 'Giá trị': exportSource.filter(item => getInventoryStockState(item).isBelowSafety).length },
-            { 'Chỉ tiêu': 'Tổng đang về kho', 'Giá trị': exportSource.reduce((sum, item) => sum + getInventoryStockState(item).incomingStock, 0) }
+            { [t('pages.Inventory.excel.metric')]: t('pages.Inventory.excel.totalProducts'), [t('pages.Inventory.excel.value')]: exportSource.length },
+            { [t('pages.Inventory.excel.metric')]: t('pages.Inventory.excel.selected'), [t('pages.Inventory.excel.value')]: selectedProducts.length },
+            { [t('pages.Inventory.excel.metric')]: t('pages.Inventory.excel.hasBarcode'), [t('pages.Inventory.excel.value')]: exportSource.filter(item => !!item.barcode).length },
+            { [t('pages.Inventory.excel.metric')]: t('pages.Inventory.excel.noBarcode'), [t('pages.Inventory.excel.value')]: exportSource.filter(item => !item.barcode).length },
+            { [t('pages.Inventory.excel.metric')]: t('pages.Inventory.excel.stockGreaterThanZero'), [t('pages.Inventory.excel.value')]: exportSource.filter(item => Number(item.totalStock || 0) > 0).length },
+            { [t('pages.Inventory.excel.metric')]: t('pages.Inventory.excel.stockEqualToZero'), [t('pages.Inventory.excel.value')]: exportSource.filter(item => Number(item.totalStock || 0) === 0).length },
+            { [t('pages.Inventory.excel.metric')]: t('pages.Inventory.excel.belowSafetyCount'), [t('pages.Inventory.excel.value')]: exportSource.filter(item => getInventoryStockState(item).isBelowSafety).length },
+            { [t('pages.Inventory.excel.metric')]: t('pages.Inventory.excel.totalIncoming'), [t('pages.Inventory.excel.value')]: exportSource.reduce((sum, item) => sum + getInventoryStockState(item).incomingStock, 0) }
         ];
         const summarySheet = XLSX.utils.json_to_sheet(summaryRows);
-        XLSX.utils.book_append_sheet(workbook, summarySheet, 'Tổng hợp');
-        return workbook;
+        XLSX.utils.book_append_sheet(workbook, summarySheet, t('pages.Inventory.excel.sheetNameSummary'));
+        return { workbook, rows };
     };
 
     const handleExportExcel = async () => {
         const exportSource = selectedProducts.length > 0 ? selectedProducts : filteredProducts;
 
         if (!exportSource.length) {
-            showMessage("Không có dữ liệu", "Không có sản phẩm nào để xuất Excel.");
+            showMessage(t('pages.Inventory.dialog.noDataTitle'), t('pages.Inventory.dialog.noDataExcelMessage'));
             return;
         }
 
@@ -699,7 +700,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         const success = await performExport(workbook, null, rows);
         if (success) {
             closeExportModal();
-            showMessage("Đã xuất Excel", "File đã được lưu thành công.");
+            showMessage(t('pages.Inventory.dialog.exportedTitle'), t('pages.Inventory.dialog.exportedMessage'));
         }
     };
 
@@ -716,7 +717,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
 
     const handleCreateReceiptFlow = (kind) => {
         if (!selectedProducts.length) {
-            showMessage("Thiếu lựa chọn", "Vui lòng chọn ít nhất một sản phẩm trong bảng trước.");
+            showMessage(t('pages.Inventory.dialog.missingSelectionTitle'), t('pages.Inventory.dialog.missingSelectionMessage'));
             return;
         }
 
@@ -747,10 +748,10 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
             {/* ── Toolbar: Action Buttons (Sticky) ── */}
             <div className="sticky top-0 z-20 flex items-center justify-between bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 mb-4 md:mb-6">
                 <div className="flex gap-4 md:gap-8 overflow-x-auto no-scrollbar pb-1 w-full lg:w-auto">
-                    <div onClick={() => setIsAddModalOpen(true)} className="shrink-0"><ActionButton iconSrc={addIcon} label="THÊM MỚI" /></div>
+                    <div onClick={() => setIsAddModalOpen(true)} className="shrink-0"><ActionButton iconSrc={addIcon} label={t('pages.Inventory.toolbar.addNew')} /></div>
                     <div onClick={() => {
                         if (selectedProducts.length === 0) {
-                            showMessage("Thiếu lựa chọn", "Vui lòng chọn một sản phẩm trong bảng trước.");
+                            showMessage(t('pages.Inventory.dialog.missingSelectionTitle'), t('pages.Inventory.dialog.missingSelectionSingleMessage'));
                             return;
                         }
                         if (selectedProducts.length === 1) {
@@ -758,21 +759,21 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                             return;
                         }
                         setIsBulkEditModalOpen(true);
-                    }} className="shrink-0"><ActionButton iconSrc={fixIcon} label="SỬA" /></div>
+                    }} className="shrink-0"><ActionButton iconSrc={fixIcon} label={t('pages.Inventory.toolbar.edit')} /></div>
                     <div onClick={() => {
                         if (selectedProducts.length === 0) {
-                            showMessage("Thiếu lựa chọn", "Vui lòng chọn ít nhất một sản phẩm trong bảng trước.");
+                            showMessage(t('pages.Inventory.dialog.missingSelectionTitle'), t('pages.Inventory.dialog.missingSelectionMessage'));
                             return;
                         }
                         handleDeleteProduct(selectedProducts);
-                    }} className="shrink-0"><ActionButton iconSrc={deleteIcon} label="XÓA" /></div>
-                    <div onClick={() => handleOpenDetail(selectedProducts)} className="shrink-0"><ActionButton iconSrc={infoIcon} label="CHI TIẾT" /></div>
-                    <div onClick={() => handleCreateReceiptFlow('inbound')} className="shrink-0"><ActionButton iconSrc={inboundIcon} label="NHẬP KHO" /></div>
-                    <div onClick={() => handleCreateReceiptFlow('outbound')} className="shrink-0"><ActionButton iconSrc={outboundIcon} label="XUẤT KHO" /></div>
-                    <div onClick={openExportModalLocal} className="shrink-0"><ActionButton iconSrc={excelIcon} label="XUẤT EXCEL" /></div>
-                    <div onClick={() => setIsScannerOpen(true)} className="shrink-0"><ActionButton iconSrc={scanIcon} label="QUÉT MÃ" /></div>
+                    }} className="shrink-0"><ActionButton iconSrc={deleteIcon} label={t('pages.Inventory.toolbar.delete')} /></div>
+                    <div onClick={() => handleOpenDetail(selectedProducts)} className="shrink-0"><ActionButton iconSrc={infoIcon} label={t('pages.Inventory.toolbar.detail')} /></div>
+                    <div onClick={() => handleCreateReceiptFlow('inbound')} className="shrink-0"><ActionButton iconSrc={inboundIcon} label={t('pages.Inventory.toolbar.inbound')} /></div>
+                    <div onClick={() => handleCreateReceiptFlow('outbound')} className="shrink-0"><ActionButton iconSrc={outboundIcon} label={t('pages.Inventory.toolbar.outbound')} /></div>
+                    <div onClick={openExportModalLocal} className="shrink-0"><ActionButton iconSrc={excelIcon} label={t('pages.Inventory.toolbar.excel')} /></div>
+                    <div onClick={() => setIsScannerOpen(true)} className="shrink-0"><ActionButton iconSrc={scanIcon} label={t('pages.Inventory.toolbar.scan')} /></div>
                 </div>
-                <div className="text-xs font-black text-gray-400 uppercase tracking-widest hidden lg:block">Quản lý kho sản phẩm</div>
+                <div className="text-xs font-black text-gray-400 uppercase tracking-widest hidden lg:block">{t('pages.Inventory.title')}</div>
             </div>
 
             {/* ── Filter Bar: Search & Selects ── */}
@@ -783,12 +784,12 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                         onChange={(e) => setSearchType(e.target.value)}
                         className="wms-select w-full sm:w-48 !text-sm !py-2.5 md:!py-3"
                     >
-                        <option>Tất cả</option>
-                        <option>Theo tên SP</option>
-                        <option>Theo SKU</option>
-                        <option>Theo Mã vạch</option>
-                        <option>Theo phân loại</option>
-                        <option>Theo NCC</option>
+                        <option value="Tất cả">{t('pages.Inventory.search.types.all')}</option>
+                        <option value="Theo tên SP">{t('pages.Inventory.search.types.name')}</option>
+                        <option value="Theo SKU">{t('pages.Inventory.search.types.sku')}</option>
+                        <option value="Theo Mã vạch">{t('pages.Inventory.search.types.barcode')}</option>
+                        <option value="Theo phân loại">{t('pages.Inventory.search.types.category')}</option>
+                        <option value="Theo NCC">{t('pages.Inventory.search.types.supplier')}</option>
                     </select>
                     <div className="flex flex-1 gap-2">
                         <input
@@ -796,63 +797,63 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                             value={searchKeyword}
                             onChange={(e) => setSearchKeyword(e.target.value)}
                             className="flex-1 border-2 border-gray-100 rounded-xl px-4 md:px-5 py-2.5 md:py-3 text-sm outline-none focus:border-[#1192a8] transition-all bg-white min-w-0"
-                            placeholder="Từ khóa..."
+                            placeholder={t('pages.Inventory.search.placeholder')}
                         />
                         <button
                             onClick={fetchProducts}
                             className="bg-[#1192a8] text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold text-sm hover:bg-teal-700 transition flex items-center gap-2 whitespace-nowrap cursor-pointer"
                         >
-                            <span className="hidden sm:inline">↻</span> Làm mới
+                            <span className="hidden sm:inline">↻</span> {t('pages.Inventory.filters.refresh')}
                         </button>
                     </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-4 border-t border-gray-100">
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">Phân loại:</span>
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">{t('pages.Inventory.filters.category')}</span>
                         <select
                             value={inventoryFilters.categoryId}
                             onChange={(e) => setInventoryFilters(prev => ({ ...prev, categoryId: e.target.value }))}
                             className="wms-select !text-[10px] md:!text-[11px] !py-1 md:!py-1.5 !px-2 md:!px-3 min-w-[120px] md:min-w-[140px]"
                         >
-                            <option value="ALL">Tất cả</option>
+                            <option value="ALL">{t('pages.Inventory.filters.all')}</option>
                             {categories.map(cat => <option key={cat.id} value={String(cat.id)}>{cat.name}</option>)}
                         </select>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">NCC:</span>
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">{t('pages.Inventory.filters.supplier')}</span>
                         <select
                             value={inventoryFilters.supplierCode}
                             onChange={(e) => setInventoryFilters(prev => ({ ...prev, supplierCode: e.target.value }))}
                             className="wms-select !text-[10px] md:!text-[11px] !py-1 md:!py-1.5 !px-2 md:!px-3 min-w-[100px] md:min-w-[140px]"
                         >
-                            <option value="ALL">Tất cả</option>
+                            <option value="ALL">{t('pages.Inventory.filters.all')}</option>
                             {suppliers.map(sup => <option key={sup.id} value={sup.supplierCode}>{sup.name}</option>)}
                         </select>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">TT:</span>
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">{t('pages.Inventory.filters.status')}</span>
                         <select
                             value={inventoryFilters.status}
                             onChange={(e) => setInventoryFilters(prev => ({ ...prev, status: e.target.value }))}
                             className="wms-select !text-[10px] md:!text-[11px] !py-1 md:!py-1.5 !px-2 md:!px-3 min-w-[80px] md:min-w-[120px]"
                         >
-                            <option value="ALL">Tất cả</option>
-                            <option value="ACTIVE">Kinh doanh</option>
-                            <option value="INACTIVE">Ngừng KD</option>
+                            <option value="ALL">{t('pages.Inventory.filters.all')}</option>
+                            <option value="ACTIVE">{t('pages.Inventory.filters.statusActive')}</option>
+                            <option value="INACTIVE">{t('pages.Inventory.filters.statusInactive')}</option>
                         </select>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">Tồn:</span>
+                        <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase">{t('pages.Inventory.filters.stock')}</span>
                         <select
                             value={inventoryFilters.stock}
                             onChange={(e) => setInventoryFilters(prev => ({ ...prev, stock: e.target.value }))}
                             className="wms-select !text-[10px] md:!text-[11px] !py-1 md:!py-1.5 !px-2 md:!px-3 min-w-[80px] md:min-w-[120px]"
                         >
-                            <option value="ALL">Tất cả</option>
-                            <option value="HAS">Có sẵn</option>
-                            <option value="LOW">Sắp hết</option>
-                            <option value="ZERO">Hết hàng</option>
+                            <option value="ALL">{t('pages.Inventory.filters.all')}</option>
+                            <option value="HAS">{t('pages.Inventory.filters.stockAvailable')}</option>
+                            <option value="LOW">{t('pages.Inventory.filters.stockLow')}</option>
+                            <option value="ZERO">{t('pages.Inventory.filters.stockZero')}</option>
                         </select>
                     </div>
                     <button 
@@ -871,7 +872,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                         }}
                         className="ml-auto text-[9px] md:text-[10px] font-black text-gray-400 hover:text-red-500 uppercase tracking-tighter cursor-pointer"
                     >
-                        Xóa bộ lọc ✕
+                        {t('pages.Inventory.filters.clear')}
                     </button>
                 </div>
             </div>
@@ -881,20 +882,20 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                 <div className="flex-1 overflow-x-auto no-scrollbar lg:scrollbar-thin">
                     {isLoading ? (
                         <div className="flex justify-center items-center h-full text-gray-500 font-medium">
-                            <span className="animate-pulse">Đang tải dữ liệu từ máy chủ...</span>
+                            <span className="animate-pulse">{t('pages.Inventory.loading')}</span>
                         </div>
                     ) : (
                         inventoryViewMode === 'list' ? (
                             <table className="w-full text-center text-sm min-w-[800px] md:min-w-[1000px]">
                             <thead className="bg-gray-100 sticky top-0 shadow-sm z-10">
                         <tr className="text-gray-700 uppercase text-[10px] md:text-xs tracking-wider">
-                            <th className="p-3 md:p-4 font-bold text-left">{renderSortableHeader('Mã SKU', 'SKU')}</th>
-                            <th className="p-3 md:p-4 font-bold text-left">{renderSortableHeader('Tên sản phẩm', 'NAME')}</th>
-                            <th className="p-3 md:p-4 font-bold text-right">{renderSortableHeader('Tồn khả dụng', 'AVAILABLE', 'text-right')}</th>
-                            <th className="p-3 md:p-4 font-bold text-right hidden sm:table-cell">{renderSortableHeader('Tồn an toàn', 'SAFETY', 'text-right')}</th>
-                            <th className="p-3 md:p-4 font-bold text-left hidden md:table-cell">{renderSortableHeader('Đơn vị', 'UNIT', 'text-left')}</th>
-                            <th className="p-3 md:p-4 font-bold hidden lg:table-cell">Mã vạch</th>
-                            <th className="p-3 md:p-4 font-bold text-center">Trạng thái</th>
+                            <th className="p-3 md:p-4 font-bold text-left">{renderSortableHeader(t('pages.Inventory.table.sku'), 'SKU')}</th>
+                            <th className="p-3 md:p-4 font-bold text-left">{renderSortableHeader(t('pages.Inventory.table.name'), 'NAME')}</th>
+                            <th className="p-3 md:p-4 font-bold text-right">{renderSortableHeader(t('pages.Inventory.table.available'), 'AVAILABLE', 'text-right')}</th>
+                            <th className="p-3 md:p-4 font-bold text-right hidden sm:table-cell">{renderSortableHeader(t('pages.Inventory.table.safety'), 'SAFETY', 'text-right')}</th>
+                            <th className="p-3 md:p-4 font-bold text-left hidden md:table-cell">{renderSortableHeader(t('pages.Inventory.table.unit'), 'UNIT', 'text-left')}</th>
+                            <th className="p-3 md:p-4 font-bold hidden lg:table-cell">{t('pages.Inventory.table.barcode')}</th>
+                            <th className="p-3 md:p-4 font-bold text-center">{t('pages.Inventory.table.status')}</th>
                         </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
@@ -927,7 +928,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                                                     </span>
                                                 ) : null}
                                                 <span className="text-[11px] text-slate-400">
-                                                    {categoryProductCount} sản phẩm
+                                                    {t('pages.Inventory.table.productCount', { count: categoryProductCount })}
                                                 </span>
                                             </div>
                                         </td>
@@ -978,7 +979,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                                         className={`p-4 font-semibold text-left group-hover:underline ${
                                             stockState.isBelowSafety ? 'text-red-600' : 'text-blue-700'
                                         }`}
-                                        title={stockState.isBelowSafety ? 'Tồn khả dụng thấp hơn tồn an toàn' : ''}
+                                        title={stockState.isBelowSafety ? t('pages.Inventory.table.belowSafetyTooltip') : ''}
                                     >
                                         {item.sku}
                                     </td>
@@ -1029,8 +1030,8 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                             })
                         ) : (
                             <tr>
-                                <td colSpan="7" className="p-8 text-gray-500 text-center">
-                                    Không tìm thấy sản phẩm nào phù hợp với "{searchKeyword}".
+                                <td colSpan="7" className="p-8 text-center text-gray-400">
+                                    {t('pages.Inventory.table.noProducts', { keyword: searchKeyword })}
                                 </td>
                             </tr>
                         )}
@@ -1048,7 +1049,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                                                     {group.category.code}
                                                 </span>
                                             ) : null}
-                                            <span className="text-[11px] text-slate-400">{group.products.length} sản phẩm</span>
+                                            <span className="text-[11px] text-slate-400">{t('pages.Inventory.table.productCount', { count: group.products.length })}</span>
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -1083,7 +1084,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                                                                     }}
                                                                 />
                                                             ) : (
-                                                                <span className="text-[10px] text-slate-400 font-medium text-center px-2">Chưa có ảnh</span>
+                                                                <span className="text-[10px] text-slate-400 font-medium text-center px-2">{t('pages.Inventory.grid.noImage')}</span>
                                                             )}
                                                         </div>
 
@@ -1093,9 +1094,9 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                                                                     className={`text-xs font-bold truncate ${
                                                                         stockState.isBelowSafety ? 'text-red-600' : 'text-blue-700'
                                                                     }`}
-                                                                    title={stockState.isBelowSafety ? 'Tồn khả dụng thấp hơn tồn an toàn' : ''}
+                                                                    title={stockState.isBelowSafety ? t('pages.Inventory.table.belowSafetyTooltip') : ''}
                                                                 >
-                                                                    {product.sku || 'Chưa có SKU'}
+                                                                    {product.sku || t('pages.Inventory.grid.noSku')}
                                                                 </div>
                                                                 <div className="text-sm font-semibold text-slate-900 truncate" title={product.name}>
                                                                     {product.name}
@@ -1104,29 +1105,29 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
 
                                                             <div className="grid grid-cols-2 gap-2 text-xs">
                                                                 <div>
-                                                                    <div className="text-slate-400">Khả dụng</div>
+                                                                    <div className="text-slate-400">{t('pages.Inventory.grid.available')}</div>
                                                                     <div className={`font-bold ${stockState.isBelowSafety ? 'text-red-600' : 'text-green-700'}`}>
                                                                         {stockState.availableStock.toLocaleString()} {unitLabel}
                                                                     </div>
                                                                 </div>
                                                                 <div>
-                                                                    <div className="text-slate-400">Tồn an toàn</div>
+                                                                    <div className="text-slate-400">{t('pages.Inventory.grid.safety')}</div>
                                                                     <div className="font-semibold text-amber-700">{stockState.safetyStock ?? 'N/A'}</div>
                                                                 </div>
                                                                 <div>
-                                                                    <div className="text-slate-400">Tổng tồn</div>
+                                                                    <div className="text-slate-400">{t('pages.Inventory.grid.total')}</div>
                                                                     <div className="font-semibold text-slate-700">{stockState.totalStock.toLocaleString()}</div>
                                                                 </div>
                                                                 <div>
-                                                                    <div className="text-slate-400">Đã phân bổ</div>
+                                                                    <div className="text-slate-400">{t('pages.Inventory.grid.allocated')}</div>
                                                                     <div className="font-semibold text-slate-700">{stockState.allocatedStock.toLocaleString()}</div>
                                                                 </div>
                                                                 <div className="col-span-2">
                                                                     <div
                                                                         className="text-slate-400"
-                                                                        title="Chỉ cộng vào tồn khả dụng khi phiếu nhập hoàn tất"
+                                                                        title={t('pages.Inventory.grid.incomingTooltip')}
                                                                     >
-                                                                        Đang về kho
+                                                                        {t('pages.Inventory.grid.incoming')}
                                                                     </div>
                                                                     <div className="font-semibold text-cyan-700">{stockState.incomingStock.toLocaleString()} {unitLabel}</div>
                                                                 </div>
@@ -1134,7 +1135,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
 
                                                             <div className="flex items-center justify-between gap-2 text-[11px]">
                                                                 <span className="text-slate-500 font-medium uppercase tracking-wide" title={product.barcode || ''}>
-                                                                    Barcode: {product.barcode || 'N/A'}
+                                                                    {t('pages.Inventory.grid.barcode', { barcode: product.barcode || 'N/A' })}
                                                                 </span>
                                                                 {product.status === 'ACTIVE' ? (
                                                                     <span className="shrink-0 font-bold text-green-700">ACTIVE</span>
@@ -1145,7 +1146,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
 
                                                             {product.supplierCodes ? (
                                                                 <div className="text-[11px] text-slate-500 truncate" title={product.supplierCodes}>
-                                                                    NCC: {product.supplierCodes}
+                                                                    {t('pages.Inventory.grid.supplier', { supplier: product.supplierCodes })}
                                                                 </div>
                                                             ) : null}
                                                         </div>
@@ -1157,7 +1158,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                                 ))
                             ) : (
                                 <div className="p-8 text-gray-500 text-center">
-                                    Không tìm thấy sản phẩm nào phù hợp với "{searchKeyword}".
+                                    {t('pages.Inventory.table.noProducts', { keyword: searchKeyword })}
                                 </div>
                             )}
                         </div>
@@ -1170,8 +1171,8 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                 type="button"
                 onClick={() => setInventoryViewMode(prev => (prev === 'list' ? 'grid' : 'list'))}
                 className="fixed right-6 bottom-6 z-[90] w-14 h-14 rounded-full bg-[#1192a8] text-white shadow-lg border border-white/60 hover:bg-teal-700 transition flex items-center justify-center text-2xl font-bold"
-                title={inventoryViewMode === 'list' ? 'Chuyển sang dạng ô' : 'Chuyển sang dạng list'}
-                aria-label={inventoryViewMode === 'list' ? 'Chuyển sang dạng ô' : 'Chuyển sang dạng list'}
+                title={inventoryViewMode === 'list' ? t('pages.Inventory.viewMode.grid') : t('pages.Inventory.viewMode.list')}
+                aria-label={inventoryViewMode === 'list' ? t('pages.Inventory.viewMode.grid') : t('pages.Inventory.viewMode.list')}
             >
                 {inventoryViewMode === 'list' ? '▦' : '☰'}
             </button>
@@ -1196,7 +1197,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                             />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center bg-gray-50 text-gray-400 text-xs font-medium text-center px-3">
-                                Chưa có ảnh
+                                {t('pages.Inventory.grid.noImage')}
                             </div>
                         )}
                     </div>
@@ -1322,7 +1323,7 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
                 message={systemDialog?.message || ''}
                 onClose={() => setSystemDialog(null)}
                 onConfirm={systemDialog?.onConfirm}
-                confirmLabel="Xác nhận"
+                confirmLabel={t('pages.Inventory.dialog.confirmLabel')}
             />
 
             <ScannerModal 
