@@ -45,6 +45,7 @@ const menuItems = [
 
 export default function Sidebar({ user, onLogout, isOpen, onClose }) {
     const { t, i18n } = useTranslation();
+    const { theme, toggleTheme } = useTheme();
     const [attendance, setAttendance] = useState(null);
     const [loadingAt, setLoadingAt] = useState(false);
     const [dialog, setDialog] = useState({ isOpen: false, title: '', message: '' });
