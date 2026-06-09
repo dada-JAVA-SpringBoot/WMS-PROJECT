@@ -22,6 +22,9 @@ public class ProductUnit {
     @Column(name = "IsActive")
     private Boolean isActive = true;
 
+    @Column(name = "CompanyId")
+    private Integer companyId;
+
     public Integer getId() {
         return id;
     }
@@ -60,5 +63,13 @@ public class ProductUnit {
 
     public void setIsActive(Boolean active) {
         isActive = active;
+    }
+
+    public Integer getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Integer companyId) {
+        this.companyId = companyId;
     }
 }

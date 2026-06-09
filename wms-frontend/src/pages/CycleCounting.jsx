@@ -7,6 +7,7 @@ import addIcon from '../components/common/icons/add.png';
 import excel1Icon from '../components/common/icons/excel1.png';
 import storageIcon from '../components/common/icons/storage-stacks.png';
 import { useAuth } from '../context/AuthContext';
+import { formatDateByLanguage, formatNumberByLanguage } from '../utils/formatters';
 
 export default function CycleCounting() {
     const { t } = useTranslation();
@@ -147,7 +148,7 @@ export default function CycleCounting() {
                                         {plan.status === 'COMPLETED' ? t('pages.CycleCounting.statusCompleted') : t('pages.CycleCounting.statusCounting')}
                                     </span>
                                 </div>
-                                <div className="text-[9px] md:text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">{new Date(plan.createdAt).toLocaleString('vi-VN')}</div>
+                                <div className="text-[9px] md:text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">{formatDateByLanguage(plan.createdAt)}</div>
                                 <div className="mt-2 flex items-center gap-2">
                                     <span className="text-[9px] md:text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">{t('pages.CycleCounting.assignedLabel')}</span>
                                     <span className="text-[10px] font-black text-gray-600 dark:text-gray-300 uppercase truncate">{getStaffFullName(plan.assignedTo)}</span>
@@ -164,7 +165,7 @@ export default function CycleCounting() {
                     {!activePlan ? (
                         <div className="flex-1 flex flex-col items-center justify-center text-gray-300 dark:text-gray-600 gap-4 p-8 text-center">
                             <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                                <img src={storageIcon} className="w-8 h-8 md:w-10 md:h-10 opacity-20 dark:opacity-30 dark:brightness-110" alt="Select plan" />
+                                <img src={storageIcon} className="w-8 h-8 md:w-10 md:h-10 opacity-20 dark:opacity-40 dark:invert dark:hue-rotate-180" alt="Select plan" />
                             </div>
                             <p className="italic font-medium text-sm md:text-base">{t('pages.CycleCounting.selectPlanInstruction')}</p>
                         </div>
@@ -212,7 +213,7 @@ export default function CycleCounting() {
                                                     <div className="text-[9px] md:text-[10px] font-mono text-gray-400 dark:text-gray-500">{d.productSku}</div>
                                                 </td>
                                                 <td className="p-4 font-mono font-bold text-gray-500 dark:text-gray-400">{d.batchCode}</td>
-                                                <td className="p-4 text-center font-bold text-gray-400 dark:text-gray-500">{d.systemQty.toLocaleString()}</td>
+                                                <td className="p-4 text-center font-bold text-gray-400 dark:text-gray-500">{formatNumberByLanguage(d.systemQty)}</td>
                                                 <td className="p-4">
                                                     <input 
                                                         type="number" 
@@ -231,7 +232,7 @@ export default function CycleCounting() {
                                                         <span className="text-green-500 dark:text-green-400 font-bold text-[10px] md:text-xs">{t('pages.CycleCounting.statusMatch')}</span>
                                                     ) : (
                                                         <span className={`font-black text-sm md:text-base ${d.variance > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
-                                                            {d.variance > 0 ? `+${d.variance.toLocaleString()}` : d.variance.toLocaleString()}
+                                                            {d.variance > 0 ? `+${formatNumberByLanguage(d.variance)}` : formatNumberByLanguage(d.variance)}
                                                         </span>
                                                 )}
                                             </td>

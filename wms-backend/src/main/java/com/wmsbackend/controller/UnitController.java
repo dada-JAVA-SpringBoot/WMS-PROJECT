@@ -2,6 +2,7 @@ package com.wmsbackend.controller;
 
 import com.wmsbackend.entity.ProductUnit;
 import com.wmsbackend.repository.ProductUnitRepository;
+import com.wmsbackend.security.WorkspaceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +20,10 @@ public class UnitController {
 
     @GetMapping
     public List<ProductUnit> getUnits() {
-        return unitRepository.findAllByOrderByNameAsc();
+        Integer companyId = WorkspaceContext.getCurrentCompanyId();
+        return companyId == null
+                ? unitRepository.findAllByOrderByNameAsc()
+                : unitRepository.findByCompanyIdOrderByNameAsc(companyId);
     }
 
     @PostMapping
@@ -31,7 +35,16 @@ public class UnitController {
             return ResponseEntity.badRequest().build();
         }
 
-        Optional<ProductUnit> existing = unitRepository.findByUnitCodeIgnoreCase(unit.getUnitCode());
+        Integer companyId = WorkspaceContext.getCurrentCompanyId();
+        if (unit.getCompanyId() == null) {
+            unit.setCompanyId(companyId);
+        } else if (companyId != null && !companyId.equals(unit.getCompanyId())) {
+            return ResponseEntity.status(403).build();
+        }
+
+        Optional<ProductUnit> existing = companyId == null
+                ? unitRepository.findByUnitCodeIgnoreCase(unit.getUnitCode())
+                : unitRepository.findByUnitCodeIgnoreCaseAndCompanyId(unit.getUnitCode(), companyId);
         if (existing.isPresent()) {
             return ResponseEntity.badRequest().build();
         }
@@ -51,15 +64,32 @@ public class UnitController {
         }
 
         ProductUnit existing = existingOpt.get();
+        Integer companyId = WorkspaceContext.getCurrentCompanyId();
+        if (!WorkspaceContext.isGlobalAdmin() && companyId != null
+                && existing.getCompanyId() != null
+                && !companyId.equals(existing.getCompanyId())) {
+            return ResponseEntity.status(403).build();
+        }
         existing.setUnitCode(unit.getUnitCode());
         existing.setName(unit.getName());
         existing.setDescription(unit.getDescription());
         existing.setIsActive(unit.getIsActive());
+        if (unit.getCompanyId() != null) {
+            existing.setCompanyId(unit.getCompanyId());
+        }
         return ResponseEntity.ok(unitRepository.save(existing));
     }
 
     @DeleteMapping("/{id}")
-    public void deleteUnit(@PathVariable Integer id) {
+    public ResponseEntity<Void> deleteUnit(@PathVariable Integer id) {
+        ProductUnit existing = unitRepository.findById(id).orElse(null);
+        Integer companyId = WorkspaceContext.getCurrentCompanyId();
+        if (existing != null && !WorkspaceContext.isGlobalAdmin() && companyId != null
+                && existing.getCompanyId() != null
+                && !companyId.equals(existing.getCompanyId())) {
+            return ResponseEntity.status(403).build();
+        }
         unitRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

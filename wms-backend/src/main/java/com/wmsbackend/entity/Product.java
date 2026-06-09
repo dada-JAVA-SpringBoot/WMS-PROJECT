@@ -29,6 +29,9 @@ public class Product {
     @Column(name = "CategoryId")
     private Integer categoryId;
 
+    @Column(name = "CompanyId")
+    private Integer companyId;
+
     @Column(name = "ImageUrl", columnDefinition = "NVARCHAR(MAX)")
     private String imageUrl;
 
@@ -117,6 +120,14 @@ public class Product {
 
     public void setCategoryId(Integer categoryId) {
         this.categoryId = categoryId;
+    }
+
+    public Integer getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Integer companyId) {
+        this.companyId = companyId;
     }
 
     public String getImageUrl() {

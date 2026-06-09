@@ -5,8 +5,8 @@ export default function SystemDialog({
     isOpen,
     title,
     message,
-    confirmLabel = 'Đồng ý',
-    cancelLabel = 'Hủy',
+    confirmLabel = 'Confirm',
+    cancelLabel = 'Cancel',
     onConfirm,
     onClose,
     variant = 'info',
@@ -45,8 +45,8 @@ export default function SystemDialog({
                                 ? 'bg-red-600 text-white hover:bg-red-700'
                                 : 'bg-[#1192a8] text-white hover:bg-teal-700'
                         }`}
-                    >
-                        {isConfirm ? confirmLabel : 'Đóng'}
+                        >
+                        {isConfirm ? confirmLabel : 'Close'}
                     </button>
                 </div>
             </div>

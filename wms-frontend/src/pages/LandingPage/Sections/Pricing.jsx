@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatCurrencyExact } from '../../../utils/formatters';
 
 const CheckIcon = () => (
     <svg className="w-4 h-4 text-gray-400 dark:text-gray-500 mr-3 shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -22,8 +23,7 @@ const Pricing = ({ onEnter }) => {
         {
             id: 'ho-tro',
             name: t('pages.Pricing.planSupportName'),
-            price: '270.000',
-            currency: 'đ',
+            price: 270000,
             subtexts: [t('pages.Pricing.planSupportSubtext1')],
             buttonText: t('pages.Pricing.btnTryFree'),
             buttonStyle: 'bg-[#dcfce7] text-[#166534] hover:bg-green-200',
@@ -47,8 +47,7 @@ const Pricing = ({ onEnter }) => {
             id: 'chuyen-nghiep',
             name: t('pages.Pricing.planProfessionalName'),
             badge: t('pages.Pricing.planProfessionalBadge'),
-            price: '330.000',
-            currency: 'đ',
+            price: 330000,
             subtexts: [
                 t('pages.Pricing.planProfessionalSubtext1'),
                 t('pages.Pricing.planProfessionalSubtext2')
@@ -78,8 +77,7 @@ const Pricing = ({ onEnter }) => {
         {
             id: 'cao-cap',
             name: t('pages.Pricing.planPremiumName'),
-            price: '490.000',
-            currency: 'đ',
+            price: 490000,
             subtexts: [
                 t('pages.Pricing.planPremiumSubtext1'),
                 t('pages.Pricing.planPremiumSubtext2')
@@ -138,8 +136,7 @@ const Pricing = ({ onEnter }) => {
 
                             {/* Price */}
                             <div className="mb-4">
-                                <span className="text-4xl font-extrabold text-gray-900 dark:text-white">{plan.price}</span>
-                                <span className="text-xl font-bold text-gray-900 dark:text-white align-top">{plan.currency}</span>
+                                <span className="text-4xl font-extrabold text-gray-900 dark:text-white">{formatCurrencyExact(plan.price)}</span>
                             </div>
 
                             {/* Subtext */}

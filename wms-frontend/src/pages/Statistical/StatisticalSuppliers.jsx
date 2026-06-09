@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../../api/axiosClient';
+import { formatNumberByLanguage } from '../../utils/formatters';
 
 const KpiCard = ({ label, value, icon, color }) => (
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-5 flex flex-col gap-1 shadow-sm transition-colors duration-300">
@@ -25,6 +26,8 @@ const Spinner = () => {
     );
 };
 
+import { useWorkspaceRefresh } from '../../hooks/useWorkspaceRefresh';
+
 export default function StatisticalSuppliers() {
     const { t } = useTranslation();
     const [suppliers, setSuppliers] = useState([]);
@@ -45,6 +48,8 @@ export default function StatisticalSuppliers() {
         fetchSuppliers();
     }, []);
 
+    useWorkspaceRefresh(fetchSuppliers);
+
     const handleSearch = (e) => {
         e.preventDefault();
         setLoading(true);
@@ -55,8 +60,6 @@ export default function StatisticalSuppliers() {
     const topSupplier = suppliers.length
         ? [...suppliers].sort((a, b) => (b.totalImportQuantity || 0) - (a.totalImportQuantity || 0))[0]
         : null;
-
-    const fmt = (n) => (n || 0).toLocaleString('vi-VN');
 
     return (
         <div className="p-6 space-y-6 bg-[#f8f9fa] dark:bg-gray-900 min-h-full transition-colors duration-300">
@@ -70,7 +73,7 @@ export default function StatisticalSuppliers() {
                 />
                 <KpiCard
                     label={t('pages.StatisticalSuppliers.kpiImport')}
-                    value={fmt(totalImport)}
+                    value={formatNumberByLanguage(totalImport)}
                     icon="📦"
                     color="text-amber-600 dark:text-amber-400"
                 />
@@ -148,7 +151,7 @@ export default function StatisticalSuppliers() {
                                     <td className="py-2.5 pr-4 text-gray-500 dark:text-gray-400">{s.phone || '—'}</td>
                                     <td className="py-2.5 pr-4 text-gray-500 dark:text-gray-400 max-w-[200px] truncate">{s.address || '—'}</td>
                                     <td className="py-2.5 text-right">
-                                        <span className="font-bold text-indigo-600 dark:text-indigo-400">{fmt(s.totalImportQuantity)}</span>
+                                        <span className="font-bold text-indigo-600 dark:text-indigo-400">{formatNumberByLanguage(s.totalImportQuantity)}</span>
                                         <span className="text-gray-400 dark:text-gray-500 text-xs ml-1">{t('pages.StatisticalSuppliers.unitPcs')}</span>
                                     </td>
                                 </tr>

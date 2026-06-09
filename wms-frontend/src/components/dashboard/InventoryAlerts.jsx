@@ -6,9 +6,9 @@ export default function InventoryAlerts({ nearExpiry, topStock }) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {/* Sắp hết hạn */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="p-4 border-b border-gray-50 bg-orange-50/50">
-                    <h3 className="font-bold text-orange-800 flex items-center gap-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-colors">
+                <div className="p-4 border-b border-gray-50 dark:border-gray-700 bg-orange-50/50 dark:bg-orange-900/20">
+                    <h3 className="font-bold text-orange-800 dark:text-orange-400 flex items-center gap-2">
                         <span>⚠️</span> {t('pages.InventoryAlerts.nearExpiry')}
                     </h3>
                 </div>
@@ -41,9 +41,9 @@ export default function InventoryAlerts({ nearExpiry, topStock }) {
             </div>
 
             {/* Tồn kho nhiều nhất */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="p-4 border-b border-gray-50 bg-blue-50/50">
-                    <h3 className="font-bold text-blue-800 flex items-center gap-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-colors">
+                <div className="p-4 border-b border-gray-50 dark:border-gray-700 bg-blue-50/50 dark:bg-blue-900/20">
+                    <h3 className="font-bold text-blue-800 dark:text-blue-400 flex items-center gap-2">
                         <span>📊</span> {t('pages.InventoryAlerts.topStock')}
                     </h3>
                 </div>

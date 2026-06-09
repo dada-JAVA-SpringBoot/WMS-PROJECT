@@ -10,5 +10,7 @@ import java.util.Optional;
 @Repository
 public interface ProductCategoryRepository extends JpaRepository<ProductCategory, Integer> {
     List<ProductCategory> findAllByOrderByNameAsc();
+    List<ProductCategory> findByCompanyIdOrderByNameAsc(Integer companyId);
     Optional<ProductCategory> findByCategoryCodeIgnoreCase(String categoryCode);
+    Optional<ProductCategory> findByCategoryCodeIgnoreCaseAndCompanyId(String categoryCode, Integer companyId);
 }

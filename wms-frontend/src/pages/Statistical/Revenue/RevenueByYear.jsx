@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../../../api/axiosClient';
+import { useWorkspaceRefresh } from '../../../hooks/useWorkspaceRefresh';
 import FilterBar, { FilterButton, FilterInput, FilterSelect } from '../../../components/statistical/FilterBar';
 import FinancialCards from '../../../components/statistical/FinancialCards';
 import GroupedBarChart from '../../../components/statistical/charts/GroupedBarChart';
@@ -36,6 +37,10 @@ export default function RevenueByYear() {
 
     useEffect(() => { fetchAll(fromYear, toYear); }, []);
 
+    useWorkspaceRefresh(() => {
+        fetchAll(fromYear, toYear);
+    });
+
     const handleFilter = () => {
         if (Number(fromYear) > Number(toYear)) { setError(t('pages.RevenueByYear.validationYear')); return; }
         fetchAll(fromYear, toYear);
@@ -43,6 +48,11 @@ export default function RevenueByYear() {
     const handleReset = () => { setFromYear(String(CUR_YEAR - 5)); setToYear(String(CUR_YEAR)); fetchAll(CUR_YEAR - 5, CUR_YEAR); };
 
     const isActual = profitType === 'actual';
+
+    const formattedLabels = detail?.labels?.map(label => {
+        const y = parseInt(label, 10);
+        return isNaN(y) ? label : `${t('pages.RevenueByYear.lblYearPrefix', { defaultValue: 'Year' })} ${y}`;
+    }) || [];
 
     return (
         <div className="space-y-5 p-5 bg-[#f8f9fa] dark:bg-gray-900 min-h-screen transition-colors duration-300">
@@ -68,7 +78,7 @@ export default function RevenueByYear() {
                     <div className="dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700 transition-colors">
                         <GroupedBarChart
                             title={t('pages.RevenueByYear.chartGroupedTitle')}
-                            labels={detail.labels}
+                            labels={formattedLabels}
                             series={[
                                 { label: isActual ? t('pages.RevenueByYear.chartGroupedCogsLabel') : t('pages.RevenueByYear.chartGroupedCostLabel'), color: '#e6b06e', data: isActual ? detail.cogsData : detail.costData },
                                 { label: t('pages.RevenueByYear.chartGroupedRevenueLabel'), color: '#74b9f5', data: detail.revenueData },
@@ -79,7 +89,7 @@ export default function RevenueByYear() {
                     <div className="dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700 transition-colors">
                         <LineAreaChart
                             title={t('pages.RevenueByYear.chartLineTitle')}
-                            labels={detail.labels}
+                            labels={formattedLabels}
                             series={[
                                 { label: isActual ? t('pages.RevenueByYear.chartLineActualLabel') : t('pages.RevenueByYear.chartLineNetLabel'), color: '#b68cf0', fill: '#b68cf0', data: isActual ? detail.actualProfitData : detail.profitData },
                             ]}

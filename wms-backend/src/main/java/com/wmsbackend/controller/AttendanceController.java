@@ -21,7 +21,8 @@ public class AttendanceController {
                                     @RequestBody(required = false) java.util.Map<String, String> body) {
         String username = jwtUtil.extractUsername(authHeader.substring(7));
         String reason = body != null ? body.get("reason") : null;
-        return ResponseEntity.ok(attendanceService.checkIn(username, reason));
+        String qrToken = body != null ? body.get("qrToken") : null;
+        return ResponseEntity.ok(attendanceService.checkIn(username, reason, qrToken));
     }
 
     @PostMapping("/{id}/approve")
@@ -48,8 +49,14 @@ public class AttendanceController {
     }
 
     @GetMapping("/history")
-    public ResponseEntity<?> getHistory(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<?> getHistory(@RequestHeader("Authorization") String authHeader,
+                                      @RequestParam(defaultValue = "0") int page,
+                                      @RequestParam(defaultValue = "20") int size) {
         String username = jwtUtil.extractUsername(authHeader.substring(7));
+        if (page >= 0 && size > 0) {
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by("workDate").descending());
+            return ResponseEntity.ok(attendanceService.getStaffHistoryPaginated(username, pageable));
+        }
         return ResponseEntity.ok(attendanceService.getStaffHistory(username));
     }
 
@@ -61,10 +68,19 @@ public class AttendanceController {
 
     @GetMapping("/admin/all")
     @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public List<Attendance> getAll(@RequestParam(required = false) String start,
-                                  @RequestParam(required = false) String end) {
-        java.time.LocalDate startDate = start != null ? java.time.LocalDate.parse(start) : null;
-        java.time.LocalDate endDate = end != null ? java.time.LocalDate.parse(end) : null;
-        return attendanceService.getAllAttendance(startDate, endDate);
+    public ResponseEntity<?> getAll(@RequestParam(required = false) String start,
+                                  @RequestParam(required = false) String end,
+                                  @RequestParam(defaultValue = "0") int page,
+                                  @RequestParam(defaultValue = "20") int size) {
+        java.time.LocalDate startDate = (start != null && !start.isBlank()) ? java.time.LocalDate.parse(start) : null;
+        java.time.LocalDate endDate = (end != null && !end.isBlank()) ? java.time.LocalDate.parse(end) : null;
+        
+        // Nếu truyền page và size thì dùng pagination
+        if (page >= 0 && size > 0) {
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by("workDate").descending().and(org.springframework.data.domain.Sort.by("checkInTime").descending()));
+            return ResponseEntity.ok(attendanceService.getAllAttendancePaginated(startDate, endDate, pageable));
+        }
+        
+        return ResponseEntity.ok(attendanceService.getAllAttendance(startDate, endDate));
     }
 }

@@ -25,6 +25,8 @@ const Spinner = () => {
     );
 };
 
+import { useWorkspaceRefresh } from '../../hooks/useWorkspaceRefresh';
+
 export default function StatisticalCustomers() {
     const { t } = useTranslation();
     const [customers, setCustomers] = useState([]);

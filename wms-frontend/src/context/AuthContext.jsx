@@ -17,6 +17,8 @@ function parseToken(token) {
             token,
             username:     decoded.sub,
             roles:        cleanRoles,       // ['ADMIN'] hoặc ['INBOUND_STAFF', ...]
+            companyId:    decoded.companyId ?? null,
+            globalAdmin:  Boolean(decoded.globalAdmin),
             exp:          decoded.exp,
         };
     } catch {
@@ -38,8 +40,8 @@ function isTokenExpired(token) {
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(() => {
         try {
-            const token    = localStorage.getItem('wms_token');
-            const userJson = localStorage.getItem('wms_user');
+            const token    = sessionStorage.getItem('wms_token');
+            const userJson = sessionStorage.getItem('wms_user');
 
             if (token && !isTokenExpired(token) && userJson) {
                 const stored  = JSON.parse(userJson) || {};
@@ -52,6 +54,8 @@ export function AuthProvider({ children }) {
                         employeeCode: stored.employeeCode || '---',
                         avatar:       stored.avatar || 'default',
                         roles:        decoded.roles || stored.roles || [],
+                        companyId:    decoded.companyId ?? stored.companyId ?? null,
+                        globalAdmin:  decoded.globalAdmin ?? stored.globalAdmin ?? false,
                         exp:          decoded.exp,
                     };
                 }
@@ -59,17 +63,19 @@ export function AuthProvider({ children }) {
         } catch (e) {
             console.error("Auth init error:", e);
         }
-        localStorage.removeItem('wms_token');
-        localStorage.removeItem('wms_user');
+        sessionStorage.removeItem('wms_token');
+        sessionStorage.removeItem('wms_user');
         return null;
     });
 
     const [loading] = useState(false);
 
     const logout = useCallback(() => {
-        localStorage.removeItem('wms_token');
-        localStorage.removeItem('wms_user');
+        sessionStorage.removeItem('wms_token');
+        sessionStorage.removeItem('wms_user');
+        sessionStorage.removeItem('wms_workspace_company_id');
         setUser(null);
+        window.dispatchEvent(new Event('wms:mobile-disconnected')); // Gửi tín hiệu ngắt kết nối
     }, []);
 
     useEffect(() => {
@@ -93,11 +99,20 @@ export function AuthProvider({ children }) {
             employeeCode: data.employeeCode || '---',
             avatar:       data.avatar || 'default',
             roles:        data.roles || decoded.roles || [],
+            companyId:    data.companyId ?? decoded.companyId ?? null,
+            companyCode:  data.companyCode || null,
+            companyName:  data.companyName || null,
+            globalAdmin:  data.globalAdmin ?? decoded.globalAdmin ?? false,
             exp:          decoded.exp,
         };
 
-        localStorage.setItem('wms_token', data.token);
-        localStorage.setItem('wms_user',  JSON.stringify(userObj));
+        sessionStorage.setItem('wms_token', data.token);
+        sessionStorage.setItem('wms_user',  JSON.stringify(userObj));
+        if (userObj.companyId) {
+            sessionStorage.setItem('wms_workspace_company_id', String(userObj.companyId));
+        } else {
+            sessionStorage.removeItem('wms_workspace_company_id');
+        }
         setUser(userObj);
         return userObj;
     }, []);

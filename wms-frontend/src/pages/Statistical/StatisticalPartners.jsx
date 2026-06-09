@@ -4,6 +4,8 @@ import SubTabNav from '../../components/statistical/SubTabNav';
 import StatisticalCustomers from './StatisticalCustomers';
 import StatisticalSuppliers from './StatisticalSuppliers';
 
+import { useWorkspaceRefresh } from '../../hooks/useWorkspaceRefresh';
+
 export default function StatisticalPartners() {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('customers');

@@ -11,6 +11,7 @@ import Staff              from './pages/Staff.jsx';
 import Statistical        from './pages/Statistical.jsx';
 import Account            from './pages/Account.jsx';
 import AccountManagement   from './pages/AccountManagement.jsx';
+import CompanyManagement   from './pages/CompanyManagement.jsx';
 import AttendanceHistory  from './pages/AttendanceHistory.jsx';
 import AttendanceManagement from './pages/AttendanceManagement.jsx';
 import ImportReceiptsPage from './pages/ImportReceipts.jsx';
@@ -21,10 +22,12 @@ import ExportReceipts     from './pages/OutboundOrder.jsx';
 import TransactionHistory from './pages/TransactionHistory.jsx';
 import WavePicking        from './pages/WavePicking.jsx';
 import CycleCounting      from './pages/CycleCounting.jsx';
-import LandingPage        from './pages/LandingPage/LandingPage.jsx';
+import MobileScanner        from './pages/MobileScanner';
+import LandingPage          from './pages/LandingPage/LandingPage';
 import PrivateRoute       from './components/PrivateRoute.jsx';
 import UnauthorizedPage   from './pages/UnauthorizedPage.jsx';
 import AttendanceModal    from './components/modals/AttendanceModal.jsx';
+import AttendanceQRDisplay from './pages/AttendanceQRDisplay.jsx';
 import { getAvatarSrc }    from './components/common/avatarUtils';
 
 import { ContextMenuProvider } from './context/ContextMenuContext';
@@ -103,6 +106,24 @@ function AdminLayout() {
             console.error("Lỗi khi xử lý quét mã:", e);
         }
     };
+
+    useEffect(() => {
+        const handleScanEvent = (e) => {
+            if (e.detail) {
+                handleGlobalScan(e.detail);
+            }
+        };
+        const handleToast = (e) => {
+            const { title, message } = e.detail;
+            setDialog({ isOpen: true, title, message });
+        };
+        window.addEventListener('wms:global-scan', handleScanEvent);
+        window.addEventListener('wms:show-toast', handleToast);
+        return () => {
+            window.removeEventListener('wms:global-scan', handleScanEvent);
+            window.removeEventListener('wms:show-toast', handleToast);
+        };
+    }, [handleGlobalScan]);
 
     const openWorkflow = (nextWorkflow) => {
         if (!nextWorkflow?.kind) return;
@@ -194,6 +215,11 @@ function AdminLayout() {
                                 <AccountManagement />
                             </PrivateRoute>
                         } />
+                        <Route path="companies" element={
+                            <PrivateRoute roles={['ADMIN']}>
+                                <CompanyManagement />
+                            </PrivateRoute>
+                        } />
                         <Route path="statistical" element={
                             <PrivateRoute roles={['ADMIN','MANAGER','ACCOUNTANT']}>
                                 <Statistical />
@@ -269,9 +295,20 @@ function AppContent() {
             {/* 1. Landing Page */}
             <Route path="/" element={<LandingPage onEnter={() => navigate('/admin/home')} onLogin={() => navigate('/login')} />} />
 
+            {/* Mobile Scanner (Public) */}
+            <Route path="/mobile-scanner" element={<MobileScanner />} />
+
             {/* 2. Login Page */}
             <Route path="/login" element={<Login onLoginSuccess={() => navigate('/admin/home')} />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
+            
+            {/* QR Display for LAN */}
+            <Route path="/qr-display" element={
+                <PrivateRoute roles={['ADMIN', 'MANAGER']}>
+                    <AttendanceQRDisplay />
+                </PrivateRoute>
+            } />
+
             <Route path="/admin/*" element={
                 <PrivateRoute>
                     <AdminLayout />

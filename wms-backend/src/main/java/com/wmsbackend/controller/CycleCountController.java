@@ -4,6 +4,7 @@ import com.wmsbackend.dto.CycleCountCreateRequest;
 import com.wmsbackend.dto.CycleCountDetailDTO;
 import com.wmsbackend.entity.*;
 import com.wmsbackend.repository.*;
+import com.wmsbackend.security.WorkspaceContext;
 import com.wmsbackend.util.TimeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,17 +29,22 @@ public class CycleCountController {
 
     @GetMapping
     public List<CycleCountPlan> getAllPlans() {
-        return planRepository.findAll();
+        Integer companyId = WorkspaceContext.getCurrentCompanyId();
+        return companyId == null
+                ? planRepository.findAll()
+                : planRepository.findByCompanyIdOrderByIdDesc(companyId);
     }
 
     @PostMapping
     @Transactional
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','WAREHOUSE_KEEPER')")
     public CycleCountPlan createPlan(@RequestBody CycleCountCreateRequest request) {
+        Integer companyId = WorkspaceContext.getCurrentCompanyId();
         CycleCountPlan plan = new CycleCountPlan();
         plan.setPlanCode("CC-" + System.currentTimeMillis());
         plan.setNote(request.getNote());
         plan.setStatus("CREATED");
+        plan.setCompanyId(companyId);
         plan.setCreatedAt(TimeUtils.now());
         plan.setAssignedTo(request.getAssignedTo()); 
         
@@ -46,9 +52,11 @@ public class CycleCountController {
 
         List<Inventory> targets;
         if (request.getZone() != null && !request.getZone().isEmpty() && !request.getZone().equalsIgnoreCase("ALL")) {
-            targets = inventoryRepository.findByLocationZone(request.getZone());
+            targets = inventoryRepository.findByLocationZone(request.getZone(), companyId);
         } else {
-            targets = inventoryRepository.findAll();
+            targets = inventoryRepository.findAll().stream()
+                    .filter(inv -> companyId == null || companyId.equals(inv.getCompanyId()))
+                    .toList();
         }
 
         for (Inventory inv : targets) {
@@ -67,7 +75,8 @@ public class CycleCountController {
 
     @GetMapping("/{id}/details")
     public List<CycleCountDetailDTO> getPlanDetails(@PathVariable Long id) {
-        return detailRepository.findByPlanId(id).stream().map(d -> {
+        CycleCountPlan plan = getAccessiblePlan(id);
+        return detailRepository.findByPlanId(plan.getId()).stream().map(d -> {
             Product p = productRepository.findById(d.getProductId()).orElse(null);
             Location l = locationRepository.findById(d.getLocationId()).orElse(null);
             Batch b = batchRepository.findById(d.getBatchId()).orElse(null);
@@ -95,12 +104,12 @@ public class CycleCountController {
     @Transactional
     public void updateCount(@PathVariable Long detailId, @RequestParam BigDecimal countedQty, @RequestParam(required = false) String note) {
         CycleCountDetail detail = detailRepository.findById(detailId).orElseThrow();
+        CycleCountPlan plan = getAccessiblePlan(detail.getPlanId());
         detail.setCountedQty(countedQty);
         detail.setVariance(countedQty.subtract(detail.getSystemQty()));
         detail.setNote(note);
         detailRepository.save(detail);
         
-        CycleCountPlan plan = planRepository.findById(detail.getPlanId()).orElse(null);
         if (plan != null && plan.getStatus().equals("CREATED")) {
             plan.setStatus("IN_PROGRESS");
             planRepository.save(plan);
@@ -111,7 +120,7 @@ public class CycleCountController {
     @Transactional
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public void completePlan(@PathVariable Long id) {
-        CycleCountPlan plan = planRepository.findById(id).orElseThrow();
+        CycleCountPlan plan = getAccessiblePlan(id);
         if (plan.getStatus().equals("COMPLETED")) return;
 
         List<CycleCountDetail> details = detailRepository.findByPlanId(id);
@@ -139,5 +148,17 @@ public class CycleCountController {
         plan.setStatus("COMPLETED");
         plan.setCompletedAt(TimeUtils.now());
         planRepository.save(plan);
+    }
+
+    private CycleCountPlan getAccessiblePlan(Long id) {
+        Integer companyId = WorkspaceContext.getCurrentCompanyId();
+        CycleCountPlan plan = companyId == null
+                ? planRepository.findById(id).orElseThrow()
+                : planRepository.findByIdAndCompanyId(id, companyId).orElseThrow();
+        if (!WorkspaceContext.isGlobalAdmin() && companyId != null && plan.getCompanyId() != null
+                && !companyId.equals(plan.getCompanyId())) {
+            throw new RuntimeException("Không có quyền thao tác plan của công ty khác");
+        }
+        return plan;
     }
 }

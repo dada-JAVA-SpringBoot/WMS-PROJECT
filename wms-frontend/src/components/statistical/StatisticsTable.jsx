@@ -4,12 +4,12 @@ export default function StatisticsTable({ columns, rows, scrollHeight = '420px',
     return (
         <div className="overflow-auto" style={{ maxHeight: scrollHeight }}>
             <table className="min-w-full border-collapse text-[15px]">
-                <thead className="sticky top-0 z-10 bg-[#f2f3f5]">
+                <thead className="sticky top-0 z-10 bg-[#f2f3f5] dark:bg-gray-800 transition-colors">
                     <tr>
                         {columns.map((column) => (
                             <th
                                 key={column.key}
-                                className={`border-b border-slate-200 px-6 py-4 font-semibold text-slate-900 ${column.className || ''}`}
+                                className={`border-b border-slate-200 dark:border-gray-700 px-6 py-4 font-semibold text-slate-900 dark:text-gray-100 ${column.className || ''}`}
                                 style={{ minWidth: column.minWidth || 140, textAlign: column.align || align }}
                             >
                                 {column.label}
@@ -17,13 +17,13 @@ export default function StatisticsTable({ columns, rows, scrollHeight = '420px',
                         ))}
                     </tr>
                 </thead>
-                <tbody>
+                <tbody className="bg-white dark:bg-gray-800 transition-colors">
                     {rows.map((row, rowIndex) => (
-                        <tr key={row.id || rowIndex} className="border-b border-slate-200 hover:bg-slate-50">
+                        <tr key={row.id || rowIndex} className="border-b border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-700/50 transition-colors">
                             {columns.map((column) => (
                                 <td
                                     key={column.key}
-                                    className={`px-6 py-4 text-slate-800 ${column.cellClassName || ''}`}
+                                    className={`px-6 py-4 text-slate-800 dark:text-gray-200 ${column.cellClassName || ''}`}
                                     style={{ textAlign: column.align || align }}
                                 >
                                     {row[column.key]}

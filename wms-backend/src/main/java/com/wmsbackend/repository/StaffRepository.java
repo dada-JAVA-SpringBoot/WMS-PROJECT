@@ -20,19 +20,18 @@ public interface StaffRepository extends JpaRepository<Staff, Integer> {
     boolean existsByEmployeeCode(String employeeCode);
 
     // ── Queries cập nhật ──────────────────────────────────
-    @Query("SELECT new com.wmsbackend.dto.StaffDTO(s.id, s.employeeCode, s.fullName, s.gender, " +
-            "s.dateOfBirth, s.phone, s.email, s.hireDate, s.contractType, s.warehouseRole, s.workStatus, s.notes, s.username, s.enabled, s.avatar, s.lastActiveAt) " +
-            "FROM Staff s ORDER BY s.id DESC")
-    List<StaffDTO> findAllStaff();
+    @Query("SELECT s FROM Staff s WHERE (:companyId IS NULL OR s.companyId = :companyId) ORDER BY s.id DESC")
+    List<Staff> findAllByCompanyId(@Param("companyId") Integer companyId);
 
-    @Query("SELECT new com.wmsbackend.dto.StaffDTO(s.id, s.employeeCode, s.fullName, s.gender, " +
-            "s.dateOfBirth, s.phone, s.email, s.hireDate, s.contractType, s.warehouseRole, s.workStatus, s.notes, s.username, s.enabled, s.avatar, s.lastActiveAt) " +
-            "FROM Staff s WHERE " +
+    @Query("SELECT s FROM Staff s WHERE (" +
             "LOWER(s.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(s.employeeCode) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(s.phone) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(s.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(s.warehouseRole) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "LOWER(s.warehouseRole) LIKE LOWER(CONCAT('%', :keyword, '%'))" +
+            ") AND (:companyId IS NULL OR s.companyId = :companyId) " +
             "ORDER BY s.id DESC")
-    List<StaffDTO> searchStaff(@Param("keyword") String keyword);
+    List<Staff> searchStaffByCompany(@Param("keyword") String keyword, @Param("companyId") Integer companyId);
+
+    long countByCompanyId(Integer companyId);
 }

@@ -67,8 +67,11 @@ public class Staff {
 
     @Column(name = "Password", length = 255)
     private String password;   // BCrypt hash
-@Column(name = "Enabled")
-private Boolean enabled = true;
+    @Column(name = "Enabled")
+    private Boolean enabled = true;
+
+    @Column(name = "CompanyId")
+    private Integer companyId;
 
     @Column(name = "Avatar", columnDefinition = "NVARCHAR(MAX)")
     private String avatar;

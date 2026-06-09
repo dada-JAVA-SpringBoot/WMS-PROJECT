@@ -40,6 +40,11 @@ export default function RevenueByMonth() {
 
     const isActual = profitType === 'actual';
 
+    const formattedLabels = detail?.labels?.map(label => {
+        const m = parseInt(label, 10);
+        return isNaN(m) ? label : `${t('pages.RevenueByMonth.lblMonthPrefix', { defaultValue: 'Month' })} ${m}`;
+    }) || [];
+
     return (
         <div className="space-y-5 p-5 bg-[#f8f9fa] dark:bg-gray-900 min-h-screen transition-colors duration-300">
             <FilterBar>
@@ -62,7 +67,7 @@ export default function RevenueByMonth() {
                     <div className="dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700 transition-colors">
                         <GroupedBarChart
                             title={t('pages.RevenueByMonth.chartGroupedTitle', { year })}
-                            labels={detail.labels}
+                            labels={formattedLabels}
                             series={[
                                 { label: isActual ? t('pages.RevenueByMonth.chartGroupedCogsLabel') : t('pages.RevenueByMonth.chartGroupedCostLabel'), color: '#e6b06e', data: isActual ? detail.cogsData : detail.costData },
                                 { label: t('pages.RevenueByMonth.chartGroupedRevenueLabel'), color: '#74b9f5', data: detail.revenueData },
@@ -73,7 +78,7 @@ export default function RevenueByMonth() {
                     <div className="dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700 transition-colors">
                         <LineAreaChart
                             title={t('pages.RevenueByMonth.chartLineTitle', { year })}
-                            labels={detail.labels}
+                            labels={formattedLabels}
                             series={[
                                 { label: isActual ? t('pages.RevenueByMonth.chartLineActualLabel') : t('pages.RevenueByMonth.chartLineNetLabel'), color: '#b68cf0', fill: '#b68cf0', data: isActual ? detail.actualProfitData : detail.profitData },
                             ]}

@@ -6,6 +6,8 @@ import { getAvatarSrc } from '../components/common/avatarUtils';
 import ImageCropModal from '../components/modals/ImageCropModal';
 import { useTranslation } from 'react-i18next';
 
+import { useWorkspaceRefresh } from '../hooks/useWorkspaceRefresh';
+
 export default function AccountManagement() {
     const { t } = useTranslation();
     const { user } = useAuth();
@@ -32,6 +34,8 @@ export default function AccountManagement() {
     }, []);
 
     useEffect(() => { fetchStaff(); }, [fetchStaff]);
+
+    useWorkspaceRefresh(fetchStaff);
 
     const saveAvatar = async (staffId, croppedBlob) => {
         if (!staffId || !croppedBlob) return;

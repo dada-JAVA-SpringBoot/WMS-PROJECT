@@ -26,4 +26,7 @@ public class WorkShift {
 
     @Column(name = "GracePeriodMinutes")
     private Integer gracePeriodMinutes = 15; // Thời gian cho phép trễ (phút)
+
+    @Column(name = "CompanyId")
+    private Integer companyId;
 }

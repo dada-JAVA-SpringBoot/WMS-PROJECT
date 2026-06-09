@@ -22,6 +22,9 @@ public class Customer {
     @Column(name = "Address")
     private String address;
 
+    @Column(name = "CompanyId")
+    private Integer companyId;
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -36,4 +39,7 @@ public class Customer {
 
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
+
+    public Integer getCompanyId() { return companyId; }
+    public void setCompanyId(Integer companyId) { this.companyId = companyId; }
 }

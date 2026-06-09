@@ -4,6 +4,7 @@ import com.wmsbackend.dto.StaffDTO;
 import com.wmsbackend.entity.Staff;
 import com.wmsbackend.repository.StaffRepository;
 import com.wmsbackend.service.StaffService;
+import com.wmsbackend.security.WorkspaceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -47,14 +48,23 @@ public class StaffController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public Staff createStaff(@RequestBody Staff staff) {
+        if (staff.getCompanyId() == null) {
+            staff.setCompanyId(WorkspaceContext.getCurrentCompanyId());
+        }
         return staffService.createStaff(staff);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public Staff updateStaff(@PathVariable Integer id, @RequestBody Staff staff) {
+        if (!WorkspaceContext.isGlobalAdmin() && WorkspaceContext.getCurrentCompanyId() != null) {
+            Staff existing = staffRepository.findById(id).orElseThrow();
+            if (existing.getCompanyId() != null && !existing.getCompanyId().equals(WorkspaceContext.getCurrentCompanyId())) {
+                throw new RuntimeException("Bạn không có quyền sửa nhân viên của công ty khác");
+            }
+        }
         return staffService.updateStaff(id, staff);
     }
 
@@ -80,8 +90,14 @@ public class StaffController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public void deleteStaff(@PathVariable Integer id) {
+        if (!WorkspaceContext.isGlobalAdmin() && WorkspaceContext.getCurrentCompanyId() != null) {
+            Staff existing = staffRepository.findById(id).orElseThrow();
+            if (existing.getCompanyId() != null && !existing.getCompanyId().equals(WorkspaceContext.getCurrentCompanyId())) {
+                throw new RuntimeException("Bạn không có quyền xóa nhân viên của công ty khác");
+            }
+        }
         staffService.deleteStaff(id);
     }
 

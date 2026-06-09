@@ -9,6 +9,7 @@ import TransferModal from '../components/modals/TransferModal';
 import SystemDialog from '../components/modals/SystemDialog';
 import ScannerModal from '../components/modals/ScannerModal';
 import axiosClient from '../api/axiosClient';
+import { useWorkspaceRefresh } from '../hooks/useWorkspaceRefresh';
 import addIcon from '../components/common/icons/add.png';
 import fixIcon from '../components/common/icons/fix.png';
 import deleteIcon from '../components/common/icons/delete.png';
@@ -69,7 +70,7 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
     const [isLoading, setIsLoading] = useState(false);
 
     const [searchKeyword, setSearchKeyword] = useState('');
-    const [searchType, setSearchType] = useState('Tất cả');
+    const [searchType, setSearchType] = useState('ALL');
     const [filterZone, setFilterZone] = useState('ALL');
     const [filterStatus, setFilterStatus] = useState('ALL');
     const [filterStorage, setFilterStorage] = useState('ALL');
@@ -92,13 +93,13 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
     useEffect(() => {
         const params = new URLSearchParams(reactLocation.search);
         const searchCode = params.get('search');
-        if (searchCode) { setSearchKeyword(searchCode); setSearchType('Theo mã vị trí'); }
+        if (searchCode) { setSearchKeyword(searchCode); setSearchType('BIN_CODE'); }
     }, [reactLocation.search]);
 
     const handleScanSuccess = (decodedText) => {
         setIsScannerOpen(false);
         setSearchKeyword(decodedText.trim());
-        setSearchType('Theo mã vị trí');
+        setSearchType('BIN_CODE');
     };
 
     const unitMap = useMemo(() => {
@@ -187,6 +188,11 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
         fetchUnits();
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+    useWorkspaceRefresh(() => {
+        fetchLocations();
+        fetchUnits();
+    });
+
     const selectedLocation = useMemo(
         () => locations.find(loc => loc.id === selectedLocationId) || null,
         [locations, selectedLocationId]
@@ -198,15 +204,16 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
             let matchesKeyword = true;
             if (keyword) {
                 const target = {
-                    'Theo mã vị trí': loc.binCode,
-                    'Theo khu vực': loc.zone,
-                    'Theo lối': loc.aisle,
-                    'Theo kệ': loc.rack,
-                    'Theo tầng': loc.level,
-                    'Theo loại kho': getStorageTypeLabel(loc.storageType, t),
-                    'Theo loại hàng': getContainerMeta(loc.containerType).label
+                    'ALL': loc.binCode + ' ' + loc.zone + ' ' + loc.aisle + ' ' + loc.rack + ' ' + loc.level,
+                    'BIN_CODE': loc.binCode,
+                    'ZONE': loc.zone,
+                    'AISLE': loc.aisle,
+                    'RACK': loc.rack,
+                    'LEVEL': loc.level,
+                    'STORAGE_TYPE': getStorageTypeLabel(loc.storageType, t),
+                    'CONTAINER_TYPE': getContainerMeta(loc.containerType).label
                 };
-                matchesKeyword = searchType === 'Tất cả'
+                matchesKeyword = searchType === 'ALL'
                     ? Object.values(target).some(val => normalizeText(val).includes(keyword))
                     : normalizeText(target[searchType]).includes(keyword);
             }
@@ -215,7 +222,7 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
             const matchesStorage = filterStorage === 'ALL' || loc.storageType === filterStorage;
             return matchesKeyword && matchesZone && matchesStatus && matchesStorage;
         });
-    }, [locations, searchKeyword, searchType, filterZone, filterStatus, filterStorage]);
+    }, [locations, searchKeyword, searchType, filterZone, filterStatus, filterStorage, t]);
 
     const zones = useMemo(() => Array.from(new Set(locations.map(l => l.zone))).sort(), [locations]);
 
@@ -234,11 +241,11 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
         const groups = new Map();
         sortedLocations.forEach((loc) => {
             const key = normalizeText(loc.zone) || 'unassigned';
-            if (!groups.has(key)) groups.set(key, { zoneLabel: loc.zone?.trim() || 'Chưa phân khu', locations: [] });
+            if (!groups.has(key)) groups.set(key, { zoneLabel: loc.zone?.trim() || t('pages.WarehouseArea.unassignedZone'), locations: [] });
             groups.get(key).locations.push(loc);
         });
         return Array.from(groups.values());
-    }, [sortedLocations]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [sortedLocations, t]);
 
     const statusCounts = useMemo(() => {
         const counts = {};
@@ -335,10 +342,10 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
             <div className="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col gap-4 mb-4 md:mb-6 transition-colors duration-300">
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                     <select value={searchType} onChange={(e) => setSearchType(e.target.value)} className="wms-select w-full sm:w-48 !text-sm !py-2.5 md:!py-3 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
-                        <option value="Tất cả">{t("pages.WarehouseArea.searchAll")}</option>
-                        <option value="Theo mã vị trí">{t("pages.WarehouseArea.searchByBinCode")}</option>
-                        <option value="Theo khu vực">{t("pages.WarehouseArea.searchByZone")}</option>
-                        <option value="Theo loại kho">{t("pages.WarehouseArea.searchByStorageType")}</option>
+                        <option value="ALL">{t("pages.WarehouseArea.searchAll")}</option>
+                        <option value="BIN_CODE">{t("pages.WarehouseArea.searchByBinCode")}</option>
+                        <option value="ZONE">{t("pages.WarehouseArea.searchByZone")}</option>
+                        <option value="STORAGE_TYPE">{t("pages.WarehouseArea.searchByStorageType")}</option>
                     </select>
                     <div className="relative flex-1">
                         <input type="text" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} placeholder={t("pages.WarehouseArea.searchPlaceholder")} className="w-full border-2 border-gray-100 dark:border-gray-600 rounded-xl px-4 py-2.5 md:py-3 text-sm outline-none focus:border-[#1192a8] focus:ring-4 focus:ring-[#1192a8]/10 transition-all bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"/>
@@ -427,10 +434,10 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
                                                 </div>
                                                 {viewMode === 'grid' ? (
                                                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 border-t border-gray-50 dark:border-gray-700 pt-3">
-                                                        <CardField label="Lối/Kệ"      value={`${loc.aisle || '-'}/${loc.rack || '-'}`} />
-                                                        <CardField label="Tầng"         value={loc.level || '-'} />
-                                                        <CardField label="Sức chứa"     value={loc.capacity} />
-                                                        <CardField label="Tồn thực tế"  value={`${(loc.quantityOnHand || 0).toLocaleString()} / ${(loc.capacity || 0).toLocaleString()}`} />
+                                                        <CardField label={t("pages.WarehouseArea.labels.aisleRack")} value={`${loc.aisle || '-'}/${loc.rack || '-'}`} />
+                                                        <CardField label={t("pages.WarehouseArea.labels.level")}     value={loc.level || '-'} />
+                                                        <CardField label={t("pages.WarehouseArea.labels.capacity")}  value={loc.capacity} />
+                                                        <CardField label={t("pages.WarehouseArea.labels.actualStock")} value={`${(loc.quantityOnHand || 0).toLocaleString()} / ${(loc.capacity || 0).toLocaleString()}`} />
                                                     </div>
                                                 ) : (
                                                     <div className="mt-2 border-t border-gray-50 dark:border-gray-700 pt-3">
@@ -460,7 +467,7 @@ export default function WarehouseAreaPage({ onCreateInbound }) {
                 <div className="fixed inset-0 bg-black/40 z-50 flex justify-center items-center backdrop-blur-md p-4">
                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-[780px] flex flex-col max-h-[92vh]">
                         <div className="px-5 py-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
-                            <div className="flex items-center gap-2"><img src={addIcon} alt="add" className="h-5 w-5 object-contain dark:opacity-85 dark:brightness-110" /><h2 className="text-xl font-medium text-[#0e7c8a] uppercase">{formMode === 'create' ? t('pages.WarehouseArea.form.addTitle') : t('pages.WarehouseArea.form.editTitle')}</h2></div>
+                            <div className="flex items-center gap-2"><img src={addIcon} alt="add" className="h-5 w-5 object-contain dark:invert dark:hue-rotate-180 dark:opacity-90" /><h2 className="text-xl font-medium text-[#0e7c8a] uppercase">{formMode === 'create' ? t('pages.WarehouseArea.form.addTitle') : t('pages.WarehouseArea.form.editTitle')}</h2></div>
                             <button onClick={() => setIsFormOpen(false)} className="text-2xl text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors">×</button>
                         </div>
                         <div className="p-6 overflow-y-auto flex-1 text-left">

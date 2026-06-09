@@ -20,6 +20,9 @@ public class Wave {
     @Column(name = "Status", length = 20)
     private String status = "CREATED"; // CREATED, IN_PROGRESS, COMPLETED, CANCELED
 
+    @Column(name = "CompanyId")
+    private Integer companyId;
+
     @Column(name = "CreatedBy")
     private Integer createdBy;
 

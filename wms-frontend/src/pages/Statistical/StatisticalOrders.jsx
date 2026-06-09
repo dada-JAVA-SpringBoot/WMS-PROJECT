@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../../api/axiosClient';
+import { formatCurrencyExact, formatDateByLanguage } from '../../utils/formatters';
 
 const KpiCard = ({ label, value, icon, color }) => (
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-5 flex flex-col gap-1 shadow-sm transition-colors duration-300">
@@ -43,6 +44,8 @@ const StatusBadge = ({ status }) => {
     );
 };
 
+import { useWorkspaceRefresh } from '../../hooks/useWorkspaceRefresh';
+
 export default function StatisticalOrders() {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('inbound');
@@ -79,6 +82,10 @@ export default function StatisticalOrders() {
     useEffect(() => {
         fetchOrders('', activeTab);
     }, []);
+
+    useWorkspaceRefresh(() => {
+        fetchOrders('', activeTab);
+    });
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -180,7 +187,7 @@ export default function StatisticalOrders() {
                                         {o.orderCode || o.code || o.issueCode || o.receiptCode || '—'}
                                     </td>
                                     <td className="py-2.5 pr-4 text-gray-800 dark:text-gray-200">
-                                        {o.createdDate || o.createdAt || o.date || '—'}
+                                        {formatDateByLanguage(o.createdDate || o.createdAt || o.date)}
                                     </td>
                                     <td className="py-2.5 pr-4 font-semibold text-gray-800 dark:text-gray-100 max-w-[200px] truncate">
                                         {activeTab === 'inbound'
@@ -188,9 +195,7 @@ export default function StatisticalOrders() {
                                             : (o.customer?.name || o.customerName || '—')}
                                     </td>
                                     <td className="py-2.5 pr-4 text-gray-500 dark:text-gray-400 text-right font-medium">
-                                        {(o.totalAmount || o.totalValue)
-                                            ? `${(o.totalAmount || o.totalValue).toLocaleString('vi-VN')} đ`
-                                            : '—'}
+                                        {formatCurrencyExact(o.totalAmount || o.totalValue)}
                                     </td>
                                     <td className="py-2.5">
                                         <StatusBadge status={o.status} />

@@ -29,8 +29,8 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    // Tạo token — payload chứa username + danh sách roles
-    public String generateToken(UserDetails userDetails) {
+    // Tạo token — payload chứa username + danh sách roles + company
+    public String generateToken(UserDetails userDetails, Integer companyId, boolean globalAdmin) {
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
@@ -38,6 +38,8 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(userDetails.getUsername())
                 .claim("roles", roles)
+                .claim("companyId", companyId)
+                .claim("globalAdmin", globalAdmin)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getKey())
@@ -51,6 +53,25 @@ public class JwtUtil {
     @SuppressWarnings("unchecked")
     public List<String> extractRoles(String token) {
         return (List<String>) parseClaims(token).get("roles");
+    }
+
+    public Integer extractCompanyId(String token) {
+        Object value = parseClaims(token).get("companyId");
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Integer integer) {
+            return integer;
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return Integer.valueOf(String.valueOf(value));
+    }
+
+    public boolean extractGlobalAdmin(String token) {
+        Object value = parseClaims(token).get("globalAdmin");
+        return value instanceof Boolean b ? b : Boolean.parseBoolean(String.valueOf(value));
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {

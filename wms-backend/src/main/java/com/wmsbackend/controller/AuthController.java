@@ -6,10 +6,13 @@ import com.wmsbackend.dto.LoginResponse;
 import com.wmsbackend.dto.RegisterRequest;
 import com.wmsbackend.entity.Role;
 import com.wmsbackend.entity.Staff;
+import com.wmsbackend.entity.Company;
+import com.wmsbackend.repository.CompanyRepository;
 import com.wmsbackend.repository.RoleRepository;
 import com.wmsbackend.repository.StaffRepository;
 import com.wmsbackend.security.JwtUtil;
 import com.wmsbackend.security.StaffUserDetailsService;
+import com.wmsbackend.security.WorkspaceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -37,6 +40,7 @@ public class AuthController {
     @Autowired private StaffUserDetailsService userDetailsService;
     @Autowired private StaffRepository staffRepository;
     @Autowired private RoleRepository roleRepository;
+    @Autowired private CompanyRepository companyRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private MessageSource messageSource;
 
@@ -64,21 +68,29 @@ public class AuthController {
         }
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
-        String token = jwtUtil.generateToken(userDetails);
-
         Staff staff = staffRepository.findByUsername(request.getUsername()).orElseThrow();
+        boolean globalAdmin = staff.getRoles().stream().anyMatch(role -> "ADMIN".equals(role.getRoleName()));
+        String token = jwtUtil.generateToken(userDetails, staff.getCompanyId(), globalAdmin);
+
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(a -> a.getAuthority().replace("ROLE_", ""))
                 .toList();
 
+        Company company = staff.getCompanyId() != null ? companyRepository.findById(staff.getCompanyId()).orElse(null) : null;
+
         return ResponseEntity.ok(new LoginResponse(
-                token, staff.getId(), staff.getUsername(), staff.getFullName(), staff.getEmployeeCode(), staff.getAvatar(), roles
+                token, staff.getId(), staff.getUsername(), staff.getFullName(), staff.getEmployeeCode(), staff.getAvatar(),
+                staff.getCompanyId(),
+                company != null ? company.getCompanyCode() : null,
+                company != null ? company.getCompanyName() : (globalAdmin ? "GLOBAL" : null),
+                globalAdmin,
+                roles
         ));
     }
 
     // ── ĐĂNG KÝ TÀI KHOẢN MỚI (chỉ ADMIN) ───────────────────────────────
     @PostMapping("/register")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         if (staffRepository.existsByUsername(request.getUsername())) {
             return ResponseEntity.badRequest()
@@ -89,9 +101,20 @@ public class AuthController {
                     .body(Map.of("message", getMessage("auth.employee_code.exists")));
         }
 
+        Integer targetCompanyId = WorkspaceContext.isGlobalAdmin()
+                ? (request.getCompanyId() != null ? request.getCompanyId() : WorkspaceContext.getCurrentCompanyId())
+                : WorkspaceContext.getCurrentCompanyId();
+
+        if (targetCompanyId == null && !WorkspaceContext.isGlobalAdmin()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Thiếu công ty con cho tài khoản mới"));
+        }
+
         // Lấy roles từ DB
         Set<Role> roles = new HashSet<>();
         for (String roleName : request.getRoleNames()) {
+            if (!WorkspaceContext.isGlobalAdmin() && "ADMIN".equals(roleName)) {
+                continue;
+            }
             roleRepository.findByRoleName(roleName).ifPresent(roles::add);
         }
         if (roles.isEmpty()) {
@@ -108,6 +131,7 @@ public class AuthController {
         staff.setEmail(request.getEmail());
         staff.setContractType(request.getContractType() != null ? request.getContractType() : "FULL_TIME");
         staff.setWarehouseRole(request.getWarehouseRole() != null ? request.getWarehouseRole() : "INBOUND_STAFF");
+        staff.setCompanyId(targetCompanyId);
         staff.setWorkStatus("OFF_SHIFT");
         staff.setEnabled(true);
         staff.setRoles(roles);
@@ -143,8 +167,14 @@ public class AuthController {
         String username = jwtUtil.extractUsername(token);
         Staff staff     = staffRepository.findByUsername(username).orElseThrow();
         List<String> roles = jwtUtil.extractRoles(token);
+        Company company = staff.getCompanyId() != null ? companyRepository.findById(staff.getCompanyId()).orElse(null) : null;
         return ResponseEntity.ok(new LoginResponse(
-                token, staff.getId(), staff.getUsername(), staff.getFullName(), staff.getEmployeeCode(), staff.getAvatar(), roles
+                token, staff.getId(), staff.getUsername(), staff.getFullName(), staff.getEmployeeCode(), staff.getAvatar(),
+                staff.getCompanyId(),
+                company != null ? company.getCompanyCode() : null,
+                company != null ? company.getCompanyName() : null,
+                roles.stream().anyMatch("ADMIN"::equals),
+                roles
         ));
     }
 }

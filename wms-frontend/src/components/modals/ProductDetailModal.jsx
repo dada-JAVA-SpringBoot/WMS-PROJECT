@@ -10,7 +10,7 @@ export default function ProductDetailModal({ product, onClose }) {
     const [categories, setCategories] = useState([]);
     const [units, setUnits] = useState([]);
     
-    // State cho việc chuyển kho
+    // State for warehouse transfers
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
     const [selectedStockLine, setSelectedStockLine] = useState(null);
 
@@ -34,7 +34,7 @@ export default function ProductDetailModal({ product, onClose }) {
                 const res = await axiosClient.get(`/api/inventory/product/${product.id}`);
                 setInventoryDetails(res.data);
             } catch (err) {
-                console.error("Lỗi tải chi tiết:", err);
+                console.error("Failed to load details:", err);
                 setInventoryDetails([]);
             } finally {
                 setIsLoadingDetails(false);
@@ -65,28 +65,28 @@ export default function ProductDetailModal({ product, onClose }) {
 
     if (!product) return null;
 
-    // Tính toán thể tích (CBM)
+    // Calculate volume (CBM)
     const calculateCBM = (l, w, h) => {
         if (!l || !w || !h) return "N/A";
         return ((l * w * h) / 1000000).toFixed(4) + " m³";
     };
 
-    // Hàm format ngày giờ từ Java (ISO 8601) sang chuẩn Việt Nam
+    // Format a date/time value for display
     const formatDateTime = (dateString) => {
-        if (!dateString) return "Chưa cập nhật";
+        if (!dateString) return "Not updated";
         const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN', {
+        return date.toLocaleDateString('en-US', {
             day: '2-digit', month: '2-digit', year: 'numeric',
             hour: '2-digit', minute: '2-digit'
         });
     };
 
-    // Hàm render Label Trạng thái kinh doanh
+    // Render business status label
     const renderStatusBadge = (status) => {
         if (status === 'ACTIVE') {
-            return <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-bold border border-green-200">ĐANG KINH DOANH</span>;
+            return <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-bold border border-green-200">ACTIVE</span>;
         }
-        return <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded text-[11px] font-bold border border-gray-200">NGỪNG KINH DOANH</span>;
+        return <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded text-[11px] font-bold border border-gray-200">INACTIVE</span>;
     };
 
     const handleOpenTransfer = (inv) => {
@@ -98,7 +98,7 @@ export default function ProductDetailModal({ product, onClose }) {
         fetchInventoryDetails();
     };
 
-    const categoryName = product.categoryName || categories.find(item => String(item.id) === String(product.categoryId))?.name || 'Chưa gán';
+    const categoryName = product.categoryName || categories.find(item => String(item.id) === String(product.categoryId))?.name || 'Unassigned';
     const categoryCode = product.categoryCode || categories.find(item => String(item.id) === String(product.categoryId))?.categoryCode || '';
     const unitName = units.find(item => item.name === normalizeUnitName(product.baseUnit))?.name
         || normalizeUnitName(product.baseUnit)
@@ -121,7 +121,7 @@ export default function ProductDetailModal({ product, onClose }) {
                 {/* Header */}
                 <div className="bg-[#1192a8] text-white px-4 md:px-6 py-3 md:py-4 flex justify-between items-center shrink-0">
                     <div className="min-w-0">
-                        <h2 className="text-base md:text-xl font-bold uppercase tracking-tight truncate">Hồ sơ chi tiết mặt hàng</h2>
+                        <h2 className="text-base md:text-xl font-bold uppercase tracking-tight truncate">Product Details</h2>
                         <p className="text-[11px] md:text-sm opacity-90 truncate">{product.sku} — {product.name}</p>
                     </div>
                     <button onClick={onClose} className="text-white hover:text-red-200 text-2xl md:text-3xl leading-none ml-4">&times;</button>
@@ -129,7 +129,7 @@ export default function ProductDetailModal({ product, onClose }) {
 
                 <div className="p-3 md:p-6 overflow-y-auto flex-1 bg-gray-50 space-y-4 md:space-y-6">
                     <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
-                        {/* CỘT TRÁI: Ảnh & Barcode */}
+                        {/* Left column: image and barcode */}
                         <div className="w-full lg:w-1/4 flex flex-col items-center bg-white p-4 md:p-5 rounded-xl border shadow-sm h-fit">
                             <div className="w-32 lg:w-full aspect-square bg-gray-50 border border-gray-200 rounded-lg flex justify-center items-center overflow-hidden mb-4 md:mb-5">
                                 {product.imageUrl ? (
@@ -146,70 +146,70 @@ export default function ProductDetailModal({ product, onClose }) {
                                 )}
                             </div>
                             <div className="w-full flex flex-col items-center border-t pt-4">
-                                <span className="text-[10px] text-gray-400 font-black mb-2 uppercase tracking-widest">Mã Vạch Hệ Thống</span>
+                                <span className="text-[10px] text-gray-400 font-black mb-2 uppercase tracking-widest">System Barcode</span>
                                 {product.barcode ? (
                                     <div className="flex flex-col items-center gap-2 max-w-full overflow-hidden">
                                         <Barcode value={product.barcode} format="CODE128" width={1.5} height={40} fontSize={12} textMargin={2} margin={0} displayValue background="#ffffff" lineColor="#000000" />
                                     </div>
                                 ) : (
-                                    <span className="text-[10px] text-red-400 font-bold italic uppercase">Không có mã vạch</span>
+                                    <span className="text-[10px] text-red-400 font-bold italic uppercase">No barcode available</span>
                                 )}
                             </div>
                         </div>
 
-                        {/* CỘT PHẢI: Dữ liệu Master Data */}
+                        {/* Right column: master data */}
                         <div className="w-full lg:w-3/4 flex flex-col gap-4 md:gap-5">
                             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
                                 <section className="bg-white p-4 rounded-xl border shadow-sm">
-                                    <h3 className="text-[#00529c] font-black border-b mb-3 pb-1 text-[11px] uppercase tracking-wider">1. Thông tin cơ bản</h3>
+                                    <h3 className="text-[#00529c] font-black border-b mb-3 pb-1 text-[11px] uppercase tracking-wider">1. Basic information</h3>
                                     <div className="space-y-3">
-                                        <InfoRow label="Mã SKU" value={product.sku} isBold color="text-blue-700" />
-                                        <InfoRow label="Mã vạch" value={product.barcode || 'N/A'} />
-                                        <InfoRow label="Đơn vị" value={unitName} />
-                                        <InfoRow label="Danh mục" value={categoryCode ? `${categoryCode} - ${categoryName}` : categoryName} />
+                                        <InfoRow label="SKU" value={product.sku} isBold color="text-blue-700" />
+                                        <InfoRow label="Barcode" value={product.barcode || 'N/A'} />
+                                        <InfoRow label="Unit" value={unitName} />
+                                        <InfoRow label="Category" value={categoryCode ? `${categoryCode} - ${categoryName}` : categoryName} />
                                     </div>
                                 </section>
                                 <section className="bg-white p-4 rounded-xl border shadow-sm">
-                                    <h3 className="text-[#00529c] font-black border-b mb-3 pb-1 text-[11px] uppercase tracking-wider">2. Thông số Logistics</h3>
+                                    <h3 className="text-[#00529c] font-black border-b mb-3 pb-1 text-[11px] uppercase tracking-wider">2. Logistics specs</h3>
                                     <div className="space-y-3">
-                                        <InfoRow label="Trọng lượng" value={product.weight ? `${product.weight} kg` : "N/A"} />
-                                        <InfoRow label="Kích thước" value={product.length ? `${product.length}x${product.width}x${product.height} cm` : "N/A"} />
-                                        <InfoRow label="Thể tích" value={calculateCBM(product.length, product.width, product.height)} color="text-teal-600 font-black" />
+                                        <InfoRow label="Weight" value={product.weight ? `${product.weight} kg` : "N/A"} />
+                                        <InfoRow label="Dimensions" value={product.length ? `${product.length}x${product.width}x${product.height} cm` : "N/A"} />
+                                        <InfoRow label="Volume" value={calculateCBM(product.length, product.width, product.height)} color="text-teal-600 font-black" />
                                         <div className="pt-1">
                                             <span className={`text-[9px] px-2 py-0.5 rounded-lg font-black uppercase shadow-sm border ${product.isFragile ? 'bg-red-50 text-red-600 border-red-100' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
-                                                {product.isFragile ? "⚠️ Hàng dễ vỡ" : "Hàng thông thường"}
+                                                {product.isFragile ? "⚠️ Fragile goods" : "Standard goods"}
                                             </span>
                                         </div>
                                     </div>
                                 </section>
                                 <section className="bg-white p-4 rounded-xl border shadow-sm sm:col-span-2 xl:col-span-1">
-                                    <h3 className="text-[#00529c] font-black border-b mb-3 pb-1 text-[11px] uppercase tracking-wider">3. Lưu kho & Cảnh báo</h3>
+                                    <h3 className="text-[#00529c] font-black border-b mb-3 pb-1 text-[11px] uppercase tracking-wider">3. Storage & alerts</h3>
                                     <div className="space-y-3">
-                                        <InfoRow label="Nhiệt độ" value={product.storageTemp || "Bình thường"} />
-                                        <InfoRow label="Ngưỡng an toàn" value={safetyStock !== null ? `${safetyStock.toLocaleString()} ${unitName}` : "N/A"} />
-                                        <InfoRow label="Cảnh báo" value={isBelowSafety ? "Dưới tồn an toàn" : "Bình thường"} isBold color={isBelowSafety ? "text-red-600" : "text-green-700"} />
+                                        <InfoRow label="Temperature" value={product.storageTemp || "Normal"} />
+                                        <InfoRow label="Safety stock" value={safetyStock !== null ? `${safetyStock.toLocaleString()} ${unitName}` : "N/A"} />
+                                        <InfoRow label="Alert" value={isBelowSafety ? "Below safety stock" : "Normal"} isBold color={isBelowSafety ? "text-red-600" : "text-green-700"} />
                                     </div>
                                 </section>
                             </div>
 
                             <section className="bg-white p-4 rounded-xl border shadow-sm">
-                                <h3 className="text-[#00529c] font-black border-b mb-3 pb-1 text-[11px] uppercase tracking-wider">4. Tổng quan tồn kho</h3>
+                                <h3 className="text-[#00529c] font-black border-b mb-3 pb-1 text-[11px] uppercase tracking-wider">4. Inventory overview</h3>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                                    <StockMetric label="Tổng tồn" value={totalStock} unit={unitName} color="text-slate-800" />
-                                    <StockMetric label="Đã phân bổ" value={allocatedStock} unit={unitName} color="text-slate-700" />
-                                    <StockMetric label="Khả dụng" value={availableStock} unit={unitName} color={isBelowSafety ? "text-red-600" : "text-green-700"} />
-                                    <StockMetric label="Đang về" value={incomingStock} unit={unitName} color="text-cyan-700" title="Chỉ cộng vào tồn khả dụng khi phiếu nhập hoàn tất" />
-                                    <StockMetric label="An toàn" value={safetyStock} unit={unitName} color="text-amber-700" />
+                                    <StockMetric label="Total stock" value={totalStock} unit={unitName} color="text-slate-800" />
+                                    <StockMetric label="Allocated" value={allocatedStock} unit={unitName} color="text-slate-700" />
+                                    <StockMetric label="Available" value={availableStock} unit={unitName} color={isBelowSafety ? "text-red-600" : "text-green-700"} />
+                                    <StockMetric label="Incoming" value={incomingStock} unit={unitName} color="text-cyan-700" title="Counted toward available stock only after the receipt is completed" />
+                                    <StockMetric label="Safety" value={safetyStock} unit={unitName} color="text-amber-700" />
                                 </div>
                             </section>
 
                             <section className="bg-white p-4 rounded-xl border shadow-sm flex-1">
-                                <h3 className="text-[#00529c] font-black border-b mb-3 pb-1 text-[11px] uppercase tracking-wider">5. Nguồn gốc & Trạng thái</h3>
+                                <h3 className="text-[#00529c] font-black border-b mb-3 pb-1 text-[11px] uppercase tracking-wider">5. Source & status</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-10 mt-2">
-                                    <InfoRow label="Nhà cung cấp" value={product.supplierCodes || "Chưa xác định"} isBold color="text-blue-700" />
-                                    <InfoRow label="Trạng thái" value={renderStatusBadge(product.status)} />
-                                    <InfoRow label="Nhập gần nhất" value={formatDateTime(product.lastImportDate)} />
-                                    <InfoRow label="Khởi tạo" value={formatDateTime(product.createdAt)} />
+                                    <InfoRow label="Supplier" value={product.supplierCodes || "Unspecified"} isBold color="text-blue-700" />
+                                    <InfoRow label="Status" value={renderStatusBadge(product.status)} />
+                                    <InfoRow label="Latest import" value={formatDateTime(product.lastImportDate)} />
+                                    <InfoRow label="Created" value={formatDateTime(product.createdAt)} />
                                 </div>
                             </section>
                         </div>
@@ -217,24 +217,24 @@ export default function ProductDetailModal({ product, onClose }) {
 
                     <div className="space-y-3">
                         <h3 className="text-sm md:text-lg font-black text-gray-800 flex items-center gap-2 uppercase tracking-tight">
-                            <span className="w-1 h-5 md:h-6 bg-[#1192a8]"></span> Phân bổ tồn kho thực tế
+                            <span className="w-1 h-5 md:h-6 bg-[#1192a8]"></span> Actual stock allocation
                         </h3>
                         <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
                             <div className="overflow-x-auto no-scrollbar lg:scrollbar-thin">
                                 <table className="w-full text-left text-xs md:text-sm min-w-[600px]">
                                     <thead className="bg-gray-50 text-gray-500 border-b font-black uppercase">
                                         <tr>
-                                            <th className="p-3 md:p-4">Vị trí kho</th>
-                                            <th className="p-3 md:p-4">Mã Lô</th>
-                                            <th className="p-3 md:p-4">Hạn dùng</th>
-                                            <th className="p-3 md:p-4 text-right">Khả dụng</th>
-                                            <th className="p-3 md:p-4 text-right">Tổng tồn</th>
-                                            <th className="p-3 md:p-4 text-center w-24 md:w-32">Thao tác</th>
+                                            <th className="p-3 md:p-4">Warehouse location</th>
+                                            <th className="p-3 md:p-4">Batch</th>
+                                            <th className="p-3 md:p-4">Expiry</th>
+                                            <th className="p-3 md:p-4 text-right">Available</th>
+                                            <th className="p-3 md:p-4 text-right">Total stock</th>
+                                            <th className="p-3 md:p-4 text-center w-24 md:w-32">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                     {isLoadingDetails ? (
-                                        <tr><td colSpan="6" className="p-10 text-center text-gray-400 font-medium animate-pulse">Đang truy xuất sổ kho...</td></tr>
+                                        <tr><td colSpan="6" className="p-10 text-center text-gray-400 font-medium animate-pulse">Loading inventory ledger...</td></tr>
                                     ) : inventoryDetails.length > 0 ? (
                                         inventoryDetails.map((inv, idx) => {
                                             const rowOnHand = Number(inv.onHand || 0);
@@ -258,14 +258,14 @@ export default function ProductDetailModal({ product, onClose }) {
                                                                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                                             }`}
                                                         >
-                                                            CHUYỂN
+                                                            TRANSFER
                                                         </button>
                                                     </td>
                                                 </tr>
                                             );
                                         })
                                     ) : (
-                                        <tr><td colSpan="6" className="p-10 text-center text-gray-400 italic">Sản phẩm này hiện không có tồn kho thực tế.</td></tr>
+                                        <tr><td colSpan="6" className="p-10 text-center text-gray-400 italic">This product currently has no physical stock.</td></tr>
                                     )}
                                     </tbody>
                                 </table>
@@ -276,7 +276,7 @@ export default function ProductDetailModal({ product, onClose }) {
 
                 <div className="bg-white p-4 border-t shrink-0 flex justify-end">
                     <button onClick={onClose} className="w-full sm:w-auto px-10 py-3 bg-[#56748a] text-white rounded-xl font-black hover:bg-slate-700 transition shadow-lg active:scale-95 uppercase text-xs tracking-widest">
-                        Đóng cửa sổ
+                        Close window
                     </button>
                 </div>
             </div>

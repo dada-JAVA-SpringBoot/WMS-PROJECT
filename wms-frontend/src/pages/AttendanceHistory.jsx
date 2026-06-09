@@ -8,12 +8,34 @@ export default function AttendanceHistory() {
     const { user } = useAuth();
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+
+    const fetchHistory = (reset = false) => {
+        setLoading(true);
+        const currentPage = reset ? 0 : page;
+        axiosClient.get(`/api/attendance/history?page=${currentPage}&size=20`)
+            .then(res => {
+                const data = res.data;
+                const newHistory = data.content || [];
+                if (reset) {
+                    setHistory(newHistory);
+                } else {
+                    setHistory(prev => [...prev, ...newHistory]);
+                }
+                setHasMore(!data.last);
+                if (!reset) setPage(prev => prev + 1);
+            })
+            .finally(() => setLoading(false));
+    };
 
     useEffect(() => {
-        axiosClient.get('/api/attendance/history')
-            .then(res => setHistory(res.data))
-            .finally(() => setLoading(false));
+        fetchHistory(true);
     }, []);
+
+    const handleLoadMore = () => {
+        fetchHistory(false);
+    };
 
     const formatTime = (iso) => iso ? new Date(iso).toLocaleTimeString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', { hour: '2-digit', minute: '2-digit' }) : '—';
     const formatDate = (iso) => iso ? new Date(iso).toLocaleDateString(i18n.language === 'vi' ? 'vi-VN' : 'en-US') : '—';
@@ -106,6 +128,18 @@ export default function AttendanceHistory() {
                         </tbody>
                     </table>
                 </div>
+
+                {hasMore && (
+                    <div className="p-4 flex justify-center border-t dark:border-gray-700">
+                        <button
+                            onClick={handleLoadMore}
+                            disabled={loading}
+                            className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-8 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-gray-600 transition-all disabled:opacity-50"
+                        >
+                            {loading ? t('common.loading') : t('common.loadMore')}
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -29,6 +29,7 @@ import outboundIcon from '../components/common/icons/outbound.png';
 import scanIcon from '../components/common/icons/scan.png';
 
 import { useExcelExport } from '../hooks/useExcelExport';
+import { useWorkspaceRefresh } from '../hooks/useWorkspaceRefresh';
 
 export default function Inventory({ onCreateInbound, onCreateOutbound }) {
     const { t } = useTranslation();
@@ -187,6 +188,13 @@ export default function Inventory({ onCreateInbound, onCreateOutbound }) {
         fetchSuppliers();
         fetchUnits();
     }, []);
+
+    useWorkspaceRefresh(() => {
+        fetchProducts();
+        fetchCategories();
+        fetchSuppliers();
+        fetchUnits();
+    });
 
     // 4. Logic Lọc Dữ liệu (Search Filter)
     const categoryMap = useMemo(() => {
@@ -1277,7 +1285,7 @@ function ActionButton({ iconSrc, label }) {
     return (
         <button className="flex flex-col items-center gap-1 group bg-transparent border-none cursor-pointer transition-transform active:scale-90">
             <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition duration-200">
-                <img src={iconSrc} alt={label} className="w-7 h-7 md:w-9 md:h-9 object-contain dark:opacity-85 dark:brightness-110" />
+                <img src={iconSrc} alt={label} className="w-7 h-7 md:w-9 md:h-9 object-contain dark:invert dark:hue-rotate-180 dark:opacity-90" />
             </div>
             <span className="text-[8px] md:text-[10px] font-bold text-[#00529c] dark:text-[#1192a8] uppercase tracking-tighter group-hover:text-[#1192a8] dark:group-hover:text-[#38bcd4] transition text-center whitespace-nowrap">
                 {label}

@@ -6,6 +6,7 @@ import excelIcon  from '../components/common/icons/excel.png';
 import excel1Icon from '../components/common/icons/excel1.png';
 import * as XLSX from 'xlsx';
 import { ActionButton } from '../components/common/SharedUI';
+import { formatDateByLanguage, formatNumberByLanguage } from '../utils/formatters';
 
 const TRANSACTION_TYPES = {
     INBOUND: { labelKey: 'pages.TransactionHistory.types.inbound', color: 'text-green-600 bg-green-50 border-green-100' },
@@ -68,11 +69,11 @@ export default function TransactionHistory() {
         if (!filteredData.length) return;
         const sheetData = filteredData.map((row, idx) => ({
             [t('pages.TransactionHistory.excel.stt')]: idx + 1,
-            [t('pages.TransactionHistory.excel.time')]: new Date(row.createdAt).toLocaleString('vi-VN'),
+            [t('pages.TransactionHistory.excel.time')]: formatDateByLanguage(row.createdAt),
             [t('pages.TransactionHistory.excel.product')]: row.productName,
             [t('pages.TransactionHistory.excel.sku')]: row.productSku,
             [t('pages.TransactionHistory.excel.type')]: TRANSACTION_TYPES[row.transactionType]?.labelKey ? t(TRANSACTION_TYPES[row.transactionType].labelKey) : row.transactionType,
-            [t('pages.TransactionHistory.excel.change')]: row.quantityChange,
+            [t('pages.TransactionHistory.excel.change')]: formatNumberByLanguage(row.quantityChange),
             [t('pages.TransactionHistory.excel.batch')]: row.batchCode,
             [t('pages.TransactionHistory.excel.bin')]: row.binCode,
             [t('pages.TransactionHistory.excel.zone')]: row.zone,
@@ -105,7 +106,7 @@ export default function TransactionHistory() {
                     <ActionButton label={t('pages.TransactionHistory.actions.refresh')} iconSrc={excel1Icon} onClick={fetchData} />
                 </div>
                 <div className="flex items-center gap-3">
-                    <img src={historyIcon} className="w-6 h-6 object-contain opacity-40 dark:opacity-60 dark:brightness-110" alt="History" />
+                    <img src={historyIcon} className="w-6 h-6 object-contain opacity-40 dark:opacity-60 dark:invert dark:hue-rotate-180" alt="History" />
                     <h1 className="text-sm font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{t('pages.TransactionHistory.title')}</h1>
                 </div>
             </div>
@@ -162,8 +163,8 @@ export default function TransactionHistory() {
                                     <tr key={row.id} className="hover:bg-blue-50/50 dark:hover:bg-gray-700/30 transition-colors">
                                         <td className="p-5 text-gray-300 dark:text-gray-600 font-bold">{idx + 1}</td>
                                         <td className="p-5">
-                                            <div className="font-bold text-gray-700 dark:text-gray-200">{new Date(row.createdAt).toLocaleDateString('vi-VN')}</div>
-                                            <div className="text-[10px] text-gray-400 dark:text-gray-500 font-mono">{new Date(row.createdAt).toLocaleTimeString('vi-VN')}</div>
+                                            <div className="font-bold text-gray-700 dark:text-gray-200">{formatDateByLanguage(row.createdAt)}</div>
+                                            <div className="text-[10px] text-gray-400 dark:text-gray-500 font-mono">{formatDateByLanguage(row.createdAt, undefined, { hour: '2-digit', minute: '2-digit' })}</div>
                                         </td>
                                         <td className="p-5">
                                             <div className="font-black text-gray-800 dark:text-gray-100 uppercase truncate max-w-[200px]" title={row.productName}>{row.productName}</div>

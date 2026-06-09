@@ -6,6 +6,7 @@ import SystemDialog from '../components/modals/SystemDialog';
 import addIcon from '../components/common/icons/add.png';
 import excel1Icon from '../components/common/icons/excel1.png';
 import outboundIcon from '../components/common/icons/outbound.png';
+import { formatDateByLanguage } from '../utils/formatters';
 
 export default function WavePicking() {
     const { t } = useTranslation();
@@ -128,7 +129,7 @@ export default function WavePicking() {
                                         className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-[#1192a8] focus:ring-[#1192a8]"
                                     />
                                 </div>
-                                <div className="text-[9px] md:text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">{new Date(order.issueDate).toLocaleDateString('vi-VN')}</div>
+                                <div className="text-[9px] md:text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">{formatDateByLanguage(order.issueDate)}</div>
                                 <div className="text-[11px] md:text-xs text-gray-600 dark:text-gray-400 mt-1 truncate">{t('pages.WavePicking.customerLabel', { id: order.customerId })}</div>
                             </div>
                         ))}
@@ -160,7 +161,7 @@ export default function WavePicking() {
                                     {waves.map(wave => (
                                         <tr key={wave.id} className="hover:bg-blue-50/50 dark:hover:bg-gray-700/30 transition-colors">
                                             <td className="p-4 md:p-5 font-black text-gray-700 dark:text-gray-200">{wave.waveCode}</td>
-                                            <td className="p-4 md:p-5 text-gray-500 dark:text-gray-400">{new Date(wave.createdAt).toLocaleString('vi-VN')}</td>
+                                            <td className="p-4 md:p-5 text-gray-500 dark:text-gray-400">{formatDateByLanguage(wave.createdAt)}</td>
                                             <td className="p-4 md:p-5">
                                                 <span className={`px-2 md:px-3 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase border
                                                     ${wave.status === 'COMPLETED'

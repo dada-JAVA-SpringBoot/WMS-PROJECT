@@ -3,6 +3,7 @@ package com.wmsbackend.service;
 import com.wmsbackend.dto.ProductDTO;
 import com.wmsbackend.entity.Product;
 import com.wmsbackend.repository.ProductRepository;
+import com.wmsbackend.security.WorkspaceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -14,7 +15,7 @@ public class ProductService {
     private ProductRepository productRepository;
 
     public List<ProductDTO> getAllProductsWithStock() {
-        return productRepository.findAllProductsWithTotalStock();
+        return productRepository.findAllProductsWithTotalStock(WorkspaceContext.getCurrentCompanyId());
     }
 
     public Product saveProduct(Product product) {

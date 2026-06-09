@@ -19,6 +19,7 @@ public class StaffDTO {
     private String username;
     private Boolean enabled;
     private String avatar;
+    private Integer companyId;
     private java.util.List<String> roles;
     private String shiftStartTime;
     private String shiftEndTime;
@@ -104,6 +105,9 @@ public class StaffDTO {
 
     public String getAvatar() { return avatar; }
     public void setAvatar(String avatar) { this.avatar = avatar; }
+
+    public Integer getCompanyId() { return companyId; }
+    public void setCompanyId(Integer companyId) { this.companyId = companyId; }
 
     public java.util.List<String> getRoles() { return roles; }
     public void setRoles(java.util.List<String> roles) { this.roles = roles; }

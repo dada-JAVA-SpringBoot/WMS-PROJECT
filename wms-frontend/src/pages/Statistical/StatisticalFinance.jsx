@@ -6,9 +6,17 @@ import RevenueByMonth from './Revenue/RevenueByMonth';
 import RevenueByDayInMonth from './Revenue/RevenueByDayInMonth';
 import RevenueByDateRange from './Revenue/RevenueByDateRange';
 
+import { useWorkspaceRefresh } from '../../hooks/useWorkspaceRefresh';
+
 export default function StatisticalFinance() {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('year');
+
+    // Cần thêm logic fetch dữ liệu nếu cần, nhưng trang này là wrapper
+    // Nếu các trang con cần làm mới, chúng nên tự implement hook hoặc nhận prop
+    useWorkspaceRefresh(() => {
+        // Tự động làm mới khi đổi công ty
+    });
 
     const revenueTabs = [
         { id: 'year', label: t('pages.StatisticalFinance.tabYear') },

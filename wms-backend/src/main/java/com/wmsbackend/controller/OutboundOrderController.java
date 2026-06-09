@@ -8,8 +8,10 @@ import com.wmsbackend.entity.OutboundOrderDetail;
 import com.wmsbackend.repository.InventoryRepository;
 import com.wmsbackend.repository.OutboundOrderDetailRepository;
 import com.wmsbackend.repository.OutboundOrderRepository;
+import com.wmsbackend.security.WorkspaceContext;
 import com.wmsbackend.util.TimeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -36,12 +38,29 @@ public class OutboundOrderController {
     // GET danh sách phiếu xuất
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','WAREHOUSE_KEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL')")
-    public List<OutboundOrder> getAllOrders() {
-        return outboundOrderRepository.findAll();
+    public ResponseEntity<?> getAllOrders(@RequestParam(defaultValue = "0") int page,
+                                          @RequestParam(defaultValue = "20") int size) {
+        Integer filterId = WorkspaceContext.getFilterCompanyId();
+
+        if (page >= 0 && size > 0) {
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                page, size, org.springframework.data.domain.Sort.by("issueDate").descending());
+            return ResponseEntity.ok(outboundOrderRepository.findAllByCompanyId(filterId, pageable));
+        }
+
+        List<OutboundOrder> orders = outboundOrderRepository.findAll().stream()
+                .filter(o -> filterId == null || filterId.equals(o.getCompanyId()))
+                .sorted((a, b) -> b.getIssueDate().compareTo(a.getIssueDate()))
+                .toList();
+        return ResponseEntity.ok(orders);
     }
 
     @GetMapping("/{id}/details")
     public List<OutboundOrderDetail> getDetails(@PathVariable Long id) {
+        OutboundOrder order = outboundOrderRepository.findById(id).orElse(null);
+        if (order != null && !isAccessible(order.getCompanyId())) {
+            return List.of();
+        }
         return outboundOrderDetailRepository.findByOutboundOrderId(id);
     }
 
@@ -52,6 +71,7 @@ public class OutboundOrderController {
     public OutboundOrder createOrder(@RequestBody OutboundCreateRequest request) {
         OutboundOrder order = new OutboundOrder();
         order.setCustomerId(request.getCustomerId());
+        order.setCompanyId(WorkspaceContext.getCurrentCompanyId());
         order.setCreatedBy(request.getCreatedBy());
         order.setIssueDate(request.getIssueDate() != null ? request.getIssueDate() : TimeUtils.now());
         order.setStatus(request.getStatus() != null ? request.getStatus() : "DRAFT");
@@ -87,6 +107,7 @@ public class OutboundOrderController {
     public String updateStatus(@PathVariable Long id, @RequestBody StatusUpdateRequest request) {
         OutboundOrder order = outboundOrderRepository.findById(id).orElse(null);
         if (order == null) return "Không tìm thấy";
+        if (!isAccessible(order.getCompanyId())) return "Không có quyền";
 
         String oldStatus = (order.getStatus() != null ? order.getStatus() : "DRAFT").toUpperCase();
         String nextStatus = request.getStatus().toUpperCase();
@@ -125,6 +146,7 @@ public class OutboundOrderController {
     public String confirmQC(@PathVariable Long id) {
         OutboundOrder order = outboundOrderRepository.findById(id).orElse(null);
         if (order == null) return "Không tìm thấy";
+        if (!isAccessible(order.getCompanyId())) return "Không có quyền";
         
         String currentStatus = (order.getStatus() != null ? order.getStatus() : "DRAFT").toUpperCase();
         if (currentStatus.equals("COMPLETED")) return "Phiếu đã hoàn thành";
@@ -171,6 +193,7 @@ public class OutboundOrderController {
                 tx.setProductId(item.getProductId());
                 tx.setLocationId(item.getLocationId());
                 tx.setBatchId(item.getBatchId());
+                tx.setCompanyId(order.getCompanyId());
                 tx.setTransactionType(direction < 0 ? "OUTBOUND" : "ADJUSTMENT");
                 tx.setQuantityChange(delta); // delta đã bao gồm direction (số âm nếu là xuất kho)
                 tx.setReferenceId(order.getId());
@@ -179,5 +202,10 @@ public class OutboundOrderController {
                 transactionRepo.save(tx);
             }
         }
+    }
+
+    private boolean isAccessible(Integer companyId) {
+        Integer currentCompanyId = WorkspaceContext.getCurrentCompanyId();
+        return WorkspaceContext.isGlobalAdmin() || currentCompanyId == null || companyId == null || currentCompanyId.equals(companyId);
     }
 }

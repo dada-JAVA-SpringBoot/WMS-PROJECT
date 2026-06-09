@@ -26,6 +26,9 @@ public class Supplier {
     @Column(name = "TotalImportQuantity")
     private Integer totalImportQuantity = 0;
 
+    @Column(name = "CompanyId")
+    private Integer companyId;
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -43,5 +46,8 @@ public class Supplier {
 
     public Integer getTotalImportQuantity() { return totalImportQuantity; }
     public void setTotalImportQuantity(Integer totalImportQuantity) { this.totalImportQuantity = totalImportQuantity; }
+
+    public Integer getCompanyId() { return companyId; }
+    public void setCompanyId(Integer companyId) { this.companyId = companyId; }
 }
  

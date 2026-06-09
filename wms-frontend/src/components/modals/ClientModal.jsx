@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import axiosClient from '../../api/axiosClient';
 import { useModalDismiss } from './useModalDismiss';
 
@@ -6,6 +7,47 @@ const API = '/api/customers';
 const emptyForm = { customerCode: '', name: '', phone: '', address: '' };
 
 export default function ClientModal({ isOpen, onClose, onSaved, editData }) {
+    const { i18n } = useTranslation();
+    const isEnglish = String(i18n.language || '').startsWith('en');
+    const copy = isEnglish ? {
+        editTitle: 'Edit customer',
+        createTitle: 'Add new customer',
+        editSubtitle: (name) => `Editing: ${name}`,
+        createSubtitle: 'Fill in the details to create a customer',
+        code: 'Customer code',
+        codePlaceholder: 'e.g. CUS-001',
+        name: 'Customer name',
+        namePlaceholder: 'e.g. John Doe',
+        phone: 'Phone number',
+        phonePlaceholder: 'e.g. 0987654321',
+        address: 'Contact address',
+        addressPlaceholder: 'e.g. 123 ABC Street, District 1, HCMC',
+        cancel: 'Cancel',
+        save: 'Save changes',
+        create: 'Add customer',
+        error: 'An error occurred: ',
+        enterCode: 'Please enter the customer code',
+        enterName: 'Please enter the customer name',
+    } : {
+        editTitle: 'Chỉnh sửa khách hàng',
+        createTitle: 'Thêm khách hàng mới',
+        editSubtitle: (name) => `Đang sửa: ${name}`,
+        createSubtitle: 'Điền thông tin để tạo khách hàng',
+        code: 'Mã khách hàng',
+        codePlaceholder: 'VD: CUS-001',
+        name: 'Tên khách hàng',
+        namePlaceholder: 'VD: Nguyễn Văn A',
+        phone: 'Số điện thoại',
+        phonePlaceholder: 'VD: 0987654321',
+        address: 'Địa chỉ liên hệ',
+        addressPlaceholder: 'VD: 123 ABC, Quận 1, TP.HCM',
+        cancel: 'Hủy',
+        save: 'Lưu thay đổi',
+        create: 'Thêm mới',
+        error: 'Có lỗi xảy ra: ',
+        enterCode: 'Vui lòng nhập mã khách hàng',
+        enterName: 'Vui lòng nhập tên khách hàng',
+    };
     const isEdit = !!editData;
     useModalDismiss(isOpen, onClose);
 
@@ -29,8 +71,8 @@ export default function ClientModal({ isOpen, onClose, onSaved, editData }) {
 
     const validate = () => {
         const e = {};
-        if (!form.customerCode.trim()) e.customerCode = 'Vui lòng nhập mã khách hàng';
-        if (!form.name.trim()) e.name = 'Vui lòng nhập tên khách hàng';
+        if (!form.customerCode.trim()) e.customerCode = copy.enterCode;
+        if (!form.name.trim()) e.name = copy.enterName;
         return e;
     };
 
@@ -53,7 +95,7 @@ export default function ClientModal({ isOpen, onClose, onSaved, editData }) {
             onSaved();
             onClose();
         } catch (err) {
-            alert('Có lỗi xảy ra: ' + (err.response?.data?.message || err.message));
+            alert(copy.error + (err.response?.data?.message || err.message));
         } finally {
             setLoading(false);
         }
@@ -67,10 +109,10 @@ export default function ClientModal({ isOpen, onClose, onSaved, editData }) {
                 <div className="bg-gradient-to-r from-[#00529c] to-[#1192a8] px-5 md:px-8 py-4 md:py-5 flex items-center justify-between shrink-0">
                     <div className="min-w-0">
                         <h2 className="text-white font-bold text-base md:text-lg truncate">
-                            {isEdit ? 'Chỉnh sửa khách hàng' : 'Thêm khách hàng mới'}
+                            {isEdit ? copy.editTitle : copy.createTitle}
                         </h2>
                         <p className="text-white/70 text-[10px] md:text-xs mt-0.5 truncate">
-                            {isEdit ? `Đang sửa: ${editData.name}` : 'Điền thông tin để tạo khách hàng'}
+                            {isEdit ? copy.editSubtitle(editData.name) : copy.createSubtitle}
                         </p>
                     </div>
                     <button
@@ -81,39 +123,39 @@ export default function ClientModal({ isOpen, onClose, onSaved, editData }) {
 
                 {/* Body */}
                 <div className="px-5 md:px-8 py-4 md:py-6 space-y-4 md:space-y-5 overflow-y-auto flex-1">
-                    <Field
-                        label="Mã khách hàng"
+                        <Field
+                        label={copy.code}
                         required
                         value={form.customerCode}
                         onChange={v => handleChange('customerCode', v)}
-                        placeholder="VD: CUS-001"
+                        placeholder={copy.codePlaceholder}
                         error={errors.customerCode}
                         disabled={isEdit}
                     />
                     <Field
-                        label="Tên khách hàng"
+                        label={copy.name}
                         required
                         value={form.name}
                         onChange={v => handleChange('name', v)}
-                        placeholder="VD: Nguyễn Văn A"
+                        placeholder={copy.namePlaceholder}
                         error={errors.name}
                     />
                     <Field
-                        label="Số điện thoại"
+                        label={copy.phone}
                         value={form.phone}
                         onChange={v => handleChange('phone', v)}
-                        placeholder="VD: 0987654321"
+                        placeholder={copy.phonePlaceholder}
                         type="tel"
                     />
                     <div>
                         <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5 ml-1">
-                            Địa chỉ liên hệ
+                            {copy.address}
                         </label>
                         <textarea
                             rows={2}
                             value={form.address}
                             onChange={e => handleChange('address', e.target.value)}
-                            placeholder="VD: 123 Đường ABC, Quận 1, TP.HCM"
+                            placeholder={copy.addressPlaceholder}
                             className="w-full border border-gray-200 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1192a8]/25 focus:border-[#1192a8] transition-all resize-none bg-white"
                         />
                     </div>
@@ -125,7 +167,7 @@ export default function ClientModal({ isOpen, onClose, onSaved, editData }) {
                         onClick={onClose}
                         className="order-2 sm:order-1 px-6 py-2.5 rounded-2xl text-sm font-black text-gray-400 bg-white border border-gray-100 hover:bg-gray-100 transition-all uppercase tracking-widest"
                     >
-                        Hủy
+                        {copy.cancel}
                     </button>
                     <button
                         onClick={handleSubmit}
@@ -133,7 +175,7 @@ export default function ClientModal({ isOpen, onClose, onSaved, editData }) {
                         className="order-1 sm:order-2 px-7 py-3 rounded-2xl text-xs font-black text-white bg-[#1192a8] hover:bg-teal-700 hover:shadow-lg shadow-xl shadow-teal-500/20 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-widest"
                     >
                         {loading && <span className="animate-spin text-base">↻</span>}
-                        {isEdit ? 'Lưu thay đổi' : 'Thêm mới'}
+                        {isEdit ? copy.save : copy.create}
                     </button>
                 </div>
             </div>

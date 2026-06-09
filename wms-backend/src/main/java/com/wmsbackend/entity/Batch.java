@@ -14,6 +14,9 @@ public class Batch {
     @Column(name = "ProductId", nullable = false)
     private Integer productId;
 
+    @Column(name = "CompanyId")
+    private Integer companyId;
+
     @Column(name = "BatchCode", nullable = false, length = 100)
     private String batchCode;
 
@@ -42,6 +45,14 @@ public class Batch {
 
     public void setProductId(Integer productId) {
         this.productId = productId;
+    }
+
+    public Integer getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Integer companyId) {
+        this.companyId = companyId;
     }
 
     public String getBatchCode() {

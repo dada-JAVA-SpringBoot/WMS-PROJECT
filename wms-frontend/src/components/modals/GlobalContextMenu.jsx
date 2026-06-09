@@ -11,27 +11,27 @@ export default function GlobalContextMenu() {
 
     const { isOpen, x, y, title, subtitle, actions } = menuState;
 
-    // Các hành động mặc định "hợp lý" cho toàn trang
+    // Default page-wide actions
     const defaultActions = useMemo(() => [
         { 
-            label: 'Quét mã nhanh (F2)', 
+            label: 'Quick scan (F2)', 
             onClick: () => {
-                // Chúng ta sẽ dispatch một custom event để mở scanner ở bất kỳ đâu
+                // Dispatch a custom event so the scanner can open from anywhere
                 window.dispatchEvent(new CustomEvent('wms:open-global-scanner'));
             }
         },
         { divider: true },
         { 
-            label: 'Làm mới trang', 
+            label: 'Refresh page', 
             onClick: () => window.location.reload()
         },
         { 
-            label: 'Quay lại', 
+            label: 'Go back', 
             onClick: () => navigate(-1)
         },
         { divider: true },
         { 
-            label: 'Toàn màn hình', 
+            label: 'Fullscreen', 
             onClick: () => {
                 if (!document.fullscreenElement) {
                     document.documentElement.requestFullscreen();
@@ -41,14 +41,14 @@ export default function GlobalContextMenu() {
             }
         },
         { 
-            label: 'Sao chép liên kết', 
+            label: 'Copy link', 
             onClick: () => {
                 navigator.clipboard.writeText(window.location.href);
             }
         },
         { divider: true },
         { 
-            label: 'Đăng xuất', 
+            label: 'Logout', 
             onClick: logout, 
             danger: true
         }
@@ -56,28 +56,22 @@ export default function GlobalContextMenu() {
 
     useEffect(() => {
         const handleGlobalContextMenu = (e) => {
-            // Không chặn context menu nếu đang nhấn vào input hoặc textarea (để người dùng vẫn copy/paste được)
+            // Do not block the context menu inside inputs or textareas
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
                 return;
             }
 
             e.preventDefault();
 
-            // Kiểm tra xem click vào một vùng đã có menu riêng chưa
-            // Chúng ta có thể dùng thuộc tính data-context-menu để xác định các vùng đặc biệt
-            // Nhưng ở đây chúng ta sẽ ưu tiên actions truyền vào menuState
+            // Respect any area-specific menu that may already be active
             
-            // Nếu click vào background chung, show defaultActions
-            // Nếu click vào row cụ thể (đã được xử lý bởi component con), menuState sẽ được set bởi component đó
-            
-            // Tuy nhiên, vì các component con thường gọi e.stopPropagation(), 
-            // nên listener này thường chỉ bắt các click vào "khoảng trắng".
+            // This listener mostly catches clicks on empty page space because child components stop propagation.
             
             openMenu({
                 x: e.clientX,
                 y: e.clientY,
-                title: 'Hệ thống WMS',
-                subtitle: user?.fullName || user?.username || 'Menu nhanh',
+                title: 'WMS System',
+                subtitle: user?.fullName || user?.username || 'Quick menu',
                 actions: defaultActions
             });
         };
@@ -88,7 +82,7 @@ export default function GlobalContextMenu() {
 
     if (!isOpen) return null;
 
-    // Tính toán vị trí để không bị tràn
+    // Calculate the position so the menu stays on screen
     const menuWidth = 240;
     const itemHeight = 40;
     const dividerHeight = 10;

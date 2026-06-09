@@ -12,9 +12,16 @@ axiosClient.interceptors.request.use(
         // Debug URL (có thể xóa sau)
         console.log(`[Axios Request] ${config.method.toUpperCase()} ${config.url}`);
         
-        const token = localStorage.getItem('wms_token');
+        const token = sessionStorage.getItem('wms_token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
+        }
+
+        const selectedCompanyId = sessionStorage.getItem('wms_workspace_company_id');
+        if (selectedCompanyId) {
+            config.headers['X-Workspace-Company-Id'] = selectedCompanyId;
+        } else {
+            delete config.headers['X-Workspace-Company-Id'];
         }
         
         const lang = localStorage.getItem('i18nextLng') || 'vi';
@@ -32,8 +39,9 @@ axiosClient.interceptors.response.use(
 
         if (status === 401) {
             // Token hết hạn hoặc không hợp lệ — xóa storage và reload về Login
-            localStorage.removeItem('wms_token');
-            localStorage.removeItem('wms_user');
+            sessionStorage.removeItem('wms_token');
+            sessionStorage.removeItem('wms_user');
+            sessionStorage.removeItem('wms_workspace_company_id');
             window.dispatchEvent(new Event('wms:unauthorized'));
         }
 

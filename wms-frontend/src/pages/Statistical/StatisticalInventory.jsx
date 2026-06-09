@@ -5,7 +5,9 @@ import PanelCard from '../../components/statistical/PanelCard';
 import StatisticsTable from '../../components/statistical/StatisticsTable';
 import StatMetricCard from '../../components/statistical/StatMetricCard';
 import FilterBar, { FilterButton, FilterDateInput } from '../../components/statistical/FilterBar';
-import { formatCurrencyShort, formatCurrencyVN } from '../../components/statistical/charts/chartUtils';
+import { formatCurrencyExact, formatNumberByLanguage } from '../../utils/formatters';
+
+import { useWorkspaceRefresh } from '../../hooks/useWorkspaceRefresh';
 
 export default function StatisticalInventory() {
     const { t } = useTranslation();
@@ -65,7 +67,13 @@ export default function StatisticalInventory() {
         }
     };
 
-    useEffect(() => { fetchData(startDate, endDate); }, []);
+    useEffect(() => {
+        fetchData(startDate, endDate);
+    }, []);
+
+    useWorkspaceRefresh(() => {
+        fetchData(startDate, endDate);
+    });
 
     const handleSearch = () => fetchData(startDate, endDate);
 
@@ -86,10 +94,10 @@ export default function StatisticalInventory() {
             stt:      item.stt,
             sku:      item.sku,
             name:     item.name,
-            opening:  Number(item.openingStock).toLocaleString('vi-VN'),
-            inbound:  Number(item.inboundQty).toLocaleString('vi-VN'),
-            outbound: Number(item.outboundQty).toLocaleString('vi-VN'),
-            ending:   Number(item.endingStock).toLocaleString('vi-VN'),
+            opening:  formatNumberByLanguage(item.openingStock),
+            inbound:  formatNumberByLanguage(item.inboundQty),
+            outbound: formatNumberByLanguage(item.outboundQty),
+            ending:   formatNumberByLanguage(item.endingStock),
             abcClass: item.abcClass || '—',
         }));
     }, [data]);
@@ -100,7 +108,7 @@ export default function StatisticalInventory() {
             id:           index,
             className:    item.className,
             productCount: item.productCount,
-            totalValue:   Number(item.totalValue).toLocaleString('vi-VN'),
+            totalValue:   formatCurrencyExact(item.totalValue),
             percentage:   `${item.percentage}%`,
         }));
     }, [data]);
@@ -110,21 +118,21 @@ export default function StatisticalInventory() {
         return data.lossDetails.map((item, index) => ({
             id:        index,
             date:      item.date,
-            type:      item.type,
+            type:      item.type === 'QC' ? t('pages.PendingTaskTable.status_pending') || 'QC' : (item.type === 'ADJUSTMENT' ? t('pages.TransactionHistory.types.adjustment') : item.type),
             product:   `${item.sku} - ${item.productName}`,
-            quantity:  Number(item.quantity).toLocaleString('vi-VN'),
+            quantity:  formatNumberByLanguage(item.quantity),
             reason:    item.reason || '—',
             reference: item.referenceCode || '—',
         }));
-    }, [data]);
+    }, [data, t]);
 
     return (
         <div className="min-h-[calc(100vh-120px)] p-5 space-y-5 bg-[#f8f9fa] dark:bg-gray-900 transition-colors duration-300">
 
             {/* ── Filter Bar ── */}
             <FilterBar>
-                <span className="text-[16px] text-slate-800 text-gray-200 font-bold uppercase tracking-wider">{t('pages.StatisticalInventory.lblPeriod')}</span>
-                <span className="text-[15px] text-slate-700 text-gray-300">{t('pages.StatisticalInventory.lblFromDate')}</span>
+                <span className="text-[16px] text-slate-800 dark:text-gray-200 font-bold uppercase tracking-wider">{t('pages.StatisticalInventory.lblPeriod')}</span>
+                <span className="text-[15px] text-slate-700 dark:text-gray-300">{t('pages.StatisticalInventory.lblFromDate')}</span>
                 <FilterDateInput
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
@@ -155,7 +163,7 @@ export default function StatisticalInventory() {
                     />
                     <StatMetricCard
                         icon="📊"
-                        value={Number(data.totalStockValue || 0).toLocaleString('vi-VN')}
+                        value={formatCurrencyExact(data.totalStockValue)}
                         label={t('pages.StatisticalInventory.lblTotalStockValue')}
                         circleClass="bg-green-500 text-white"
                     />
@@ -198,7 +206,7 @@ export default function StatisticalInventory() {
                 </PanelCard>
 
                 {/* ── Sub-tables ── */}
-                <div className="grid grid-cols-1 xl:grid-cols-[450px_1fr] gap-5">
+                <div className="flex flex-col gap-5">
                     {/* ABC Analysis Summary */}
                     <PanelCard className="overflow-hidden bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 transition-colors duration-300">
                         <div className="border-b border-slate-200 dark:border-gray-700 px-6 py-4 flex items-center gap-2">

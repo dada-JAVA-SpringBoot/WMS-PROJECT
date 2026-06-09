@@ -1,11 +1,14 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 
 export default function SmartAssistant({ stats, inboundOrders, outboundOrders, cycleCounts }) {
+    const { i18n } = useTranslation();
     const { user } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
 
     const roles = user?.roles || [];
+    const isEnglish = String(i18n.language || '').startsWith('en');
     
     // Expert System Analysis Logic (Heuristic-based)
     const analysis = useMemo(() => {
@@ -17,27 +20,27 @@ export default function SmartAssistant({ stats, inboundOrders, outboundOrders, c
         // 1. Phân tích cho Quản lý & Kế toán
         if (roles.includes('ADMIN') || roles.includes('MANAGER') || roles.includes('ACCOUNTANT')) {
             const occupancy = stats?.warehouseOccupancyRate || 0;
-            if (occupancy > 85) recommendations.push("Kho đã gần đầy ( >85% ). Cân nhắc tối ưu hóa vị trí hoặc xuất bớt hàng cũ.");
-            if (stats?.lowStockCount > 0) recommendations.push(`Có ${stats.lowStockCount} mặt hàng dưới định mức an toàn. Cần lên kế hoạch nhập hàng.`);
+            if (occupancy > 85) recommendations.push(isEnglish ? 'The warehouse is nearly full (>85%). Consider optimizing locations or clearing old stock.' : 'Kho đã gần đầy ( >85% ). Cân nhắc tối ưu hóa vị trí hoặc xuất bớt hàng cũ.');
+            if (stats?.lowStockCount > 0) recommendations.push(isEnglish ? `There are ${stats.lowStockCount} items below safety stock. Plan replenishment soon.` : `Có ${stats.lowStockCount} mặt hàng dưới định mức an toàn. Cần lên kế hoạch nhập hàng.`);
             
             if (roles.includes('ACCOUNTANT')) {
-                recommendations.push("Kiểm tra báo cáo tồn kho giá trị cao để tối ưu dòng vốn.");
+                recommendations.push(isEnglish ? 'Check high-value inventory reports to optimize cash flow.' : 'Kiểm tra báo cáo tồn kho giá trị cao để tối ưu dòng vốn.');
             } else {
-                tasks.push(`Theo dõi ${inboundOrders.length} đơn nhập và ${outboundOrders.length} đơn xuất đang xử lý.`);
+                tasks.push(isEnglish ? `Track ${inboundOrders.length} inbound orders and ${outboundOrders.length} outbound orders in progress.` : `Theo dõi ${inboundOrders.length} đơn nhập và ${outboundOrders.length} đơn xuất đang xử lý.`);
             }
         }
 
         // 2. Phân tích cho Thủ kho / Kiểm kê / Nhân viên kho / Nhân viên điều chuyển
         if (roles.includes('STOREKEEPER') || roles.includes('WAREHOUSE_KEEPER') || roles.includes('INVENTORY_CHECKER') || roles.includes('CHECKER') || roles.includes('HANDLER')) {
             if (cycleCounts.length > 0) {
-                tasks.push(`Hoàn thành ${cycleCounts.length} đợt kiểm kê được giao.`);
-                recommendations.push("Ưu tiên kiểm kê trước giờ xuất hàng cao điểm để đảm bảo số liệu chính xác.");
+                tasks.push(isEnglish ? `Complete ${cycleCounts.length} assigned cycle counts.` : `Hoàn thành ${cycleCounts.length} đợt kiểm kê được giao.`);
+                recommendations.push(isEnglish ? 'Prioritize counts before peak outbound hours to keep data accurate.' : 'Ưu tiên kiểm kê trước giờ xuất hàng cao điểm để đảm bảo số liệu chính xác.');
             }
             if (stats?.nearExpiryProducts?.length > 0) {
-                recommendations.push(`Có ${stats.nearExpiryProducts.length} lô hàng sắp hết hạn. Cần kiểm tra tình trạng thực tế để ưu tiên xuất.`);
+                recommendations.push(isEnglish ? `There are ${stats.nearExpiryProducts.length} batches nearing expiry. Check their condition and prioritize outbound.` : `Có ${stats.nearExpiryProducts.length} lô hàng sắp hết hạn. Cần kiểm tra tình trạng thực tế để ưu tiên xuất.`);
             }
             if (roles.includes('HANDLER')) {
-                recommendations.push("Theo dõi các vị trí trống để tối ưu hóa việc sắp xếp hàng hóa khi điều chuyển.");
+                recommendations.push(isEnglish ? 'Track empty locations to optimize transfers and storage layout.' : 'Theo dõi các vị trí trống để tối ưu hóa việc sắp xếp hàng hóa khi điều chuyển.');
             }
         }
 
@@ -48,13 +51,13 @@ export default function SmartAssistant({ stats, inboundOrders, outboundOrders, c
             
             if (roles.includes('QUALITY_CONTROL')) {
                 const needsQC = inboundOrders.filter(o => o.status === 'PENDING' || o.status === 'ORDERED').length;
-                if (needsQC > 0) tasks.push(`Có ${needsQC} lô hàng nhập mới cần kiểm duyệt chất lượng.`);
+                if (needsQC > 0) tasks.push(isEnglish ? `There are ${needsQC} new inbound batches waiting for quality inspection.` : `Có ${needsQC} lô hàng nhập mới cần kiểm duyệt chất lượng.`);
             } else {
-                if (pendingIn > 0) tasks.push(`Xử lý ${pendingIn} phiếu nhập kho đang đợi.`);
-                if (pendingOut > 0) tasks.push(`Chuẩn bị hàng cho ${pendingOut} lệnh xuất kho.`);
+                if (pendingIn > 0) tasks.push(isEnglish ? `Process ${pendingIn} pending inbound receipts.` : `Xử lý ${pendingIn} phiếu nhập kho đang đợi.`);
+                if (pendingOut > 0) tasks.push(isEnglish ? `Prepare goods for ${pendingOut} outbound orders.` : `Chuẩn bị hàng cho ${pendingOut} lệnh xuất kho.`);
             }
             
-            if (pendingIn + pendingOut > 10) recommendations.push("Lượng đơn hàng hôm nay khá lớn. Hãy sử dụng Wave Picking để tăng tốc độ lấy hàng.");
+            if (pendingIn + pendingOut > 10) recommendations.push(isEnglish ? 'Order volume is high today. Use Wave Picking to speed up picking.' : 'Lượng đơn hàng hôm nay khá lớn. Hãy sử dụng Wave Picking để tăng tốc độ lấy hàng.');
         }
 
         return { tasks, recommendations };
@@ -69,17 +72,17 @@ export default function SmartAssistant({ stats, inboundOrders, outboundOrders, c
                 <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 w-80 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
                     <div className="bg-gradient-to-r from-[#1192a8] to-teal-600 p-6 text-white">
                         <div className="flex justify-between items-start mb-2">
-                            <h3 className="font-black uppercase tracking-tight text-sm">Trợ lý công việc thông minh</h3>
+                            <h3 className="font-black uppercase tracking-tight text-sm">{isEnglish ? 'Smart Work Assistant' : 'Trợ lý công việc thông minh'}</h3>
                             <button onClick={() => setIsOpen(false)} className="opacity-60 hover:opacity-100">×</button>
                         </div>
-                        <p className="text-[10px] text-teal-50 opacity-80 uppercase font-bold">Phân tích công việc ngày: {new Date().toLocaleDateString('vi-VN')}</p>
+                        <p className="text-[10px] text-teal-50 opacity-80 uppercase font-bold">{isEnglish ? 'Work analysis for:' : 'Phân tích công việc ngày:'} {new Date().toLocaleDateString(isEnglish ? 'en-US' : 'vi-VN')}</p>
                     </div>
                     
                     <div className="p-6 space-y-6 max-h-[400px] overflow-auto">
                         {/* Tasks Section */}
                         <div>
                             <h4 className="text-[10px] font-black text-gray-400 uppercase mb-3 tracking-widest flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span> Mục tiêu hôm nay
+                                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span> {isEnglish ? 'Today\'s goals' : 'Mục tiêu hôm nay'}
                             </h4>
                             <ul className="space-y-3">
                                 {analysis?.tasks.length > 0 ? analysis.tasks.map((t, i) => (
@@ -87,7 +90,7 @@ export default function SmartAssistant({ stats, inboundOrders, outboundOrders, c
                                         {t}
                                     </li>
                                 )) : (
-                                    <li className="text-xs text-gray-400 italic">Hôm nay không có nhiệm vụ khẩn cấp nào.</li>
+                                    <li className="text-xs text-gray-400 italic">{isEnglish ? 'No urgent tasks for today.' : 'Hôm nay không có nhiệm vụ khẩn cấp nào.'}</li>
                                 )}
                             </ul>
                         </div>
@@ -95,7 +98,7 @@ export default function SmartAssistant({ stats, inboundOrders, outboundOrders, c
                         {/* Analysis Section */}
                         <div>
                             <h4 className="text-[10px] font-black text-gray-400 uppercase mb-3 tracking-widest flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span> Phân tích & Gợi ý
+                                <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span> {isEnglish ? 'Analysis & Suggestions' : 'Phân tích & Gợi ý'}
                             </h4>
                             <ul className="space-y-3">
                                 {analysis?.recommendations.map((r, i) => (
@@ -105,14 +108,14 @@ export default function SmartAssistant({ stats, inboundOrders, outboundOrders, c
                                     </li>
                                 ))}
                                 {analysis?.recommendations.length === 0 && (
-                                    <li className="text-xs text-gray-400 italic">Hệ thống chưa ghi nhận rủi ro nào cần xử lý.</li>
+                                    <li className="text-xs text-gray-400 italic">{isEnglish ? 'No risks currently detected.' : 'Hệ thống chưa ghi nhận rủi ro nào cần xử lý.'}</li>
                                 )}
                             </ul>
                         </div>
                     </div>
 
                     <div className="p-4 bg-gray-50 border-t flex justify-center">
-                        <span className="text-[9px] font-bold text-gray-400 uppercase">Được hỗ trợ bởi Trợ lý ảo thông minh WMS</span>
+                        <span className="text-[9px] font-bold text-gray-400 uppercase">{isEnglish ? 'Powered by the WMS Smart Assistant' : 'Được hỗ trợ bởi Trợ lý ảo thông minh WMS'}</span>
                     </div>
                 </div>
             )}

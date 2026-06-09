@@ -19,7 +19,7 @@ export default function ImageCropModal({ isOpen, imageSrc, onCropComplete, onCan
             onCropComplete(croppedImage);
         } catch (e) {
             console.error(e);
-            alert("Lỗi khi cắt ảnh");
+            alert("An error occurred while cropping the image.");
         }
     };
 
@@ -29,7 +29,7 @@ export default function ImageCropModal({ isOpen, imageSrc, onCropComplete, onCan
         <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
             <div className="bg-white rounded-[40px] w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
                 <div className="p-6 border-b flex items-center justify-between">
-                    <h3 className="font-black text-[#1192a8] uppercase text-sm tracking-[0.2em]">Cắt ảnh chân dung</h3>
+                    <h3 className="font-black text-[#1192a8] uppercase text-sm tracking-[0.2em]">Crop Portrait Image</h3>
                     <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
                 </div>
                 
@@ -49,7 +49,7 @@ export default function ImageCropModal({ isOpen, imageSrc, onCropComplete, onCan
 
                 <div className="p-8 space-y-6">
                     <div className="flex flex-col gap-3">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Phóng to / Thu nhỏ</label>
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Zoom in / out</label>
                         <input
                             type="range"
                             value={zoom}
@@ -67,13 +67,13 @@ export default function ImageCropModal({ isOpen, imageSrc, onCropComplete, onCan
                             onClick={onCancel}
                             className="flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-gray-500 bg-gray-50 hover:bg-gray-100 transition-all"
                         >
-                            Hủy bỏ
+                            Cancel
                         </button>
                         <button 
                             onClick={handleConfirm}
                             className="flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1192a8] hover:bg-teal-700 shadow-lg shadow-teal-500/20 transition-all"
                         >
-                            Xác nhận cắt
+                            Confirm crop
                         </button>
                     </div>
                 </div>

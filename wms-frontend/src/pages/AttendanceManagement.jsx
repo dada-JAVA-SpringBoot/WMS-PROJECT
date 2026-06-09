@@ -2,26 +2,58 @@ import React, { useState, useEffect } from 'react';
 import axiosClient from '../api/axiosClient';
 import AttendanceModal from '../components/modals/AttendanceModal'; // We might use a custom modal for approval
 import { useTranslation } from 'react-i18next';
+import { useWorkspaceRefresh } from '../hooks/useWorkspaceRefresh';
 
 export default function AttendanceManagement() {
     const { t, i18n } = useTranslation();
     const [records, setRecords] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
     const [filters, setFilters] = useState({ start: '', end: '' });
     const [selectedRecord, setSelectedRecord] = useState(null);
     const [approvalNote, setApprovalNote] = useState('');
 
-    const fetchRecords = () => {
+    const fetchRecords = (reset = false) => {
         setLoading(true);
+        const currentPage = reset ? 0 : page;
         const params = new URLSearchParams();
         if (filters.start) params.append('start', filters.start);
         if (filters.end) params.append('end', filters.end);
+        params.append('page', currentPage);
+        params.append('size', 20);
+
         axiosClient.get(`/api/attendance/admin/all?${params.toString()}`)
-            .then(res => setRecords(res.data))
+            .then(res => {
+                const data = res.data;
+                const newRecords = data.content || [];
+                if (reset) {
+                    setRecords(newRecords);
+                } else {
+                    setRecords(prev => [...prev, ...newRecords]);
+                }
+                setHasMore(!data.last);
+                if (!reset) setPage(prev => prev + 1);
+            })
             .finally(() => setLoading(false));
     };
 
-    useEffect(() => { fetchRecords(); }, []);
+    useEffect(() => { 
+        fetchRecords(true); 
+    }, []);
+
+    useWorkspaceRefresh(() => {
+        fetchRecords(true);
+    });
+
+    const handleFilter = () => {
+        setPage(0);
+        fetchRecords(true);
+    };
+
+    const handleLoadMore = () => {
+        fetchRecords(false);
+    };
 
     const handleApprove = async (id, status) => {
         try {
@@ -47,37 +79,46 @@ export default function AttendanceManagement() {
                     <h1 className="text-xl md:text-2xl font-black text-gray-800 dark:text-gray-100 uppercase tracking-tight">{t('pages.AttendanceManagement.title')}</h1>
                     <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium">{t('pages.AttendanceManagement.subtitle')}</p>
                 </div>
+                
+                <div className="flex gap-2">
+                    <button 
+                        onClick={() => window.open('/qr-display', '_blank')}
+                        className="bg-gradient-to-r from-[#00529c] to-[#1192a8] text-white hover:shadow-lg hover:shadow-[#1192a8]/30 font-black py-2.5 px-6 rounded-xl transition-all active:scale-95 uppercase tracking-widest text-[10px] md:text-xs flex items-center gap-2"
+                    >
+                        <span className="text-lg leading-none">📱</span> Mở Màn Hình Mã QR
+                    </button>
+                </div>
+            </div>
 
-                {/* ── Filter card ── */}
-                <div className="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row gap-2 md:gap-3 shrink-0 transition-colors duration-300">
-                    <div className="flex gap-2">
-                        <div className="flex-1 sm:flex-none">
-                            <p className="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1 mb-0.5">{t('pages.AttendanceManagement.fromDate')}</p>
-                            <input 
-                                type="date" 
-                                className="w-full px-3 py-2 rounded-xl border border-gray-100 dark:border-gray-600 text-xs font-bold outline-none focus:border-[#1192a8] transition-all bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                                value={filters.start}
-                                onChange={e => setFilters({ ...filters, start: e.target.value })}
-                            />
-                        </div>
-                        <div className="flex-1 sm:flex-none">
-                            <p className="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1 mb-0.5">{t('pages.AttendanceManagement.toDate')}</p>
-                            <input 
-                                type="date" 
-                                className="w-full px-3 py-2 rounded-xl border border-gray-100 dark:border-gray-600 text-xs font-bold outline-none focus:border-[#1192a8] transition-all bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                                value={filters.end}
-                                onChange={e => setFilters({ ...filters, end: e.target.value })}
-                            />
-                        </div>
+            {/* ── Filter card ── */}
+            <div className="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row gap-2 md:gap-3 shrink-0 mb-6 transition-colors duration-300">
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <div className="flex-1 sm:flex-none">
+                        <p className="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1 mb-0.5">{t('pages.AttendanceManagement.fromDate')}</p>
+                        <input 
+                            type="date" 
+                            className="w-full px-3 py-2 rounded-xl border border-gray-100 dark:border-gray-600 text-xs font-bold outline-none focus:border-[#1192a8] transition-all bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                            value={filters.start}
+                            onChange={e => setFilters({ ...filters, start: e.target.value })}
+                        />
                     </div>
-                    <div className="flex items-end">
-                        <button
-                            onClick={fetchRecords}
-                            className="w-full sm:w-auto bg-[#1192a8] text-white px-6 py-2.5 rounded-xl font-black text-[11px] shadow-lg shadow-teal-500/20 active:scale-95 transition-all uppercase tracking-widest"
-                        >
-                            {t('pages.AttendanceManagement.filterButton')}
-                        </button>
+                    <div className="flex-1 sm:flex-none">
+                        <p className="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1 mb-0.5">{t('pages.AttendanceManagement.toDate')}</p>
+                        <input 
+                            type="date" 
+                            className="w-full px-3 py-2 rounded-xl border border-gray-100 dark:border-gray-600 text-xs font-bold outline-none focus:border-[#1192a8] transition-all bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                            value={filters.end}
+                            onChange={e => setFilters({ ...filters, end: e.target.value })}
+                        />
                     </div>
+                </div>
+                <div className="flex items-end mt-2 sm:mt-0">
+                    <button
+                        onClick={handleFilter}
+                        className="w-full sm:w-auto bg-[#1192a8] text-white px-6 py-2.5 rounded-xl font-black text-[11px] shadow-lg shadow-teal-500/20 active:scale-95 transition-all uppercase tracking-widest"
+                    >
+                        {t('pages.AttendanceManagement.filterButton')}
+                    </button>
                 </div>
             </div>
 
@@ -97,7 +138,7 @@ export default function AttendanceManagement() {
                         </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
-                        {loading ? (
+                        {loading && records.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="px-6 py-20 text-center text-[#1192a8] font-bold animate-pulse uppercase text-xs tracking-widest">
                                     {t('pages.AttendanceManagement.loading')}
@@ -143,35 +184,32 @@ export default function AttendanceManagement() {
                                         {row.lateMinutes > 0 ? (
                                             <div className="flex flex-col">
                                                 <span className="text-sm text-red-500 dark:text-red-400 font-black">{t('pages.AttendanceManagement.minutes', { count: row.lateMinutes })}</span>
-                                                <span className={`text-[9px] font-black uppercase tracking-tighter mt-0.5 ${
-                                                row.approvalStatus === 'APPROVED' ? 'text-green-500 dark:text-green-400' :
-                                                    row.approvalStatus === 'REJECTED' ? 'text-red-400 dark:text-red-400' :
-                                                        'text-amber-500 dark:text-amber-400'
-                                            }`}>
-                                                    {row.approvalStatus === 'PENDING' ? t('pages.AttendanceManagement.approvalPending') : row.approvalStatus === 'APPROVED' ? t('pages.AttendanceManagement.approvalApproved') : t('pages.AttendanceManagement.approvalRejected')}
-                                                </span>
                                             </div>
                                         ) : <span className="text-gray-300 dark:text-gray-600 font-bold">—</span>}
                                     </td>
-                                    <td className="px-5 md:px-6 py-4 max-w-xs">
+                                    <td className="px-5 md:px-6 py-4 max-w-xs text-left">
                                         {row.lateReason && <p className="text-xs text-gray-700 dark:text-gray-300 font-bold bg-orange-50 dark:bg-orange-900/20 px-2.5 py-1 rounded-lg inline-block border border-orange-100 dark:border-orange-800 italic">"{row.lateReason}"</p>}
-                                        {row.note && <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium italic mt-1.5">{t('pages.AttendanceManagement.feedback', { note: row.note })}</p>}
                                     </td>
                                     <td className="px-5 md:px-6 py-4 text-right">
-                                        {row.lateMinutes > 0 && row.approvalStatus === 'PENDING' ? (
-                                            <button 
-                                                onClick={() => setSelectedRecord(row)}
-                                                className="bg-[#1192a8]/10 dark:bg-[#1192a8]/20 text-[#1192a8] px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-[#1192a8] hover:text-white transition-all shadow-sm active:scale-95"
-                                            >
-                                                {t('pages.AttendanceManagement.approveButton')}
-                                            </button>
-                                        ) : <span className="text-gray-300 dark:text-gray-600 text-[10px] font-bold uppercase tracking-tighter">{t('pages.AttendanceManagement.completed')}</span>}
+                                        <span className="text-gray-300 dark:text-gray-600 text-[10px] font-bold uppercase tracking-tighter">{t('pages.AttendanceManagement.completed')}</span>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
+
+                {hasMore && (
+                    <div className="p-4 flex justify-center border-t dark:border-gray-700">
+                        <button
+                            onClick={handleLoadMore}
+                            disabled={loading}
+                            className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-6 py-2 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-gray-600 transition-all disabled:opacity-50"
+                        >
+                            {loading ? t('common.loading') : t('common.loadMore')}
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* ── Modal Duyệt ── */}

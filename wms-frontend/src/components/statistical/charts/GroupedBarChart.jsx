@@ -1,7 +1,7 @@
 import React from 'react';
 import { formatCurrencyShort } from './chartUtils';
 
-export default function GroupedBarChart({ labels = [], series = [], title, maxValue, height = 380, yTicks = 5 }) {
+export default function GroupedBarChart({ labels = [], series = [], title, maxValue, height = 380, yTicks = 5, valueFormatter = formatCurrencyShort }) {
     const width = 1180;
     const padding = { top: 28, right: 24, bottom: 62, left: 95 };
 
@@ -38,24 +38,25 @@ export default function GroupedBarChart({ labels = [], series = [], title, maxVa
     const yZero = padding.top + chartHeight - ((0 - roundedMin) / (roundedMax - roundedMin)) * chartHeight;
 
     return (
-        <div className="bg-white p-2 h-full flex flex-col">
-            {title && <h3 className="mb-4 text-center text-[20px] font-medium text-slate-900">{title}</h3>}
+        <div className="bg-white dark:bg-gray-800 p-2 h-full flex flex-col min-h-0 rounded-2xl transition-colors">
+            {title && <h3 className="mb-2 text-center text-[18px] font-medium text-slate-900 dark:text-gray-100">{title}</h3>}
             <div className="w-full flex-1 overflow-hidden">
                 <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
                     {ticks.map((tick, index) => {
                         const y = padding.top + (index * chartHeight) / yTicks;
                         return (
-                            <g key={tick}>
+                            <g key={tick} className="text-gray-400 dark:text-gray-500">
                                 <line
                                     x1={padding.left}
                                     y1={y}
                                     x2={width - padding.right}
                                     y2={y}
-                                    stroke="#d7dde5"
+                                    stroke="currentColor"
+                                    strokeOpacity="0.2"
                                     strokeWidth="1"
                                 />
-                                <text x={padding.left - 16} y={y + 4} textAnchor="end" fontSize="14" fill="#7c8795">
-                                    {formatCurrencyShort(tick)}
+                                <text x={padding.left - 16} y={y + 4} textAnchor="end" fontSize="14" fill="currentColor">
+                                    {valueFormatter(tick)}
                                 </text>
                             </g>
                         );
@@ -67,7 +68,8 @@ export default function GroupedBarChart({ labels = [], series = [], title, maxVa
                             y1={yZero}
                             x2={width - padding.right}
                             y2={yZero}
-                            stroke="#64748b"
+                            stroke="currentColor"
+                            className="text-gray-500 dark:text-gray-400"
                             strokeWidth="1.5"
                             strokeDasharray="4 4"
                         />
@@ -76,7 +78,7 @@ export default function GroupedBarChart({ labels = [], series = [], title, maxVa
                     {labels.map((label, labelIndex) => {
                         const startX = padding.left + labelIndex * categoryWidth + (categoryWidth - groupWidth) / 2;
                         return (
-                            <g key={label}>
+                            <g key={label} className="text-gray-400 dark:text-gray-500">
                                 {series.map((item, seriesIndex) => {
                                     const value = (item.data && item.data[labelIndex]) || 0;
                                     const ratioVal = (value - roundedMin) / (roundedMax - roundedMin);
@@ -103,7 +105,7 @@ export default function GroupedBarChart({ labels = [], series = [], title, maxVa
                                     y={height - 18}
                                     textAnchor="middle"
                                     fontSize="14"
-                                    fill="#7c8795"
+                                    fill="currentColor"
                                 >
                                     {label}
                                 </text>
@@ -112,10 +114,10 @@ export default function GroupedBarChart({ labels = [], series = [], title, maxVa
                     })}
                 </svg>
             </div>
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-8 text-[18px] text-slate-500">
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-6 text-sm text-slate-500 dark:text-gray-400">
                 {series.map((item) => (
                     <div key={item.label} className="flex items-center gap-2">
-                        <span className="inline-block h-4 w-4 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="inline-block h-3.5 w-3.5 rounded-full" style={{ backgroundColor: item.color }} />
                         <span>{item.label}</span>
                     </div>
                 ))}

@@ -33,7 +33,7 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
         if (isOpen) {
             const fetchData = async () => {
                 try {
-                    // 1. Tải danh sách quy đổi đơn vị
+                    // 1. Load unit conversion list
                     const resConv = await axiosClient.get(`/api/products/${product.id}/conversions`);
                     const convData = resConv.data;
                     
@@ -42,18 +42,18 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
                     setConversions(allUnits);
                     setSelectedUnit(baseUnitObj);
 
-                    // 2. Lấy toàn bộ vị trí kho
+                    // 2. Load all warehouse locations
                     const resAll = await axiosClient.get("/api/location-overview");
                     const allLocs = resAll.data;
 
-                    // 3. Lấy danh sách vị trí sản phẩm này đang hiện diện
+                    // 3. Load all locations where this product exists
                     const resInv = await axiosClient.get(`/api/inventory/product/${product.id}`);
                     const invDetails = resInv.data;
 
-                    // 4. Chuẩn hóa các đơn vị khả dụng của sản phẩm
+                    // 4. Normalize the product units
                     const productUnitsNormalized = allUnits.map(u => normalizeUnit(u.unitName));
 
-                    // 5. Xây dựng danh sách vị trí kèm điểm gợi ý (Scoring Logic)
+                    // 5. Build location suggestions with scoring logic
                     const processedLocs = allLocs
                         .filter(loc => loc.id !== stockLine.locationId)
                         .map(loc => {
@@ -70,31 +70,31 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
 
                             if (isUnitMatch) {
                                 if (hasSameBatch && !isFull) {
-                                    score = 300; // Tốt nhất: Gom hàng cùng lô
-                                    suggestionLabel = "(Gợi ý tốt nhất: Cùng lô hàng)";
+                                    score = 300; // Best: keep the same batch together
+                                    suggestionLabel = "(Best match: same batch)";
                                 } else if (isEmpty) {
-                                    score = 200; // Tốt: Vị trí trống
-                                    suggestionLabel = "(Gợi ý: Vị trí trống & Khớp đơn vị)";
+                                    score = 200; // Good: empty location
+                                    suggestionLabel = "(Suggested: empty location & matching unit)";
                                 } else if (!isFull) {
-                                    score = 100; // Trung bình: Cất chung với hàng khác cùng đơn vị
-                                    suggestionLabel = "(Phù hợp: Khớp đơn vị)";
+                                    score = 100; // Medium: same unit, mixed stock
+                                    suggestionLabel = "(Match: unit aligned)";
                                 } else {
-                                    score = 50; // Thấp: Khớp đơn vị nhưng đã đầy
-                                    suggestionLabel = "(Đầy: Khớp đơn vị)";
+                                    score = 50; // Low: unit matches but the location is full
+                                    suggestionLabel = "(Full: unit aligned)";
                                 }
                             } else {
-                                score = -100; // Kém: Sai quy cách đóng gói
-                                suggestionLabel = "(Không phù hợp: Sai quy cách)";
+                                score = -100; // Poor: packaging mismatch
+                                suggestionLabel = "(Not suitable: packaging mismatch)";
                             }
 
                             return { ...loc, score, suggestionLabel, isUnitMatch, isFull };
                         });
 
-                    // 6. Sắp xếp theo thứ tự ưu tiên giảm dần
+                    // 6. Sort by descending priority
                     processedLocs.sort((a, b) => b.score - a.score);
                     setLocations(processedLocs);
 
-                    // 7. TỰ ĐỘNG CHỌN VỊ TRÍ TỐT NHẤT (Auto-Slotting)
+                    // 7. Auto-select the best location
                     if (processedLocs.length > 0 && processedLocs[0].score >= 100) {
                         setToLocationId(processedLocs[0].id.toString());
                     } else {
@@ -102,7 +102,7 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
                     }
 
                 } catch (err) {
-                    console.error("Lỗi tải dữ liệu gợi ý:", err);
+                    console.error("Failed to load suggestion data:", err);
                 }
             };
             
@@ -113,7 +113,7 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
         }
     }, [isOpen, stockLine, product]);
 
-    // Xử lý khi người dùng thay đổi đơn vị
+    // Handle unit changes
     const handleUnitChange = (unitName) => {
         const unit = conversions.find(u => u.unitName === unitName);
         if (!unit) return;
@@ -125,13 +125,13 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
         setQuantity(newQty);
     };
 
-    // MỚI: Xử lý khi thay đổi vị trí đích -> Tự động chuyển đơn vị phù hợp
+    // When destination changes, auto-switch to the matching unit
     const handleLocationChange = (locId) => {
         setToLocationId(locId);
         const loc = locations.find(l => l.id.toString() === locId.toString());
         if (loc) {
             const lUnitNormalized = normalizeUnit(loc.containerType);
-            // Tìm đơn vị của sản phẩm khớp với loại vật chứa của kho
+            // Find the product unit that matches the destination container type
             const matchingUnit = conversions.find(u => normalizeUnit(u.unitName) === lUnitNormalized);
             if (matchingUnit) {
                 handleUnitChange(matchingUnit.unitName);
@@ -150,7 +150,7 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
 
     const handleTransfer = async () => {
         if (!toLocationId) {
-            showDialog("Thông báo", "Vui lòng chọn vị trí đích.", "info");
+            showDialog("Notice", "Please select a destination location.", "info");
             return;
         }
 
@@ -158,11 +158,11 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
         const selectedUnitNormalized = normalizeUnit(selectedUnit?.unitName);
         const destUnitNormalized = normalizeUnit(destLoc?.containerType);
 
-        // RÀNG BUỘC CỨNG: Đơn vị thao tác phải khớp với loại vật chứa của kho đích
+        // Hard constraint: the working unit must match the destination container type
         if (selectedUnitNormalized !== destUnitNormalized) {
             showDialog(
-                "Sai quy cách đóng gói", 
-                `Bạn đang thực hiện chuyển đơn vị [${selectedUnit?.unitName}], nhưng vị trí đích [${destLoc?.binCode}] yêu cầu vật chứa loại [${destLoc?.containerType}]. Vui lòng chọn lại đơn vị hoặc kho phù hợp.`, 
+                "Packaging mismatch", 
+                `You are transferring unit [${selectedUnit?.unitName}], but destination [${destLoc?.binCode}] requires container type [${destLoc?.containerType}]. Please choose a matching unit or warehouse location.`, 
                 "info"
             );
             return;
@@ -170,24 +170,24 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
 
         const qtyInput = Number(quantity);
         if (isNaN(qtyInput) || qtyInput <= 0) {
-            showDialog("Lỗi nhập liệu", "Số lượng không hợp lệ.", "info");
+            showDialog("Input error", "Invalid quantity.", "info");
             return;
         }
 
-        // Ràng buộc số nguyên cho các đơn vị nguyên kiện (Thùng, Lốc, Cái...)
+        // Require whole numbers for pack-based units
         const factor = selectedUnit ? selectedUnit.conversionFactor : 1;
         if (factor >= 1 && !Number.isInteger(qtyInput)) {
-            showDialog("Quy cách đóng gói", `Đơn vị [${selectedUnit.unitName}] yêu cầu số lượng nguyên, không thể chuyển số lẻ.`, "info");
+            showDialog("Packaging rule", `Unit [${selectedUnit.unitName}] requires a whole quantity; decimal values are not allowed.`, "info");
             return;
         }
 
-        // Tính toán số lượng theo đơn vị cơ sở
+        // Calculate the quantity in base units
         const totalBaseQty = qtyInput * factor;
 
         const availableBase = Number(stockLine.onHand || 0) - Number(stockLine.allocated || 0);
 
         if (totalBaseQty > availableBase) {
-            showDialog("Lỗi tồn kho", `Số lượng chuyển (${totalBaseQty} ${product.baseUnit}) vượt quá tồn khả dụng (${availableBase} ${product.baseUnit}).`, "info");
+            showDialog("Stock error", `Transfer quantity (${totalBaseQty} ${product.baseUnit}) exceeds available stock (${availableBase} ${product.baseUnit}).`, "info");
             return;
         }
 
@@ -203,11 +203,11 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
             });
 
             onSuccess();
-            showDialog("Thành công", "Di chuyển lô hàng thành công!", "success");
+            showDialog("Success", "Batch transfer completed successfully!", "success");
         } catch (error) {
-            console.error("Lỗi kết nối:", error);
-            const errorMsg = error.response?.data?.message || "Không thể kết nối đến máy chủ.";
-            showDialog("Lỗi hệ thống", errorMsg, "info");
+            console.error("Connection error:", error);
+            const errorMsg = error.response?.data?.message || "Cannot connect to the server.";
+            showDialog("System error", errorMsg, "info");
         } finally {
             setIsSubmitting(false);
         }
@@ -221,39 +221,39 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-[100] p-2 md:p-4">
             <div className="bg-white w-full max-w-4xl rounded-2xl md:rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[98vh] md:max-h-none">
                 <div className="bg-[#1192a8] text-white px-5 md:px-6 py-3 md:py-4 flex justify-between items-center shrink-0">
-                    <h2 className="text-sm md:text-lg font-bold uppercase tracking-widest truncate">Di chuyển lô hàng</h2>
+                    <h2 className="text-sm md:text-lg font-bold uppercase tracking-widest truncate">Transfer Batch</h2>
                     <button onClick={onClose} className="text-2xl md:text-3xl hover:text-red-200 leading-none">&times;</button>
                 </div>
                 
                 <div className="p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto flex-1">
-                    {/* Thông tin nguồn - Rộng hơn */}
+                    {/* Source information */}
                     <div className="bg-gray-50 p-3 md:p-4 rounded-xl border border-gray-200 text-xs md:text-sm grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 shadow-sm">
                         <div className="flex justify-between border-b border-gray-100 pb-1 sm:col-span-2">
-                            <span className="text-gray-400 font-bold uppercase text-[9px] md:text-[10px]">Mặt hàng:</span>
+                            <span className="text-gray-400 font-bold uppercase text-[9px] md:text-[10px]">Item:</span>
                             <span className="font-black text-blue-700 truncate ml-2 uppercase">{product.sku} - {product.name}</span>
                         </div>
                         <div className="flex justify-between border-b border-gray-100 pb-1">
-                            <span className="text-gray-400 font-bold uppercase text-[9px] md:text-[10px]">Tồn khả dụng:</span>
+                            <span className="text-gray-400 font-bold uppercase text-[9px] md:text-[10px]">Available stock:</span>
                             <span className="font-black text-green-600 ml-2 text-sm">
                                 {(Number(stockLine.onHand || 0) - Number(stockLine.allocated || 0)).toLocaleString()} {product.baseUnit}
                             </span>
                         </div>
                         <div className="flex justify-between border-b border-gray-100 pb-1 sm:border-b-0 sm:pb-0">
-                            <span className="text-gray-400 font-bold uppercase text-[9px] md:text-[10px]">Số lô:</span>
+                            <span className="text-gray-400 font-bold uppercase text-[9px] md:text-[10px]">Batch no.:</span>
                             <span className="font-mono bg-white px-1.5 border rounded text-[11px] font-bold text-[#1192a8]">{stockLine.batchCode}</span>
                         </div>
                         <div className="flex justify-between sm:col-span-2 sm:pt-2 sm:border-t sm:border-gray-100">
-                            <span className="text-gray-400 font-bold uppercase text-[9px] md:text-[10px]">Vị trí hiện tại:</span>
+                            <span className="text-gray-400 font-bold uppercase text-[9px] md:text-[10px]">Current location:</span>
                             <span className="font-black text-orange-600 uppercase text-sm">{stockLine.locCode}</span>
                         </div>
                     </div>
 
-                    {/* Thao tác chuyển - Grid 2 cột */}
+                    {/* Transfer controls */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                         <div className="space-y-4">
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="col-span-2">
-                                    <label className="block text-[10px] md:text-[11px] font-black text-gray-500 uppercase mb-1">Số lượng chuyển:</label>
+                                    <label className="block text-[10px] md:text-[11px] font-black text-gray-500 uppercase mb-1">Transfer quantity:</label>
                                     <input 
                                         type="number" 
                                         className="w-full border-2 border-gray-100 rounded-xl px-3 py-2.5 text-sm focus:border-blue-500 outline-none font-black text-blue-700"
@@ -263,7 +263,7 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] md:text-[11px] font-black text-gray-500 uppercase mb-1">Đơn vị:</label>
+                                    <label className="block text-[10px] md:text-[11px] font-black text-gray-500 uppercase mb-1">Unit:</label>
                                         <select 
                                             className="wms-select w-full !py-2.5 !px-2 !text-xs"
                                             value={selectedUnit ? selectedUnit.unitName : ''}
@@ -290,20 +290,20 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-[10px] md:text-[11px] font-black text-gray-500 uppercase mb-1">Vị trí đích (Gợi ý):</label>
+                                <label className="block text-[10px] md:text-[11px] font-black text-gray-500 uppercase mb-1">Destination location (suggested):</label>
                                 <select 
                                     className="wms-select w-full !py-2.5 !px-2 !text-[11px] font-bold"
                                     value={toLocationId}
                                     onChange={(e) => handleLocationChange(e.target.value)}
                                 >
-                                    <option value="">-- Chọn vị trí --</option>
+                                    <option value="">-- Select location --</option>
                                     {locations.map(loc => (
                                         <option key={loc.id} value={loc.id}>
                                             {loc.binCode} | {loc.containerType} | {loc.suggestionLabel.split(':')[0].replace('(', '').replace(')', '')}
                                         </option>
                                     ))}
                                 </select>
-                                <p className="text-[9px] text-gray-400 mt-2 italic font-medium leading-tight">* Ưu tiên vị trí cùng lô hàng hoặc vị trí trống khớp đơn vị.</p>
+                                <p className="text-[9px] text-gray-400 mt-2 italic font-medium leading-tight">* Priority goes to the same batch or an empty location that matches the unit.</p>
                             </div>
                         </div>
                     </div>
@@ -314,14 +314,14 @@ export default function TransferModal({ isOpen, onClose, product, stockLine, onS
                         onClick={onClose}
                         className="order-2 sm:order-1 px-6 py-2.5 text-gray-400 font-black text-xs uppercase tracking-widest"
                     >
-                        Hủy bỏ
+                        Cancel
                     </button>
                     <button 
                         onClick={handleTransfer}
                         disabled={isSubmitting}
                         className={`order-1 sm:order-2 px-8 py-3 bg-[#1192a8] text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-teal-500/20 active:scale-95 transition-all ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                        {isSubmitting ? 'Đang xử lý...' : 'Xác nhận chuyển'}
+                        {isSubmitting ? 'Processing...' : 'Confirm transfer'}
                     </button>
                 </div>
             </div>

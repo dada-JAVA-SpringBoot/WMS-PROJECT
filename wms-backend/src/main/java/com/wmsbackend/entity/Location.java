@@ -12,6 +12,9 @@ public class Location {
     @Column(name = "WarehouseId", nullable = false)
     private Integer warehouseId;
 
+    @Column(name = "CompanyId")
+    private Integer companyId;
+
     @Column(name = "Zone", length = 50)
     private String zone;
 
@@ -52,6 +55,14 @@ public class Location {
 
     public void setWarehouseId(Integer warehouseId) {
         this.warehouseId = warehouseId;
+    }
+
+    public Integer getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Integer companyId) {
+        this.companyId = companyId;
     }
 
     public String getZone() {

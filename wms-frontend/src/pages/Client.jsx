@@ -14,6 +14,7 @@ import excelIcon  from '../components/common/icons/excel.png';
 import excel1Icon from '../components/common/icons/excel1.png';
 import { useSelection } from '../hooks/useSelection';
 import { useExcelExport } from '../hooks/useExcelExport';
+import { useWorkspaceRefresh } from '../hooks/useWorkspaceRefresh';
 import * as XLSX from 'xlsx';
 
 const BASE = '/api/customers';
@@ -42,6 +43,10 @@ export default function Client({ onCreateOutbound }) {
     };
 
     useEffect(() => { fetchData(); }, []);
+
+    useWorkspaceRefresh(() => {
+        fetchData(search);
+    });
 
     const handleSearchChange = (val) => {
         setSearch(val);
@@ -153,7 +158,7 @@ export default function Client({ onCreateOutbound }) {
                         <button key={i} onClick={action.onClick}
                                 className="flex flex-col items-center gap-1 group bg-transparent border-none cursor-pointer transition-transform active:scale-90 shrink-0">
                             <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition duration-200">
-                                <img src={action.iconSrc} alt={action.label} className="w-7 h-7 md:w-9 md:h-9 object-contain dark:opacity-85 dark:brightness-110" />
+                                <img src={action.iconSrc} alt={action.label} className="w-7 h-7 md:w-9 md:h-9 object-contain dark:invert dark:hue-rotate-180 dark:opacity-90" />
                             </div>
                             <span className="text-[8px] md:text-[10px] font-bold text-[#00529c] dark:text-[#1192a8] uppercase tracking-tighter group-hover:text-[#1192a8] dark:group-hover:text-[#38bcd4] transition text-center whitespace-nowrap">
                                 {action.label}

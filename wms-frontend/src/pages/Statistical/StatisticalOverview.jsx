@@ -1,37 +1,56 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../../api/axiosClient';
 import StatMetricCard from '../../components/statistical/StatMetricCard';
 import LineAreaChart from '../../components/statistical/charts/LineAreaChart';
 import PanelCard from '../../components/statistical/PanelCard';
 import StatisticsTable from '../../components/statistical/StatisticsTable';
+import { formatNumberByLanguage } from '../../utils/formatters';
+
+import { useWorkspaceRefresh } from '../../hooks/useWorkspaceRefresh';
 
 export default function StatisticalOverview() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const fetchDashboardData = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await axiosClient.get('/api/stats/dashboard');
+            setData(res.data);
+            setError(null);
+        } catch (error) {
+            console.error('Không tải được dữ liệu dashboard:', error);
+            setError(t('pages.StatisticalOverview.loadError'));
+        } finally {
+            setLoading(false);
+        }
+    }, [t]);
+
     useEffect(() => {
-        const getDashboardData = async () => {
-            try {
-                const res = await axiosClient.get('/api/stats/dashboard');
-                setData(res.data);
-            } catch (error) {
-                console.error('Không tải được dữ liệu dashboard:', error);
-                setError(t('pages.StatisticalOverview.loadError'));
-            } finally {
-                setLoading(false);
-            }
-        };
-        getDashboardData();
-    }, []);
+        fetchDashboardData();
+    }, [fetchDashboardData]);
+
+    useWorkspaceRefresh(() => {
+        fetchDashboardData();
+    });
 
     if (loading) return <div className="p-5 text-gray-600 dark:text-gray-400 transition-colors duration-300">{t('pages.StatisticalOverview.loading')}</div>;
     if (error) return <div className="p-5 text-red-500 dark:text-red-400 transition-colors duration-300">{error}</div>;
 
     // Dữ liệu chart từ API
-    const chartLabels   = data?.dailyFlow?.map(f => f.label)    || [];
+    const chartLabels = (data?.dailyFlow || []).map(f => {
+        const val = parseInt(f.label);
+        if (isNaN(val)) return f.label;
+        const days = {
+            en: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            vi: ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"]
+        };
+        const lang = i18n.language.startsWith('vi') ? 'vi' : 'en';
+        return days[lang][val - 1] || f.label;
+    });
     const chartInbound  = data?.dailyFlow?.map(f => f.inbound)  || [];
     const chartOutbound = data?.dailyFlow?.map(f => f.outbound) || [];
 
@@ -47,7 +66,7 @@ export default function StatisticalOverview() {
         stt: i + 1,
         sku: item.sku,
         name: item.name,
-        totalStock: Number(item.totalStock).toLocaleString('vi-VN'),
+        totalStock: formatNumberByLanguage(item.totalStock),
     }));
 
     // Cột cho bảng sản phẩm sắp hết hạn
@@ -64,7 +83,7 @@ export default function StatisticalOverview() {
         name: item.name,
         batchCode: item.batchCode,
         expiryDate: item.expiryDate,
-        quantity: Number(item.quantity).toLocaleString('vi-VN'),
+        quantity: formatNumberByLanguage(item.quantity),
     }));
 
     // Cột cho bảng phân bổ theo danh mục
@@ -77,7 +96,7 @@ export default function StatisticalOverview() {
         id: i,
         stt: i + 1,
         category: item.category,
-        totalStock: Number(item.totalStock).toLocaleString('vi-VN'),
+        totalStock: formatNumberByLanguage(item.totalStock),
     }));
 
     return (
@@ -93,7 +112,7 @@ export default function StatisticalOverview() {
                 />
                 <StatMetricCard 
                     icon="📊" 
-                    value={Number(data?.totalStockQuantity || 0).toLocaleString('vi-VN')} 
+                    value={formatNumberByLanguage(data?.totalStockQuantity)} 
                     label={t('pages.StatisticalOverview.lblTotalStockQuantity')} 
                     circleClass="bg-green-500 text-white" 
                 />
@@ -136,18 +155,21 @@ export default function StatisticalOverview() {
 
             {/* Chart */}
             {chartLabels.length > 0 && (
-                <LineAreaChart
-                    title={t('pages.StatisticalOverview.lblFlowChartTitle')}
-                    labels={chartLabels}
-                    series={[
-                        { label: t('pages.StatisticalOverview.lblInbound'), data: chartInbound, color: '#10b981', fill: '#d1fae5', strokeWidth: 3 },
-                        { label: t('pages.StatisticalOverview.lblOutbound'), data: chartOutbound, color: '#ef4444', fill: '#fee2e2', strokeWidth: 3 },
-                    ]}
-                />
+                <div className="bg-white dark:bg-gray-800 p-2 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm transition-colors duration-300">
+                    <LineAreaChart
+                        title={t('pages.StatisticalOverview.lblFlowChartTitle')}
+                        labels={chartLabels}
+                        series={[
+                            { label: t('pages.StatisticalOverview.lblInbound'), data: chartInbound, color: '#10b981', fill: '#d1fae5', strokeWidth: 3 },
+                            { label: t('pages.StatisticalOverview.lblOutbound'), data: chartOutbound, color: '#ef4444', fill: '#fee2e2', strokeWidth: 3 },
+                        ]}
+                        valueFormatter={formatNumberByLanguage}
+                    />
+                </div>
             )}
 
             {/* Tables Row: Top tồn kho & Sắp hết hạn */}
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+            <div className="flex flex-col gap-5">
                 <PanelCard className="overflow-hidden">
                     <div className="border-b border-slate-200 dark:border-gray-700 px-6 py-4">
                         <h3 className="text-[17px] font-semibold text-slate-900 dark:text-gray-100">

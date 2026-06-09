@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useWorkspaceRefresh } from '../hooks/useWorkspaceRefresh';
 import * as XLSX from 'xlsx';
 import { ActionButton } from '../components/common/SharedUI';
 import VoucherContextMenu from '../components/modals/VoucherContextMenu';
@@ -17,6 +18,7 @@ import scanIcon from '../components/common/icons/scan.png';
 import { useSelection } from '../hooks/useSelection';
 import { useExcelExport } from '../hooks/useExcelExport';
 import { useAuth } from '../context/AuthContext';
+import { formatCurrencyExact, formatDateByLanguage, formatNumberByLanguage } from '../utils/formatters';
 
 const createEmptyDetail = () => ({
     id: Math.random(),
@@ -47,14 +49,16 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
     ], [t]);
     const [exportData, setExportData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
     const [contextMenu, setContextMenu] = useState(null);
 
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [activeScanTarget, setActiveScanTarget] = useState('SEARCH');
     const [activeItemIndex, setActiveItemIndex] = useState(null);
 
-    const [dialog, setDialog] = useState({ isOpen: false, title: '', message: '', variant: 'info' });
-    const showMsg = (title, message, variant = 'info') => setDialog({ isOpen: true, title, message, variant });
+    const [dialog, setDialog] = useState({ isOpen: false, title: '', message: '', variant: 'info', onConfirm: null });
+    const showMsg = (title, message, variant = 'info', onConfirm = null) => setDialog({ isOpen: true, title, message, variant, onConfirm });
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isViewDetailOpen, setIsViewDetailOpen] = useState(false);
@@ -108,19 +112,62 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
 
     const filteredStaffs = useMemo(() => staffs.filter(s => s.roles?.some(r => allowedCreatorRoles.includes(r))), [staffs]);
 
-    const fetchData = useCallback(async () => {
+    const fetchOrders = useCallback(async (reset = false) => {
         setIsLoading(true);
+        const currentPage = reset ? 0 : page;
         try {
-            const res = await axiosClient.get("/api/outbound-orders");
-            setExportData(Array.isArray(res.data) ? res.data : []);
-        } catch (error) { console.error("Lỗi API Phiếu xuất:", error); setExportData([]); }
+            const res = await axiosClient.get(`/api/outbound-orders?page=${currentPage}&size=20`);
+            const data = res.data;
+            const newOrders = data.content || [];
+            if (reset) {
+                setExportData(newOrders);
+            } else {
+                setExportData(prev => [...prev, ...newOrders]);
+            }
+            setHasMore(!data.last);
+            if (!reset) setPage(prev => prev + 1);
+        } catch (error) { 
+            console.error("Lỗi API Phiếu xuất:", error); 
+            if (reset) setExportData([]); 
+        } finally {
+            setIsLoading(false);
+        }
+    }, [page]);
+
+    const fetchMasterData = useCallback(async () => {
         axiosClient.get("/api/products/details").then(r => setProducts(r.data)).catch(() => {});
         axiosClient.get("/api/customers").then(r => setCustomers(r.data)).catch(() => {});
         axiosClient.get("/api/staff/names").then(r => setStaffs(r.data)).catch(() => {});
-        setIsLoading(false);
+    }, []);
+
+    const fetchData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const [oRes, pRes, cRes, sRes] = await Promise.all([
+                axiosClient.get("/api/outbound-orders?page=0&size=20"),
+                axiosClient.get("/api/products/details"),
+                axiosClient.get("/api/customers"),
+                axiosClient.get("/api/staff/names")
+            ]);
+            setExportData(oRes.data.content || []);
+            setHasMore(!oRes.data.last);
+            setPage(1);
+            setProducts(pRes.data);
+            setCustomers(cRes.data);
+            setStaffs(sRes.data);
+        } catch (error) { console.error("Lỗi tải dữ liệu:", error); }
+        finally { setIsLoading(false); }
     }, []);
 
     useEffect(() => { fetchData(); }, [fetchData]);
+
+    useWorkspaceRefresh(() => {
+        fetchData();
+    });
+
+    const handleLoadMore = () => {
+        fetchOrders(false);
+    };
 
     const getCustName = (id) => customers.find(c => c.id === id)?.name || t('pages.OutboundOrder.partnerPlaceholder', { id });
     const getStfName = (id) => staffs.find(s => s.id === id)?.fullName || t('pages.OutboundOrder.staffPlaceholder', { id });
@@ -167,7 +214,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
         }
     }, [workflow, clearWorkflow, products, canCreate]);
 
-    const handleUpdateStatus = async (id, nextStatus) => {
+    const handleUpdateStatus = (id, nextStatus) => {
         const order = exportData.find(o => o.id === id);
         if (nextStatus === 'COMPLETED') {
             const canApprove = roles.some(r => ['ADMIN', 'MANAGER', 'QUALITY_CONTROL'].includes(r));
@@ -175,8 +222,22 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                 showMsg(t('pages.OutboundOrder.dialog.denied'), t('pages.OutboundOrder.dialog.noPermissionApprove'), "info");
                 return;
             }
+        }
+
+        const statusLabel = outboundStatusOptions.find(o => o.value === nextStatus)?.label || nextStatus;
+        showMsg(
+            t('pages.OutboundOrder.dialog.confirmUpdateStatusTitle'),
+            t('pages.OutboundOrder.dialog.confirmUpdateStatusMsg', { code: order.issueCode, status: statusLabel }),
+            "confirm",
+            () => executeUpdateStatus(id, nextStatus)
+        );
+    };
+
+    const executeUpdateStatus = async (id, nextStatus) => {
+        if (nextStatus === 'COMPLETED') {
             try {
                 const res = await axiosClient.get(`/api/outbound-orders/${id}/details`);
+                const order = exportData.find(o => o.id === id);
                 setPendingQCOrder(order);
                 setQCItems(res.data.map(it => ({ ...it, quantityReceived: it.quantity })));
                 setIsQCModalOpen(true);
@@ -186,8 +247,12 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                 return;
             }
         }
-        try { await axiosClient.put(`/api/outbound-orders/${id}/status`, { status: nextStatus }); fetchData(); }
-        catch (error) { showMsg(t('pages.OutboundOrder.dialog.error'), t('pages.OutboundOrder.dialog.updateError', { message: error.response?.data?.message || error.message }), "info"); }
+        try {
+            await axiosClient.put(`/api/outbound-orders/${id}/status`, { status: nextStatus });
+            fetchData();
+        } catch (error) {
+            showMsg(t('pages.OutboundOrder.dialog.error'), t('pages.OutboundOrder.dialog.updateError', { message: error.response?.data?.message || error.message }), "info");
+        }
     };
 
     const handleConfirmQCResult = async (inspectionData) => {
@@ -249,7 +314,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
         const sheetData = source.map((row, idx) => ({
             [t('pages.OutboundOrder.excel.stt')]: idx + 1,
             [t('pages.OutboundOrder.excel.voucherCode')]: row.issueCode,
-            [t('pages.OutboundOrder.excel.createdDate')]: row.createdAt ? new Date(row.createdAt).toLocaleString('vi-VN') : '---',
+            [t('pages.OutboundOrder.excel.createdDate')]: formatDateByLanguage(row.createdAt),
             [t('pages.OutboundOrder.excel.customer')]: getCustName(row.customerId),
             [t('pages.OutboundOrder.excel.totalAmount')]: row.totalAmount,
             [t('pages.OutboundOrder.excel.status')]: outboundStatusOptions.find(o => o.value === row.status)?.label || row.status,
@@ -293,7 +358,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
             { label: t('pages.OutboundOrder.contextMenu.excel'), onClick: () => {
                 const sheetData = [{
                     [t('pages.OutboundOrder.excel.voucherCode')]: item.issueCode,
-                    [t('pages.OutboundOrder.excel.createdDate')]: new Date(item.createdAt).toLocaleString(),
+                    [t('pages.OutboundOrder.excel.createdDate')]: formatDateByLanguage(item.createdAt),
                     [t('pages.OutboundOrder.excel.customer')]: getCustName(item.customerId),
                     [t('pages.OutboundOrder.excel.totalAmount')]: item.totalAmount,
                     [t('pages.OutboundOrder.excel.status')]: item.status
@@ -307,7 +372,16 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
 
     return (
         <div className="p-6 bg-[#f8f9fa] dark:bg-gray-900 min-h-full flex flex-col text-left font-sans transition-colors duration-300" onContextMenu={e => e.preventDefault()}>
-            <SystemDialog isOpen={dialog.isOpen} title={dialog.title} message={dialog.message} variant={dialog.variant} onClose={() => setDialog({ ...dialog, isOpen: false })} />
+            <SystemDialog 
+                isOpen={dialog.isOpen} 
+                title={dialog.title} 
+                message={dialog.message} 
+                variant={dialog.variant} 
+                onConfirm={dialog.onConfirm}
+                confirmLabel={t('common.confirm')}
+                cancelLabel={t('common.cancel')}
+                onClose={() => setDialog({ ...dialog, isOpen: false })} 
+            />
             <ScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanSuccess={handleScanSuccess} />
             <ExportExcelModal 
                 isOpen={isExportModalOpen} 
@@ -367,7 +441,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                             </tr>
                         </thead>
                         <tbody className="text-sm">
-                            {isLoading ? (
+                            {isLoading && exportData.length === 0 ? (
                                 <tr><td colSpan="6" className="py-20 text-center animate-pulse text-gray-400 dark:text-gray-500">{t('pages.OutboundOrder.table.loading')}</td></tr>
                             ) : filteredData.map((item, idx) => (
                                 <tr key={item.id} 
@@ -377,9 +451,9 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                                     className={`border-b border-gray-50 dark:border-gray-700/50 cursor-pointer transition-colors ${selectedIds.includes(item.id) ? 'bg-[#1192a8]/5 dark:bg-[#1192a8]/10' : 'hover:bg-gray-50 dark:hover:bg-gray-700/30'}`}>
                                     <td className="p-4 md:p-5 text-gray-300 dark:text-gray-600 font-bold">{idx + 1}</td>
                                     <td className="p-4 md:p-5 font-black text-[#1192a8] uppercase truncate">{item.issueCode}</td>
-                                    <td className="p-4 md:p-5 text-gray-500 dark:text-gray-400 font-bold">{item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : '---'}</td>
+                                    <td className="p-4 md:p-5 text-gray-500 dark:text-gray-400 font-bold">{formatDateByLanguage(item.createdAt)}</td>
                                     <td className="p-4 md:p-5 font-bold text-gray-700 dark:text-gray-200">{getCustName(item.customerId)}</td>
-                                    <td className="p-4 md:p-5 text-right font-black text-teal-700 dark:text-teal-400">{Number(item.totalAmount || 0).toLocaleString()}đ</td>
+                                    <td className="p-4 md:p-5 text-right font-black text-teal-700 dark:text-teal-400">{formatCurrencyExact(item.totalAmount)}</td>
                                     <td className="p-4 md:p-5 text-center" onClick={e => e.stopPropagation()}>
                                         <select value={item.status} onChange={e => handleUpdateStatus(item.id, e.target.value)} className={`!py-1 !px-2 !text-[9px] md:!text-[10px] uppercase font-black rounded-lg border-2 ${outboundStatusOptions.find(o => o.value === item.status)?.color || ''}`}>
                                             {outboundStatusOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -390,6 +464,18 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                         </tbody>
                     </table>
                 </div>
+
+                {hasMore && (
+                    <div className="p-4 flex justify-center border-t dark:border-gray-700">
+                        <button
+                            onClick={handleLoadMore}
+                            disabled={isLoading}
+                            className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-8 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-gray-600 transition-all disabled:opacity-50"
+                        >
+                            {isLoading ? t('common.loading') : t('common.loadMore')}
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Modal: View Detail */}
@@ -406,7 +492,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                         <div className="p-4 md:p-8 overflow-y-auto flex-1 space-y-6 md:space-y-8 bg-gray-50/30 dark:bg-gray-900/30">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-10 border-b border-gray-100 dark:border-gray-700 pb-6 md:pb-8">
                                 <div><p className="text-[9px] md:text-[10px] text-gray-400 dark:text-gray-500 font-black uppercase">{t('pages.OutboundOrder.detailModal.customer')}</p><p className="text-base md:text-lg font-black text-gray-800">{getCustName(viewingVoucher.customerId)}</p></div>
-                                <div><p className="text-[9px] md:text-[10px] text-gray-400 dark:text-gray-500 font-black uppercase">{t('pages.OutboundOrder.detailModal.createdTime')}</p><p className="text-base md:text-lg font-black text-gray-800">{viewingVoucher.createdAt ? new Date(viewingVoucher.createdAt).toLocaleString('vi-VN') : '---'}</p></div>
+                                <div><p className="text-[9px] md:text-[10px] text-gray-400 dark:text-gray-500 font-black uppercase">{t('pages.OutboundOrder.detailModal.createdTime')}</p><p className="text-base md:text-lg font-black text-gray-800">{formatDateByLanguage(viewingVoucher.createdAt)}</p></div>
                             </div>
                             <div className="overflow-x-auto no-scrollbar">
                                 <table className="w-full text-xs md:text-sm text-left min-w-[500px]">
@@ -424,9 +510,9 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                                             return (
                                                 <tr key={i}>
                                                     <td className="p-3 font-bold text-left text-gray-800 dark:text-gray-200"><p>{p?.name || t('pages.OutboundOrder.productPlaceholder', { id: row.productId })}</p></td>
-                                                    <td className="p-3 text-center font-black text-gray-700 dark:text-gray-300">{row.quantity?.toLocaleString()}</td>
-                                                    <td className="p-3 text-right text-gray-400 dark:text-gray-500">{Number(row.unitPrice || 0).toLocaleString()}đ</td>
-                                                    <td className="p-3 text-right font-black text-[#1192a8]">{(row.quantity * (row.unitPrice || 0)).toLocaleString()}đ</td>
+                                                    <td className="p-3 text-center font-black text-gray-700 dark:text-gray-300">{formatNumberByLanguage(row.quantity)}</td>
+                                                    <td className="p-3 text-right text-gray-400 dark:text-gray-500">{formatCurrencyExact(row.unitPrice)}</td>
+                                                    <td className="p-3 text-right font-black text-[#1192a8]">{formatCurrencyExact(row.quantity * (row.unitPrice || 0))}</td>
                                                 </tr>
                                             ); 
                                         })}
@@ -446,7 +532,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                                 )}
                             </div>
                             <div className="text-right font-black text-2xl md:text-3xl text-[#1192a8]">
-                                {Number(viewingVoucher.totalAmount || 0).toLocaleString()}đ
+                                {formatCurrencyExact(viewingVoucher.totalAmount)}
                             </div>
                         </div>
                     </div>
@@ -507,18 +593,18 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                                             <tr key={row.id} className="border-t border-gray-50 dark:border-gray-700 group">
                                                 <td className="p-2">
                                                     <select value={row.productId} onChange={e => { const next = [...details]; next[i].productId = e.target.value; const p = products.find(it => String(it.id) === e.target.value); if(p){ next[i].productName = p.name; next[i].price = p.price || 0; } next[i].total = Number(next[i].quantity) * Number(next[i].price); setDetails(next); }} className="w-full border-none outline-none font-bold bg-transparent dark:text-gray-200 text-left">
-                                                        <option value="">-- SP --</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                                        <option value="">{t('pages.OutboundOrder.createModal.productSelectPlaceholder')}</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                                     </select>
                                                 </td>
                                                 <td className="p-2 min-w-[200px]">
                                                     <div className="flex items-center gap-2">
                                                         {row.batchCode ? (
                                                             <div className="flex flex-col text-left">
-                                                                <span className="font-black text-[#1192a8]">Lô: {row.batchCode}</span>
-                                                                <span className="text-[9px] text-gray-400 dark:text-gray-500">Vị trí: {row.binCode}</span>
+                                                                <span className="font-black text-[#1192a8]">{t('pages.OutboundOrder.createModal.batch', { code: row.batchCode })}</span>
+                                                                <span className="text-[9px] text-gray-400 dark:text-gray-500">{t('pages.OutboundOrder.createModal.location', { code: row.binCode })}</span>
                                                             </div>
                                                         ) : (
-                                                            <button onClick={() => handleFEFOSuggestion(i)} className="text-[9px] font-black text-rose-500 hover:text-rose-700 bg-rose-50 dark:bg-rose-900/20 px-2 py-1 rounded-lg border border-rose-100 dark:border-rose-800 animate-pulse">⚡ GỢI Ý FEFO</button>
+                                                            <button onClick={() => handleFEFOSuggestion(i)} className="text-[9px] font-black text-rose-500 hover:text-rose-700 bg-rose-50 dark:bg-rose-900/20 px-2 py-1 rounded-lg border border-rose-100 dark:border-rose-800 animate-pulse">{t('pages.OutboundOrder.createModal.fefoButton')}</button>
                                                         )}
                                                     </div>
                                                 </td>
@@ -531,7 +617,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                                                 <td className="p-2 text-right">
                                                     <div className="flex items-center gap-2 justify-end">
                                                         <button onClick={() => { setActiveScanTarget('ITEM'); setActiveItemIndex(i); setIsScannerOpen(true); }} className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-colors shrink-0">
-                                                            <img src={scanIcon} className="w-4 h-4 object-contain opacity-60" alt="Scan" />
+                                                            <img src={scanIcon} className="w-4 h-4 object-contain opacity-60 dark:invert dark:hue-rotate-180 dark:opacity-90" alt="Scan" />
                                                         </button>
                                                         <button onClick={() => setDetails(details.filter((_, idx) => idx !== i))} className="text-red-300 dark:text-red-500 text-lg hover:text-red-500 dark:hover:text-red-400 transition-colors shrink-0 leading-none">&times;</button>
                                                     </div>
@@ -544,7 +630,7 @@ export default function ExportReceipts({ workflow, clearWorkflow }) {
                             </div>
                         </div>
                         <div className="p-4 md:p-6 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col sm:flex-row justify-between items-stretch sm:items-center shrink-0 gap-4 transition-colors duration-300">
-                            <div className="text-left"><p className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase">{t('pages.OutboundOrder.createModal.totalValue')}</p><p className="text-xl md:text-2xl font-black text-[#1192a8]">{details.reduce((s, r) => s + r.total, 0).toLocaleString()}đ</p></div>
+                            <div className="text-left"><p className="text-[9px] md:text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase">{t('pages.OutboundOrder.createModal.totalValue')}</p><p className="text-xl md:text-2xl font-black text-[#1192a8]">{formatCurrencyExact(details.reduce((s, r) => s + r.total, 0))}</p></div>
                             <div className="flex gap-4"><button onClick={() => setIsCreateOpen(false)} className="flex-1 sm:flex-none text-gray-400 dark:text-gray-500 font-bold uppercase text-[10px] md:text-xs hover:text-gray-600 dark:hover:text-gray-300">{t('pages.OutboundOrder.createModal.cancel')}</button><button onClick={handleSave} className="flex-1 sm:flex-none px-6 md:px-10 py-2.5 md:py-3 bg-[#1192a8] text-white rounded-xl md:rounded-2xl font-black uppercase text-[10px] md:text-xs shadow-lg shadow-[#1192a8]/20 transition-all hover:scale-105 active:scale-95">{t('pages.OutboundOrder.createModal.confirm')}</button></div>
                         </div>
                     </div>

@@ -20,6 +20,9 @@ public class InventoryTransaction {
     @Column(name = "BatchId", nullable = false)
     private Integer batchId;
 
+    @Column(name = "CompanyId")
+    private Integer companyId;
+
     @Column(name = "TransactionType", nullable = false, length = 20)
     private String transactionType;
 
@@ -74,6 +77,14 @@ public class InventoryTransaction {
 
     public void setBatchId(Integer batchId) {
         this.batchId = batchId;
+    }
+
+    public Integer getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Integer companyId) {
+        this.companyId = companyId;
     }
 
     public String getTransactionType() {
