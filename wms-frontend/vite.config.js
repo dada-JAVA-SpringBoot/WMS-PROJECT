@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
       host: true, // Allow connections from local network (LAN)
       proxy: {
         '/api': {
-          target: env.VITE_PROXY_TARGET || 'http://localhost:8085',
+          target: 'http://localhost:8080',
           changeOrigin: true,
         },
         '/ws': {
