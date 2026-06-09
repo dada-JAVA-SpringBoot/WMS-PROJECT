@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  database:
+    build: ./wms-database
+    container_name: wms-db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
+    ports:
+      - "14333:1433"
+    volumes:
+      - wms-db-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD}", "-d", "WMS_DB", "-Q", "SELECT 1", "-C"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+    networks:
+      - wms-network
+
+  backend:
+    build: ./wms-backend
+    container_name: wms-be
+    restart: on-failure
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=${MSSQL_SA_PASSWORD}
+    ports:
+      - "8085:8085"
+    volumes:
+      - ./wms-backend/uploads:/app/uploads
+    networks:
+      - wms-network
+
+  frontend:
+    build: ./wms-frontend
+    container_name: wms-fe
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT_HTTP:-80}:80"
+    volumes:
+      - ./wms-backend/uploads:/usr/share/nginx/html/uploads
+    networks:
+      - wms-network
+
+networks:
+  wms-network:
+    driver: bridge
+
+volumes:
+  wms-db-data:

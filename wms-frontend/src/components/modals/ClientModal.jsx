@@ -1,0 +1,208 @@
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import axiosClient from '../../api/axiosClient';
+import { useModalDismiss } from './useModalDismiss';
+
+const API = '/api/customers';
+const emptyForm = { customerCode: '', name: '', phone: '', address: '' };
+
+export default function ClientModal({ isOpen, onClose, onSaved, editData }) {
+    const { i18n } = useTranslation();
+    const isEnglish = String(i18n.language || '').startsWith('en');
+    const copy = isEnglish ? {
+        editTitle: 'Edit customer',
+        createTitle: 'Add new customer',
+        editSubtitle: (name) => `Editing: ${name}`,
+        createSubtitle: 'Fill in the details to create a customer',
+        code: 'Customer code',
+        codePlaceholder: 'e.g. CUS-001',
+        name: 'Customer name',
+        namePlaceholder: 'e.g. John Doe',
+        phone: 'Phone number',
+        phonePlaceholder: 'e.g. 0987654321',
+        address: 'Contact address',
+        addressPlaceholder: 'e.g. 123 ABC Street, District 1, HCMC',
+        cancel: 'Cancel',
+        save: 'Save changes',
+        create: 'Add customer',
+        error: 'An error occurred: ',
+        enterCode: 'Please enter the customer code',
+        enterName: 'Please enter the customer name',
+    } : {
+        editTitle: 'Chỉnh sửa khách hàng',
+        createTitle: 'Thêm khách hàng mới',
+        editSubtitle: (name) => `Đang sửa: ${name}`,
+        createSubtitle: 'Điền thông tin để tạo khách hàng',
+        code: 'Mã khách hàng',
+        codePlaceholder: 'VD: CUS-001',
+        name: 'Tên khách hàng',
+        namePlaceholder: 'VD: Nguyễn Văn A',
+        phone: 'Số điện thoại',
+        phonePlaceholder: 'VD: 0987654321',
+        address: 'Địa chỉ liên hệ',
+        addressPlaceholder: 'VD: 123 ABC, Quận 1, TP.HCM',
+        cancel: 'Hủy',
+        save: 'Lưu thay đổi',
+        create: 'Thêm mới',
+        error: 'Có lỗi xảy ra: ',
+        enterCode: 'Vui lòng nhập mã khách hàng',
+        enterName: 'Vui lòng nhập tên khách hàng',
+    };
+    const isEdit = !!editData;
+    useModalDismiss(isOpen, onClose);
+
+    const [form, setForm] = useState(emptyForm);
+    const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState({});
+
+    useEffect(() => {
+        if (isOpen) {
+            setForm(editData ? {
+                customerCode: editData.customerCode || '',
+                name: editData.name || '',
+                phone: editData.phone || '',
+                address: editData.address || '',
+            } : emptyForm);
+            setErrors({});
+        }
+    }, [isOpen, editData]);
+
+    if (!isOpen) return null;
+
+    const validate = () => {
+        const e = {};
+        if (!form.customerCode.trim()) e.customerCode = copy.enterCode;
+        if (!form.name.trim()) e.name = copy.enterName;
+        return e;
+    };
+
+    const handleChange = (field, value) => {
+        setForm(prev => ({ ...prev, [field]: value }));
+        if (errors[field]) setErrors(prev => ({ ...prev, [field]: undefined }));
+    };
+
+    const handleSubmit = async () => {
+        const e = validate();
+        if (Object.keys(e).length > 0) { setErrors(e); return; }
+        setLoading(true);
+        try {
+            const url = isEdit ? `${API}/${editData.id}` : API;
+            if (isEdit) {
+                await axiosClient.put(url, form);
+            } else {
+                await axiosClient.post(url, form);
+            }
+            onSaved();
+            onClose();
+        } catch (err) {
+            alert(copy.error + (err.response?.data?.message || err.message));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-2 md:p-4">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[98vh] md:max-h-[90vh]">
+
+                {/* Header */}
+                <div className="bg-gradient-to-r from-[#00529c] to-[#1192a8] px-5 md:px-8 py-4 md:py-5 flex items-center justify-between shrink-0">
+                    <div className="min-w-0">
+                        <h2 className="text-white font-bold text-base md:text-lg truncate">
+                            {isEdit ? copy.editTitle : copy.createTitle}
+                        </h2>
+                        <p className="text-white/70 text-[10px] md:text-xs mt-0.5 truncate">
+                            {isEdit ? copy.editSubtitle(editData.name) : copy.createSubtitle}
+                        </p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="text-white/70 hover:text-white text-2xl leading-none transition-colors ml-4"
+                    >×</button>
+                </div>
+
+                {/* Body */}
+                <div className="px-5 md:px-8 py-4 md:py-6 space-y-4 md:space-y-5 overflow-y-auto flex-1">
+                        <Field
+                        label={copy.code}
+                        required
+                        value={form.customerCode}
+                        onChange={v => handleChange('customerCode', v)}
+                        placeholder={copy.codePlaceholder}
+                        error={errors.customerCode}
+                        disabled={isEdit}
+                    />
+                    <Field
+                        label={copy.name}
+                        required
+                        value={form.name}
+                        onChange={v => handleChange('name', v)}
+                        placeholder={copy.namePlaceholder}
+                        error={errors.name}
+                    />
+                    <Field
+                        label={copy.phone}
+                        value={form.phone}
+                        onChange={v => handleChange('phone', v)}
+                        placeholder={copy.phonePlaceholder}
+                        type="tel"
+                    />
+                    <div>
+                        <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5 ml-1">
+                            {copy.address}
+                        </label>
+                        <textarea
+                            rows={2}
+                            value={form.address}
+                            onChange={e => handleChange('address', e.target.value)}
+                            placeholder={copy.addressPlaceholder}
+                            className="w-full border border-gray-200 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1192a8]/25 focus:border-[#1192a8] transition-all resize-none bg-white"
+                        />
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-5 md:px-8 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
+                    <button
+                        onClick={onClose}
+                        className="order-2 sm:order-1 px-6 py-2.5 rounded-2xl text-sm font-black text-gray-400 bg-white border border-gray-100 hover:bg-gray-100 transition-all uppercase tracking-widest"
+                    >
+                        {copy.cancel}
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        className="order-1 sm:order-2 px-7 py-3 rounded-2xl text-xs font-black text-white bg-[#1192a8] hover:bg-teal-700 hover:shadow-lg shadow-xl shadow-teal-500/20 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-widest"
+                    >
+                        {loading && <span className="animate-spin text-base">↻</span>}
+                        {isEdit ? copy.save : copy.create}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function Field({ label, value, onChange, placeholder, error, required, type = 'text', disabled = false }) {
+    return (
+        <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                {label} {required && <span className="text-red-500">*</span>}
+            </label>
+            <input
+                type={type}
+                value={value}
+                onChange={e => onChange(e.target.value)}
+                placeholder={placeholder}
+                disabled={disabled}
+                className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 transition-all
+                    ${disabled ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : 'bg-white'}
+                    ${error
+                        ? 'border-red-400 focus:ring-red-200 focus:border-red-400'
+                        : 'border-gray-200 focus:ring-[#1192a8]/25 focus:border-[#1192a8]'
+                    }`}
+            />
+            {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+        </div>
+    );
+}

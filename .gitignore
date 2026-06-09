@@ -1,0 +1,52 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build and Dependencies
+node_modules/
+dist/
+target/
+*.class
+*.jar
+*.war
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# User Uploads (Dữ liệu thực tế không đưa lên Git)
+uploads/
+wms-backend/uploads/
+
+# Environment and Logs
+.env
+*.log
+logs/
+
+# Docker Local Data
+wms-db-data/
+
+structure.txt
+
+# OS
+Desktop.ini
+$RECYCLE.BIN/
+
+# Java/Maven
+.mvn/wrapper/maven-wrapper.jar
+dependency-reduced-pom.xml
+*.log
+
+# Node/Vite
+.vite/
+.output/
+.nuxt/
+.vercel/
+
+# Cấu hình cá nhân
+*.user
+*.bak

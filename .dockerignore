@@ -1,0 +1,20 @@
+# Junk
+.git
+.gitignore
+*.md
+
+# Backend junk
+wms-backend/target
+wms-backend/.mvn
+wms-backend/mvnw
+wms-backend/mvnw.cmd
+
+# Frontend junk
+wms-frontend/node_modules
+wms-frontend/dist
+.env
+wms-frontend/.env.local
+
+# Docker junk
+.dockerignore
+docker-compose.yml
