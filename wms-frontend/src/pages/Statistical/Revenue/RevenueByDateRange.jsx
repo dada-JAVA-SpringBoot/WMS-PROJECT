@@ -44,42 +44,47 @@ export default function RevenueByDateRange() {
     const isActual = profitType === 'actual';
 
     return (
-        <div className="space-y-5 p-5">
-            <FilterBar>
-                <span className="text-[16px] text-slate-800">Từ ngày</span>
-                <FilterDateInput value={from} onChange={e => setFrom(e.target.value)} className="w-[170px]" />
-                <span className="text-[16px] text-slate-800">Đến ngày</span>
-                <FilterDateInput value={to}   onChange={e => setTo(e.target.value)}   className="w-[170px]" />
+        <div className="space-y-5 p-5 bg-[#f8f9fa] dark:bg-gray-900 min-h-screen transition-colors duration-300">
+            <FilterBar className="dark:bg-gray-800 dark:border-gray-700">
+                <span className="text-[16px] text-slate-800 dark:text-gray-300">Từ ngày</span>
+                <FilterDateInput value={from} onChange={e => setFrom(e.target.value)} className="w-[170px] dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" />
+                <span className="text-[16px] text-slate-800 dark:text-gray-300">Đến ngày</span>
+                <FilterDateInput value={to}   onChange={e => setTo(e.target.value)}   className="w-[170px] dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" />
                 <FilterButton variant="primary" onClick={handleFilter}>Thống kê</FilterButton>
-                <FilterButton onClick={handleReset}>Làm mới</FilterButton>
+                <FilterButton onClick={handleReset} className="dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">Làm mới</FilterButton>
 
-                <span className="text-[16px] text-slate-800 ml-auto font-medium">Loại lợi nhuận</span>
-                <FilterSelect value={profitType} onChange={e => setProfitType(e.target.value)} className="w-[200px]">
+                <span className="text-[16px] text-slate-800 dark:text-gray-300 ml-auto font-medium">Loại lợi nhuận</span>
+                <FilterSelect value={profitType} onChange={e => setProfitType(e.target.value)} className="w-[200px] dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
                     <option value="cashflow">Theo dòng tiền (Chi/Thu)</option>
                     <option value="actual">Lợi nhuận thực tế (COGS)</option>
                 </FilterSelect>
             </FilterBar>
 
+            {/* FinancialCards cần đảm bảo bên trong component này cũng đã hỗ trợ Dark Mode */}
             <FinancialCards data={summary} loading={loading} error={error} profitType={profitType} />
 
             {detail && !loading && (
                 <>
-                    <GroupedBarChart
-                        title="Chi phí, Doanh thu & Hao hụt"
-                        labels={detail.labels}
-                        series={[
-                            { label: isActual ? 'Giá vốn hàng bán (COGS)' : 'Chi phí (Nhập)', color: '#e6b06e', data: isActual ? detail.cogsData : detail.costData },
-                            { label: 'Doanh thu (Xuất)', color: '#74b9f5', data: detail.revenueData },
-                            { label: 'Hao hụt (Thất thoát)', color: '#ef4444', data: detail.lossData },
-                        ]}
-                    />
-                    <LineAreaChart
-                        title="Xu hướng lợi nhuận"
-                        labels={detail.labels}
-                        series={[
-                            { label: isActual ? 'Lợi nhuận thực tế' : 'Lợi nhuận dòng', color: '#b68cf0', fill: '#b68cf0', data: isActual ? detail.actualProfitData : detail.profitData },
-                        ]}
-                    />
+                    <div className="dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700 transition-colors">
+                        <GroupedBarChart
+                            title="Chi phí, Doanh thu & Hao hụt"
+                            labels={detail.labels}
+                            series={[
+                                { label: isActual ? 'Giá vốn hàng bán (COGS)' : 'Chi phí (Nhập)', color: '#e6b06e', data: isActual ? detail.cogsData : detail.costData },
+                                { label: 'Doanh thu (Xuất)', color: '#74b9f5', data: detail.revenueData },
+                                { label: 'Hao hụt (Thất thoát)', color: '#ef4444', data: detail.lossData },
+                            ]}
+                        />
+                    </div>
+                    <div className="dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700 transition-colors">
+                        <LineAreaChart
+                            title="Xu hướng lợi nhuận"
+                            labels={detail.labels}
+                            series={[
+                                { label: isActual ? 'Lợi nhuận thực tế' : 'Lợi nhuận dòng', color: '#b68cf0', fill: '#b68cf0', data: isActual ? detail.actualProfitData : detail.profitData },
+                            ]}
+                        />
+                    </div>
                 </>
             )}
         </div>
