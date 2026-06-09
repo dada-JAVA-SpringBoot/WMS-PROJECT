@@ -20,10 +20,10 @@ export default function RowContextMenu({
 
     const primaryProduct = products[0];
     const headerLabel = products.length > 1
-        ? `Nhiều sản phẩm (${products.length})`
+        ? `Multiple products (${products.length})`
         : primaryProduct.sku;
 
-    // Tính toán vị trí để không bị tràn
+    // Calculate the position so the menu stays on screen
     const menuWidth = 240;
     const menuHeight = 450; // Ước tính
     let adjustedX = x;
@@ -44,23 +44,23 @@ export default function RowContextMenu({
             >
                 {/* Header */}
                 <div className="px-5 py-3.5 bg-gray-50/50 border-b border-gray-100">
-                    <p className="text-[10px] uppercase text-gray-400 font-black tracking-[0.1em] mb-0.5">Tác vụ nhanh</p>
+                    <p className="text-[10px] uppercase text-gray-400 font-black tracking-[0.1em] mb-0.5">Quick actions</p>
                     <p className="text-xs font-bold text-[#1192a8] truncate drop-shadow-sm">{headerLabel}</p>
                 </div>
 
                 {/* Danh sách action */}
                 <div className="p-1.5 space-y-0.5">
-                    <MenuItem label="Chi tiết" onClick={onDetail} />
-                    <MenuItem label="Sửa" onClick={onEdit} />
-                    <MenuItem label="Xóa" danger onClick={onDelete} />
+                    <MenuItem label="Details" onClick={onDetail} />
+                    <MenuItem label="Edit" onClick={onEdit} />
+                    <MenuItem label="Delete" danger onClick={onDelete} />
                     <div className="h-px bg-gray-100 my-1 mx-2" />
-                    <MenuItem label="Lập phiếu nhập" onClick={onInbound} />
-                    <MenuItem label="Lập phiếu xuất" onClick={onOutbound} />
-                    <MenuItem label="Sao chép dữ liệu" onClick={onCopy} />
+                    <MenuItem label="Create inbound order" onClick={onInbound} />
+                    <MenuItem label="Create outbound order" onClick={onOutbound} />
+                    <MenuItem label="Copy data" onClick={onCopy} />
                     <div className="h-px bg-gray-100 my-1 mx-2" />
-                    <MenuItem label="Chọn tất cả" onClick={onSelectAll} />
-                    <MenuItem label="Bỏ chọn" onClick={onClearSelection} />
-                    <MenuItem label="Làm mới" onClick={onRefresh} />
+                    <MenuItem label="Select all" onClick={onSelectAll} />
+                    <MenuItem label="Clear selection" onClick={onClearSelection} />
+                    <MenuItem label="Refresh" onClick={onRefresh} />
                 </div>
             </div>
         </div>
@@ -73,7 +73,7 @@ function MenuItem({ label, onClick, danger = false }) {
             type="button"
             onClick={() => {
                 onClick();
-                // Close is handled by the parent's overlay click, but we can ensure it here if needed
+                // The parent overlay handles close, but we keep this click local
             }}
             className={`
                 w-full text-left px-4 py-2 text-[13px] font-semibold rounded-xl transition-all duration-200

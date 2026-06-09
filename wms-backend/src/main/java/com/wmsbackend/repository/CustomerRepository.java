@@ -13,17 +13,19 @@ import java.util.List;
 public interface CustomerRepository extends JpaRepository<Customer, Integer> {
 
     // Lấy tất cả dưới dạng DTO
-    @Query("SELECT new com.wmsbackend.dto.CustomerDTO(c.id, c.customerCode, c.name, c.phone, c.address) FROM Customer c ORDER BY c.id DESC")
-    List<CustomerDTO> findAllCustomers();
+    @Query("SELECT new com.wmsbackend.dto.CustomerDTO(c.id, c.customerCode, c.name, c.phone, c.address) FROM Customer c " +
+            "WHERE (:companyId IS NULL OR c.companyId = :companyId) ORDER BY c.id DESC")
+    List<CustomerDTO> findAllCustomers(@Param("companyId") Integer companyId);
 
     // Tìm kiếm theo nhiều tiêu chí (tên, mã, SĐT, địa chỉ)
     @Query("SELECT new com.wmsbackend.dto.CustomerDTO(c.id, c.customerCode, c.name, c.phone, c.address) FROM Customer c " +
-            "WHERE LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "WHERE ((LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "OR LOWER(c.customerCode) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "OR LOWER(c.phone) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "OR LOWER(c.address) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(c.address) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "AND (:companyId IS NULL OR c.companyId = :companyId)) " +
             "ORDER BY c.id DESC")
-    List<CustomerDTO> searchCustomers(@Param("keyword") String keyword);
+    List<CustomerDTO> searchCustomers(@Param("keyword") String keyword, @Param("companyId") Integer companyId);
 
     boolean existsByCustomerCode(String customerCode);
 }

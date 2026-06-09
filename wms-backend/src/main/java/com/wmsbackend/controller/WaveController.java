@@ -6,6 +6,7 @@ import com.wmsbackend.entity.OutboundOrder;
 import com.wmsbackend.entity.OutboundOrderDetail;
 import com.wmsbackend.entity.Wave;
 import com.wmsbackend.repository.*;
+import com.wmsbackend.security.WorkspaceContext;
 import com.wmsbackend.util.TimeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,23 +32,30 @@ public class WaveController {
 
     @GetMapping
     public List<Wave> getAllWaves() {
-        return waveRepository.findAll();
+        Integer companyId = WorkspaceContext.getCurrentCompanyId();
+        return companyId == null
+                ? waveRepository.findAll()
+                : waveRepository.findByCompanyIdOrderByIdDesc(companyId);
     }
 
     @PostMapping
     @Transactional
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public Wave createWave(@RequestBody WaveCreateRequest request) {
+        Integer companyId = WorkspaceContext.getCurrentCompanyId();
         Wave wave = new Wave();
         wave.setWaveCode("WV-" + System.currentTimeMillis());
         wave.setNote(request.getNote());
         wave.setStatus("CREATED");
+        wave.setCompanyId(companyId);
         wave.setCreatedAt(TimeUtils.now());
         
         final Wave savedWave = waveRepository.save(wave);
 
         List<OutboundOrder> orders = orderRepository.findAllById(request.getOrderIds());
-        for (OutboundOrder order : orders) {
+        for (OutboundOrder order : orders.stream()
+                .filter(o -> companyId == null || companyId.equals(o.getCompanyId()))
+                .toList()) {
             order.setWaveId(savedWave.getId());
             order.setStatus("PICKING");
             orderRepository.save(order);
@@ -58,7 +66,10 @@ public class WaveController {
 
     @GetMapping("/{id}/picking-list")
     public List<WavePickingItemDTO> getPickingList(@PathVariable Long id) {
-        List<OutboundOrder> orders = orderRepository.findByWaveId(id);
+        Wave wave = getAccessibleWave(id);
+        List<OutboundOrder> orders = orderRepository.findByWaveId(id).stream()
+                .filter(o -> wave.getCompanyId() == null || wave.getCompanyId().equals(o.getCompanyId()))
+                .toList();
         
         // Group items by Location + Product + Batch
         Map<String, WavePickingItemDTO> pickingMap = new HashMap<>();
@@ -112,7 +123,7 @@ public class WaveController {
     @PutMapping("/{id}/complete")
     @Transactional
     public void completeWave(@PathVariable Long id) {
-        Wave wave = waveRepository.findById(id).orElseThrow();
+        Wave wave = getAccessibleWave(id);
         if ("COMPLETED".equalsIgnoreCase(wave.getStatus())) return;
 
         wave.setStatus("COMPLETED");
@@ -129,5 +140,17 @@ public class WaveController {
                 orderRepository.save(order);
             }
         }
+    }
+
+    private Wave getAccessibleWave(Long id) {
+        Integer companyId = WorkspaceContext.getCurrentCompanyId();
+        Wave wave = companyId == null
+                ? waveRepository.findById(id).orElseThrow()
+                : waveRepository.findByIdAndCompanyId(id, companyId).orElseThrow();
+        if (!WorkspaceContext.isGlobalAdmin() && companyId != null && wave.getCompanyId() != null
+                && !companyId.equals(wave.getCompanyId())) {
+            throw new RuntimeException("Không có quyền thao tác wave của công ty khác");
+        }
+        return wave;
     }
 }

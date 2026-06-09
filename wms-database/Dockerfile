@@ -1,17 +1,20 @@
-# Sử dụng image MS SQL Server 2022 chính chủ
+# Use official Microsoft SQL Server 2022 image
 FROM mcr.microsoft.com/mssql/server:2022-latest
 
-# Chuyển sang quyền root để copy file và cấp quyền
+# Switch to root for file operations
 USER root
 
-# Copy 2 file script vào bên trong container
+# Copy initialization scripts
 COPY setup.sql setup.sql
 COPY entrypoint.sh entrypoint.sh
 
-# Cấp quyền thực thi cho file entrypoint.sh và xoá ký tự \r (do lỗi CRLF trên Windows)
+# Clean Windows CRLF line endings and set executable permission
 RUN sed -i -e 's/\r$//' entrypoint.sh && \
     sed -i -e 's/\r$//' setup.sql && \
     chmod +x entrypoint.sh
 
-# Khi bật container, chạy file entrypoint này đầu tiên
+# Run as the mssql user (default user in base image)
+USER mssql
+
+# Set entrypoint script
 CMD ["/bin/bash", "./entrypoint.sh"]

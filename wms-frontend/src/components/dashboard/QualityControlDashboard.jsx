@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import axiosClient from '../../api/axiosClient';
 import QCInspectionModal from '../modals/QCInspectionModal';
 import SystemDialog from '../modals/SystemDialog';
 
 export default function QualityControlDashboard({ roles, stats, inboundOrders, outboundOrders }) {
+    const { t } = useTranslation();
     // ── States ──
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [detailItems, setDetailItems] = useState([]);
@@ -13,8 +15,11 @@ export default function QualityControlDashboard({ roles, stats, inboundOrders, o
     const [dialog, setDialog] = useState({ isOpen: false, title: '', message: '', variant: 'info' });
 
     // Lọc các đơn hàng cần QC (Ví dụ: Trạng thái PENDING của Inbound)
-    const qcInbound = inboundOrders.filter(o => o.status === 'PENDING' || o.status === 'ORDERED');
-    const qcOutbound = outboundOrders.filter(o => o.status === 'ALLOCATED' || o.status === 'PICKING');
+    const safeInbound = Array.isArray(inboundOrders) ? inboundOrders : [];
+    const safeOutbound = Array.isArray(outboundOrders) ? outboundOrders : [];
+
+    const qcInbound = safeInbound.filter(o => o.status === 'PENDING' || o.status === 'ORDERED');
+    const qcOutbound = safeOutbound.filter(o => o.status === 'ALLOCATED' || o.status === 'PICKING');
 
     // Tải danh sách sản phẩm để mapping tên
     useEffect(() => {
@@ -23,7 +28,7 @@ export default function QualityControlDashboard({ roles, stats, inboundOrders, o
 
     const handleOpenQC = async (order, type) => {
         if (type !== 'INBOUND') {
-            setDialog({ isOpen: true, title: 'Thông báo', message: 'Hiện tại hệ thống ưu tiên quy trình QC cho hàng Nhập kho. QC hàng xuất sẽ được cập nhật sớm.', variant: 'info' });
+            setDialog({ isOpen: true, title: t('pages.QualityControlDashboard.notification'), message: t('pages.QualityControlDashboard.qcPriorityInbound'), variant: 'info' });
             return;
         }
 
@@ -34,7 +39,7 @@ export default function QualityControlDashboard({ roles, stats, inboundOrders, o
             setSelectedOrder(order);
             setIsModalOpen(true);
         } catch (error) {
-            setDialog({ isOpen: true, title: 'Lỗi', message: 'Không thể tải chi tiết đơn hàng để kiểm duyệt.', variant: 'error' });
+            setDialog({ isOpen: true, title: t('pages.QualityControlDashboard.error'), message: t('pages.QualityControlDashboard.failedLoadDetails'), variant: 'error' });
         } finally {
             setIsLoading(false);
         }
@@ -43,12 +48,12 @@ export default function QualityControlDashboard({ roles, stats, inboundOrders, o
     const handleConfirmQC = async (inspectedItems) => {
         try {
             await axiosClient.post(`/api/inbound/${selectedOrder.id}/qc`, inspectedItems);
-            setDialog({ isOpen: true, title: 'Thành công', message: `Đã hoàn tất kiểm duyệt phiếu ${selectedOrder.receiptCode}. Dữ liệu đã được cập nhật vào kho.`, variant: 'success' });
+            setDialog({ isOpen: true, title: t('pages.QualityControlDashboard.success'), message: t('pages.QualityControlDashboard.qcCompleteMsg', { code: selectedOrder.receiptCode }), variant: 'success' });
             setIsModalOpen(false);
             // Reload page to refresh dashboard lists
             setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
-            setDialog({ isOpen: true, title: 'Lỗi', message: 'Cập nhật QC thất bại: ' + (error.response?.data?.message || error.message), variant: 'error' });
+            setDialog({ isOpen: true, title: t('pages.QualityControlDashboard.error'), message: t('pages.QualityControlDashboard.qcFailedMsg') + (error.response?.data?.message || error.message), variant: 'error' });
         }
     };
 
@@ -64,18 +69,18 @@ export default function QualityControlDashboard({ roles, stats, inboundOrders, o
             />
 
             {/* Header: Focus on Quality Assurance */}
-            <div className="bg-white p-6 md:p-8 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6 transition-colors">
                 <div>
-                    <h2 className="text-xl md:text-2xl font-black text-gray-800 uppercase tracking-tight flex items-center gap-3">
-                        <span className="p-2 bg-purple-100 rounded-lg text-purple-600 text-xl">🛡️</span>
-                        Kiểm soát chất lượng (QC)
+                    <h2 className="text-xl md:text-2xl font-black text-gray-800 dark:text-gray-100 uppercase tracking-tight flex items-center gap-3">
+                        <span className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg text-purple-600 dark:text-purple-400 text-xl">🛡️</span>
+                        {t('pages.QualityControlDashboard.title')}
                     </h2>
-                    <p className="text-gray-500 mt-1 text-sm md:text-base">Đảm bảo hàng hóa nhập xuất đúng tiêu chuẩn và số lượng.</p>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm md:text-base">{t('pages.QualityControlDashboard.description')}</p>
                 </div>
                 <div className="flex gap-4 w-full md:w-auto">
-                    <div className="flex-1 md:flex-none text-center px-6 py-3 bg-gray-50 rounded-2xl border border-gray-100">
-                        <div className="text-2xl font-black text-purple-600">{qcInbound.length + qcOutbound.length}</div>
-                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Đợi kiểm duyệt</div>
+                    <div className="flex-1 md:flex-none text-center px-6 py-3 bg-gray-50 dark:bg-gray-700 rounded-2xl border border-gray-100 dark:border-gray-600">
+                        <div className="text-2xl font-black text-purple-600 dark:text-purple-400">{qcInbound.length + qcOutbound.length}</div>
+                        <div className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{t('pages.QualityControlDashboard.waitingForInspection')}</div>
                     </div>
                 </div>
             </div>
@@ -83,12 +88,12 @@ export default function QualityControlDashboard({ roles, stats, inboundOrders, o
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* QC Inspection Queue */}
                 <div className="lg:col-span-2 space-y-8">
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden h-[500px] md:h-[600px] flex flex-col">
-                        <div className="p-4 md:p-6 border-b border-gray-50 bg-gradient-to-r from-purple-50 to-white flex justify-between items-center">
-                            <h3 className="font-black text-gray-800 uppercase tracking-tight text-xs md:text-sm">Hàng đợi kiểm định</h3>
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden h-[500px] md:h-[600px] flex flex-col transition-colors">
+                        <div className="p-4 md:p-6 border-b border-gray-50 dark:border-gray-700 bg-gradient-to-r from-purple-50 dark:from-purple-900/20 to-white dark:to-gray-800 flex justify-between items-center">
+                            <h3 className="font-black text-gray-800 dark:text-gray-100 uppercase tracking-tight text-xs md:text-sm">{t('pages.QualityControlDashboard.inspectionQueue')}</h3>
                             <div className="flex gap-2">
-                                <span className="px-3 py-1 bg-purple-100 text-purple-700 text-[9px] md:text-[10px] font-bold rounded-full">NHẬP: {qcInbound.length}</span>
-                                <span className="px-3 py-1 bg-blue-100 text-blue-700 text-[9px] md:text-[10px] font-bold rounded-full">XUẤT: {qcOutbound.length}</span>
+                                <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-[9px] md:text-[10px] font-bold rounded-full">{t('pages.QualityControlDashboard.inboundLabel')}{qcInbound.length}</span>
+                                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[9px] md:text-[10px] font-bold rounded-full">{t('pages.QualityControlDashboard.outboundLabel')}{qcOutbound.length}</span>
                             </div>
                         </div>
                         <div className="flex-1 overflow-y-auto no-scrollbar p-3 md:p-4">
@@ -99,7 +104,7 @@ export default function QualityControlDashboard({ roles, stats, inboundOrders, o
                                     <QCItem key={order.id} order={order} type="OUTBOUND" onInspect={() => handleOpenQC(order, 'OUTBOUND')} />
                                 )) : (
                                     <div className="h-64 flex flex-col items-center justify-center text-gray-400 italic text-sm">
-                                        <p>Hiện không có đơn hàng nào cần kiểm định.</p>
+                                        <p>{t('pages.QualityControlDashboard.noOrders')}</p>
                                     </div>
                                 )}
                             </div>
@@ -109,20 +114,20 @@ export default function QualityControlDashboard({ roles, stats, inboundOrders, o
 
                 {/* Sidebar: Useful info for QC */}
                 <div className="space-y-6">
-                    <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm">
-                        <h3 className="font-black text-gray-800 mb-4 border-b pb-2 text-[11px] md:text-sm uppercase tracking-widest">Quy trình QC chuẩn</h3>
+                    <div className="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm transition-colors">
+                        <h3 className="font-black text-gray-800 dark:text-gray-100 mb-4 border-b dark:border-gray-700 pb-2 text-[11px] md:text-sm uppercase tracking-widest">{t('pages.QualityControlDashboard.standardProcess')}</h3>
                         <ul className="space-y-4">
-                            <StepItem number="1" text="Đối chiếu thực tế với phiếu giao hàng của nhà cung cấp." />
-                            <StepItem number="2" text="Kiểm tra bao bì, nhãn mác và hạn sử dụng sản phẩm." />
-                            <StepItem number="3" text="Phân loại hàng nguyên vẹn và hàng lỗi/hỏng." />
-                            <StepItem number="4" text="Xác nhận trạng thái trên hệ thống để hoàn tất phiếu." />
+                            <StepItem number="1" text={t('pages.QualityControlDashboard.step1')} />
+                            <StepItem number="2" text={t('pages.QualityControlDashboard.step2')} />
+                            <StepItem number="3" text={t('pages.QualityControlDashboard.step3')} />
+                            <StepItem number="4" text={t('pages.QualityControlDashboard.step4')} />
                         </ul>
                     </div>
 
-                    <div className="bg-purple-600 p-6 rounded-2xl text-white shadow-xl shadow-purple-100">
-                        <h3 className="font-black text-lg mb-2 uppercase tracking-tight">Lưu ý hàng dễ vỡ</h3>
+                    <div className="bg-purple-600 dark:bg-purple-800 p-6 rounded-2xl text-white shadow-xl shadow-purple-100 dark:shadow-none transition-colors">
+                        <h3 className="font-black text-lg mb-2 uppercase tracking-tight">{t('pages.QualityControlDashboard.fragileNote')}</h3>
                         <p className="text-purple-100 text-xs md:text-sm leading-relaxed italic">
-                            "Cần kiểm tra kỹ các lô hàng điện tử nhạy cảm. Báo cáo ngay nếu phát hiện va đập bên ngoài thùng hàng."
+                            {t('pages.QualityControlDashboard.fragileDesc')}
                         </p>
                     </div>
                 </div>
@@ -143,23 +148,24 @@ export default function QualityControlDashboard({ roles, stats, inboundOrders, o
 }
 
 function QCItem({ order, type, onInspect, isLoading }) {
+    const { t } = useTranslation();
     return (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-purple-300 hover:bg-white transition-all gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-2xl border border-gray-100 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 hover:bg-white dark:hover:bg-gray-800 transition-all gap-4">
             <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-xs shadow-sm shrink-0 ${type === 'INBOUND' ? 'bg-blue-100 text-blue-600' : 'bg-red-100 text-red-600'}`}>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-xs shadow-sm shrink-0 ${type === 'INBOUND' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'}`}>
                     {type === 'INBOUND' ? 'IN' : 'OUT'}
                 </div>
                 <div className="min-w-0">
-                    <div className="text-sm font-black text-gray-800 truncate uppercase tracking-tight">{type === 'INBOUND' ? order.receiptCode : order.issueCode}</div>
-                    <div className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">{new Date(type === 'INBOUND' ? order.receiptDate : order.issueDate).toLocaleDateString('vi-VN')}</div>
+                    <div className="text-sm font-black text-gray-800 dark:text-gray-200 truncate uppercase tracking-tight">{type === 'INBOUND' ? order.receiptCode : order.issueCode}</div>
+                    <div className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase mt-0.5">{new Date(type === 'INBOUND' ? order.receiptDate : order.issueDate).toLocaleDateString('vi-VN')}</div>
                 </div>
             </div>
             <button 
                 onClick={onInspect}
                 disabled={isLoading}
-                className="px-6 py-2.5 bg-white border-2 border-purple-100 rounded-xl text-[10px] md:text-xs font-black text-purple-600 hover:bg-purple-600 hover:text-white hover:border-purple-600 transition-all active:scale-95 shadow-sm uppercase tracking-widest disabled:opacity-50"
+                className="px-6 py-2.5 bg-white dark:bg-gray-800 border-2 border-purple-100 dark:border-purple-900/30 rounded-xl text-[10px] md:text-xs font-black text-purple-600 dark:text-purple-400 hover:bg-purple-600 dark:hover:bg-purple-700 hover:text-white dark:hover:text-white hover:border-purple-600 dark:hover:border-purple-700 transition-all active:scale-95 shadow-sm uppercase tracking-widest disabled:opacity-50"
             >
-                {isLoading ? 'ĐANG TẢI...' : 'KIỂM TRA NGAY'}
+                {isLoading ? t('pages.QualityControlDashboard.loading') : t('pages.QualityControlDashboard.inspectNow')}
             </button>
         </div>
     );
@@ -168,8 +174,8 @@ function QCItem({ order, type, onInspect, isLoading }) {
 function StepItem({ number, text }) {
     return (
         <li className="flex gap-3 items-start">
-            <span className="w-5 h-5 bg-purple-100 text-purple-600 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-black">{number}</span>
-            <span className="text-[11px] md:text-xs text-gray-600 font-medium leading-snug">{text}</span>
+            <span className="w-5 h-5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-black">{number}</span>
+            <span className="text-[11px] md:text-xs text-gray-600 dark:text-gray-400 font-medium leading-snug">{text}</span>
         </li>
     );
 }

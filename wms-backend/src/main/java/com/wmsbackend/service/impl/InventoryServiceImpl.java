@@ -10,6 +10,7 @@ import com.wmsbackend.repository.InventoryTransactionRepository;
 import com.wmsbackend.repository.ProductRepository;
 import com.wmsbackend.repository.LocationRepository;
 import com.wmsbackend.service.InventoryService;
+import com.wmsbackend.security.WorkspaceContext;
 import com.wmsbackend.util.TimeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -51,6 +52,15 @@ public class InventoryServiceImpl implements InventoryService {
                 .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại."));
         Location destLocation = locationRepository.findById(request.getToLocationId())
                 .orElseThrow(() -> new RuntimeException("Vị trí đích không tồn tại."));
+        Integer companyId = WorkspaceContext.getCurrentCompanyId();
+        if (companyId != null) {
+            if (product.getCompanyId() != null && !companyId.equals(product.getCompanyId())) {
+                throw new RuntimeException("Sản phẩm không thuộc công ty hiện tại.");
+            }
+            if (destLocation.getCompanyId() != null && !companyId.equals(destLocation.getCompanyId())) {
+                throw new RuntimeException("Vị trí không thuộc công ty hiện tại.");
+            }
+        }
 
         // Lấy loại đơn vị mà vị trí này yêu cầu (ví dụ: PALLET, KHAY, THUNG)
         String requiredContainerType = normalizeUnit(destLocation.getContainerType());
@@ -83,6 +93,7 @@ public class InventoryServiceImpl implements InventoryService {
             destInventory.setProductId(request.getProductId());
             destInventory.setLocationId(request.getToLocationId());
             destInventory.setBatchId(request.getBatchId());
+            destInventory.setCompanyId(companyId);
             destInventory.setQuantityOnHand(request.getQuantity());
             destInventory.setQuantityAllocated(BigDecimal.ZERO);
         } else {
@@ -95,6 +106,7 @@ public class InventoryServiceImpl implements InventoryService {
         outTransaction.setProductId(request.getProductId());
         outTransaction.setLocationId(request.getFromLocationId());
         outTransaction.setBatchId(request.getBatchId());
+        outTransaction.setCompanyId(WorkspaceContext.getCurrentCompanyId());
         outTransaction.setTransactionType("TRANSFER_OUT");
         outTransaction.setQuantityChange(request.getQuantity().negate());
         outTransaction.setCreatedBy(request.getUserId());
@@ -105,6 +117,7 @@ public class InventoryServiceImpl implements InventoryService {
         inTransaction.setProductId(request.getProductId());
         inTransaction.setLocationId(request.getToLocationId());
         inTransaction.setBatchId(request.getBatchId());
+        inTransaction.setCompanyId(WorkspaceContext.getCurrentCompanyId());
         inTransaction.setTransactionType("TRANSFER_IN");
         inTransaction.setQuantityChange(request.getQuantity());
         inTransaction.setCreatedBy(request.getUserId());

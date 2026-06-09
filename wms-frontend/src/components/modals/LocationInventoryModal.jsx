@@ -3,8 +3,10 @@ import * as XLSX from 'xlsx';
 import axiosClient from '../../api/axiosClient';
 import { useExcelExport } from '../../hooks/useExcelExport';
 import ExportExcelModal from './ExportExcelModal';
+import { formatDateByLanguage, formatNumberByLanguage, getDisplayLanguage } from '../../utils/formatters';
 
 export default function LocationInventoryModal({ location, onClose }) {
+    const isEnglish = getDisplayLanguage() === 'en';
     const [inventory, setInventory] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -44,10 +46,10 @@ export default function LocationInventoryModal({ location, onClose }) {
             'Mã SKU': item.productSku,
             'Tên sản phẩm': item.productName,
             'Mã Lô (Batch)': item.batchCode,
-            'Hạn sử dụng': item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('vi-VN') : '',
-            'Tổng tồn': Number(item.onHand || 0),
-            'Đã phân bổ': Number(item.allocated || 0),
-            'Khả dụng': Number(item.onHand || 0) - Number(item.allocated || 0)
+            [isEnglish ? 'Expiry Date' : 'Hạn sử dụng']: formatDateByLanguage(item.expiryDate),
+            [isEnglish ? 'Total Stock' : 'Tổng tồn']: Number(item.onHand || 0),
+            [isEnglish ? 'Allocated' : 'Đã phân bổ']: Number(item.allocated || 0),
+            [isEnglish ? 'Available' : 'Khả dụng']: Number(item.onHand || 0) - Number(item.allocated || 0)
         }));
 
         const ws = XLSX.utils.json_to_sheet(sheetData);
@@ -67,7 +69,7 @@ export default function LocationInventoryModal({ location, onClose }) {
                     <div className="flex items-center gap-2 md:gap-4 min-w-0">
                         <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 rounded-lg md:rounded-xl flex items-center justify-center font-black text-sm md:text-lg shrink-0">📦</div>
                         <div className="min-w-0">
-                            <h2 className="font-bold uppercase tracking-widest text-[10px] md:text-sm truncate">Hàng hóa tại vị trí</h2>
+                            <h2 className="font-bold uppercase tracking-widest text-[10px] md:text-sm truncate">{isEnglish ? 'Inventory at Location' : 'Hàng hóa tại vị trí'}</h2>
                             <p className="text-[10px] md:text-xs opacity-90 font-medium truncate">{location.binCode} — {location.zone}</p>
                         </div>
                     </div>
@@ -77,7 +79,7 @@ export default function LocationInventoryModal({ location, onClose }) {
                             disabled={inventory.length === 0}
                             className="bg-white/10 hover:bg-white/20 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[10px] font-black uppercase tracking-tight transition-all disabled:opacity-30 border border-white/20 hidden sm:block"
                         >
-                            Xuất Excel
+                            {isEnglish ? 'Export Excel' : 'Xuất Excel'}
                         </button>
                         <button onClick={onClose} className="text-2xl md:text-3xl hover:text-red-200 leading-none">&times;</button>
                     </div>
@@ -87,7 +89,7 @@ export default function LocationInventoryModal({ location, onClose }) {
                     {isLoading ? (
                         <div className="py-20 text-center">
                             <div className="inline-block w-8 h-8 border-4 border-[#1192a8] border-t-transparent rounded-full animate-spin mb-4"></div>
-                            <p className="text-[#1192a8] font-black text-xs uppercase tracking-widest">Đang tải...</p>
+                            <p className="text-[#1192a8] font-black text-xs uppercase tracking-widest">{isEnglish ? 'Loading...' : 'Đang tải...'}</p>
                         </div>
                     ) : inventory.length > 0 ? (
                         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -95,10 +97,10 @@ export default function LocationInventoryModal({ location, onClose }) {
                                 <table className="w-full text-left min-w-[500px]">
                                     <thead className="bg-gray-50 border-b text-[9px] font-black text-gray-400 uppercase tracking-wider">
                                         <tr>
-                                            <th className="px-4 py-3">Sản phẩm</th>
-                                            <th className="px-4 py-3">Thông tin lô</th>
-                                            <th className="px-4 py-3 text-right">Tổng tồn</th>
-                                            <th className="px-4 py-3 text-right">Khả dụng</th>
+                                            <th className="px-4 py-3">{isEnglish ? 'Product' : 'Sản phẩm'}</th>
+                                            <th className="px-4 py-3">{isEnglish ? 'Batch info' : 'Thông tin lô'}</th>
+                                            <th className="px-4 py-3 text-right">{isEnglish ? 'Total Stock' : 'Tổng tồn'}</th>
+                                            <th className="px-4 py-3 text-right">{isEnglish ? 'Available' : 'Khả dụng'}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="text-[11px] md:text-sm divide-y divide-gray-100">
@@ -115,19 +117,19 @@ export default function LocationInventoryModal({ location, onClose }) {
                                                     <td className="px-4 py-3">
                                                         <div className="flex flex-col gap-0.5">
                                                             <div className="flex items-center gap-1.5">
-                                                                <span className="font-mono text-[10px] font-bold text-[#1192a8] bg-[#1192a8]/5 px-1 rounded">Lô: {item.batchCode}</span>
+                                                                <span className="font-mono text-[10px] font-bold text-[#1192a8] bg-[#1192a8]/5 px-1 rounded">{isEnglish ? 'Batch' : 'Lô'}: {item.batchCode}</span>
                                                             </div>
                                                             <span className="text-[9px] font-bold text-gray-400">
-                                                                HSD: {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('vi-VN') : '---'}
+                                                                {isEnglish ? 'EXP' : 'HSD'}: {formatDateByLanguage(item.expiryDate)}
                                                             </span>
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 text-right">
-                                                        <span className="font-black text-gray-700">{onHand.toLocaleString()}</span>
+                                                        <span className="font-black text-gray-700">{formatNumberByLanguage(onHand)}</span>
                                                     </td>
                                                     <td className="px-4 py-3 text-right">
                                                         <span className="px-2 py-0.5 bg-green-50 text-green-700 rounded font-black">
-                                                            {available.toLocaleString()}
+                                                            {formatNumberByLanguage(available)}
                                                         </span>
                                                     </td>
                                                 </tr>
@@ -140,7 +142,7 @@ export default function LocationInventoryModal({ location, onClose }) {
                     ) : (
                         <div className="py-20 text-center">
                             <div className="text-4xl mb-4 opacity-20 text-gray-300">📭</div>
-                            <p className="text-gray-400 italic font-bold uppercase text-[10px] tracking-widest">Vị trí này đang trống hàng.</p>
+                            <p className="text-gray-400 italic font-bold uppercase text-[10px] tracking-widest">{isEnglish ? 'This location is empty.' : 'Vị trí này đang trống hàng.'}</p>
                         </div>
                     )}
                 </div>
@@ -151,10 +153,10 @@ export default function LocationInventoryModal({ location, onClose }) {
                         disabled={inventory.length === 0}
                         className="sm:hidden w-full py-3 bg-[#1192a8] text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 disabled:opacity-30"
                     >
-                        Xuất Excel
+                        {isEnglish ? 'Export Excel' : 'Xuất Excel'}
                     </button>
                     <button onClick={onClose} className="w-full sm:w-auto ml-auto px-10 py-3 bg-gray-500 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95">
-                        Đóng cửa sổ
+                        {isEnglish ? 'Close' : 'Đóng cửa sổ'}
                     </button>
                 </div>
             </div>

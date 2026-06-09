@@ -6,6 +6,7 @@ import com.wmsbackend.repository.InboundOrderDetailRepository;
 import com.wmsbackend.repository.InboundOrderRepository;
 import com.wmsbackend.repository.InventoryTransactionRepository;
 import com.wmsbackend.repository.OutboundOrderRepository;
+import com.wmsbackend.security.WorkspaceContext;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -62,9 +63,9 @@ public class FinancialService {
     }
 
     /** Lấy bản đồ giá trung bình của từng sản phẩm */
-    private Map<Integer, BigDecimal> getAveragePriceMap() {
+    private Map<Integer, BigDecimal> getAveragePriceMap(Integer companyId) {
         Map<Integer, BigDecimal> map = new HashMap<>();
-        List<Object[]> rows = detailRepo.getAveragePricesByProduct();
+        List<Object[]> rows = detailRepo.getAveragePricesByProduct(companyId);
         for (Object[] row : rows) {
             map.put(((Number) row[0]).intValue(), toBigDecimal(row[1]));
         }
@@ -88,17 +89,18 @@ public class FinancialService {
     public FinancialSummaryDTO getSummary(LocalDate from, LocalDate to) {
         LocalDateTime start = from.atStartOfDay();
         LocalDateTime end   = to.plusDays(1).atStartOfDay();
+        Integer companyId = WorkspaceContext.getFilterCompanyId();
         
-        BigDecimal cost    = toBigDecimal(inboundRepo.sumCostByDateRange(start, end));
-        BigDecimal revenue = toBigDecimal(outboundRepo.sumRevenueByDateRange(start, end));
+        BigDecimal cost    = toBigDecimal(inboundRepo.sumCostByDateRange(start, end, companyId));
+        BigDecimal revenue = toBigDecimal(outboundRepo.sumRevenueByDateRange(start, end, companyId));
         
-        Map<Integer, BigDecimal> priceMap = getAveragePriceMap();
-        BigDecimal adjLoss = calculateAdjustmentLoss(txRepo.findNegativeAdjustmentsByProduct(start, end), priceMap);
-        BigDecimal qcLoss  = toBigDecimal(detailRepo.sumDamagedValueByDateRange(start, end));
+        Map<Integer, BigDecimal> priceMap = getAveragePriceMap(companyId);
+        BigDecimal adjLoss = calculateAdjustmentLoss(txRepo.findNegativeAdjustmentsByProduct(start, end, companyId), priceMap);
+        BigDecimal qcLoss  = toBigDecimal(detailRepo.sumDamagedValueByDateRange(start, end, companyId));
         BigDecimal totalLoss = adjLoss.add(qcLoss);
 
         BigDecimal cogsVal = BigDecimal.ZERO;
-        List<Object[]> outboundByProd = txRepo.sumOutboundByProductInPeriod(start, end);
+        List<Object[]> outboundByProd = txRepo.sumOutboundByProductInPeriod(start, end, companyId);
         for (Object[] row : outboundByProd) {
             Integer pId = ((Number) row[0]).intValue();
             BigDecimal qty = toBigDecimal(row[1]).abs();
@@ -114,12 +116,13 @@ public class FinancialService {
     public FinancialDetailDTO getByDay(LocalDate from, LocalDate to) {
         LocalDateTime start = from.atStartOfDay();
         LocalDateTime end   = to.plusDays(1).atStartOfDay();
+        Integer companyId = WorkspaceContext.getFilterCompanyId();
 
-        Map<String, BigDecimal> costMap    = toNormalizedMap(inboundRepo.sumCostGroupByDayInRange(start, end));
-        Map<String, BigDecimal> revenueMap = toNormalizedMap(outboundRepo.sumRevenueGroupByDayInRange(start, end));
+        Map<String, BigDecimal> costMap    = toNormalizedMap(inboundRepo.sumCostGroupByDayInRange(start, end, companyId));
+        Map<String, BigDecimal> revenueMap = toNormalizedMap(outboundRepo.sumRevenueGroupByDayInRange(start, end, companyId));
         
-        Map<Integer, BigDecimal> priceMap = getAveragePriceMap();
-        List<Object[]> adjLossRows = txRepo.findNegativeAdjustmentsByDay(start, end);
+        Map<Integer, BigDecimal> priceMap = getAveragePriceMap(companyId);
+        List<Object[]> adjLossRows = txRepo.findNegativeAdjustmentsByDay(start, end, companyId);
         Map<String, BigDecimal> lossMap = new HashMap<>();
         for (Object[] row : adjLossRows) {
             String dateStr = row[0].toString();
@@ -129,13 +132,13 @@ public class FinancialService {
             lossMap.put(dateStr, lossMap.getOrDefault(dateStr, BigDecimal.ZERO).add(qty.multiply(p)));
         }
         
-        Map<String, BigDecimal> qcLossMap = toNormalizedMap(detailRepo.sumDamagedValueGroupByDayInRange(start, end));
+        Map<String, BigDecimal> qcLossMap = toNormalizedMap(detailRepo.sumDamagedValueGroupByDayInRange(start, end, companyId));
         for (Map.Entry<String, BigDecimal> entry : qcLossMap.entrySet()) {
             lossMap.put(entry.getKey(), lossMap.getOrDefault(entry.getKey(), BigDecimal.ZERO).add(entry.getValue()));
         }
 
         Map<String, BigDecimal> cogsDayMap = new HashMap<>();
-        List<Object[]> outboundQtyByDay = txRepo.sumOutboundQtyGroupByDay(start, end);
+        List<Object[]> outboundQtyByDay = txRepo.sumOutboundQtyGroupByDay(start, end, companyId);
         for (Object[] row : outboundQtyByDay) {
             String dateStr = row[0].toString();
             Integer pId = ((Number) row[1]).intValue();
@@ -246,11 +249,12 @@ public class FinancialService {
     // ── 3. Chi tiết theo THÁNG ─────────────────────────────────
 
     public FinancialDetailDTO getByMonth(int year) {
-        Map<String, BigDecimal> costMap    = toNormalizedMap(inboundRepo.sumCostGroupByMonthInYear(year));
-        Map<String, BigDecimal> revenueMap = toNormalizedMap(outboundRepo.sumRevenueGroupByMonthInYear(year));
+        Integer companyId = WorkspaceContext.getFilterCompanyId();
+        Map<String, BigDecimal> costMap    = toNormalizedMap(inboundRepo.sumCostGroupByMonthInYear(year, companyId));
+        Map<String, BigDecimal> revenueMap = toNormalizedMap(outboundRepo.sumRevenueGroupByMonthInYear(year, companyId));
 
-        Map<Integer, BigDecimal> priceMap = getAveragePriceMap();
-        List<Object[]> adjLossRows = txRepo.findNegativeAdjustmentsByMonth(year);
+        Map<Integer, BigDecimal> priceMap = getAveragePriceMap(companyId);
+        List<Object[]> adjLossRows = txRepo.findNegativeAdjustmentsByMonth(year, companyId);
         Map<String, BigDecimal> lossMap = new HashMap<>();
         for (Object[] row : adjLossRows) {
             String mStr = row[0].toString();
@@ -260,13 +264,13 @@ public class FinancialService {
             lossMap.put(mStr, lossMap.getOrDefault(mStr, BigDecimal.ZERO).add(qty.multiply(p)));
         }
         
-        Map<String, BigDecimal> qcLossMap = toNormalizedMap(detailRepo.sumDamagedValueGroupByMonthInYear(year));
+        Map<String, BigDecimal> qcLossMap = toNormalizedMap(detailRepo.sumDamagedValueGroupByMonthInYear(year, companyId));
         for (Map.Entry<String, BigDecimal> entry : qcLossMap.entrySet()) {
             lossMap.put(entry.getKey(), lossMap.getOrDefault(entry.getKey(), BigDecimal.ZERO).add(entry.getValue()));
         }
 
         Map<String, BigDecimal> cogsMonthMap = new HashMap<>();
-        List<Object[]> outboundQtyByMonth = txRepo.sumOutboundQtyGroupByMonthInYear(year);
+        List<Object[]> outboundQtyByMonth = txRepo.sumOutboundQtyGroupByMonthInYear(year, companyId);
         for (Object[] row : outboundQtyByMonth) {
             String mStr = row[0].toString();
             Integer pId = ((Number) row[1]).intValue();
@@ -284,7 +288,7 @@ public class FinancialService {
         List<BigDecimal> actualProfits = new ArrayList<>();
 
         for (int m = 1; m <= 12; m++) {
-            labels.add("Tháng " + m);
+            labels.add(String.valueOf(m));
             String lookupKey = String.valueOf(m);
             BigDecimal c = costMap.getOrDefault(lookupKey, BigDecimal.ZERO);
             BigDecimal r = revenueMap.getOrDefault(lookupKey, BigDecimal.ZERO);
@@ -304,12 +308,13 @@ public class FinancialService {
     // ── 4. Chi tiết theo NĂM ────────────────────────────
 
     public FinancialDetailDTO getByYear(int fromYear, int toYear) {
-        Map<String, BigDecimal> revenueMap = toNormalizedMap(outboundRepo.sumRevenueGroupByYear(fromYear, toYear));
-        Map<Integer, BigDecimal> priceMap = getAveragePriceMap();
+        Integer companyId = WorkspaceContext.getFilterCompanyId();
+        Map<String, BigDecimal> revenueMap = toNormalizedMap(outboundRepo.sumRevenueGroupByYear(fromYear, toYear, companyId));
+        Map<Integer, BigDecimal> priceMap = getAveragePriceMap(companyId);
 
         // Tính COGS theo năm (Số lượng xuất * Giá nhập trung bình)
         Map<String, BigDecimal> cogsMap = new HashMap<>();
-        List<Object[]> outboundQtyRows = txRepo.sumOutboundQtyGroupByYear(fromYear, toYear);
+        List<Object[]> outboundQtyRows = txRepo.sumOutboundQtyGroupByYear(fromYear, toYear, companyId);
         for (Object[] row : outboundQtyRows) {
             String yStr = row[0].toString();
             Integer pId = ((Number) row[1]).intValue();
@@ -319,7 +324,7 @@ public class FinancialService {
         }
 
         Map<String, BigDecimal> lossMap = new HashMap<>();
-        List<Object[]> adjLossRows = txRepo.findNegativeAdjustmentsByYear(fromYear, toYear);
+        List<Object[]> adjLossRows = txRepo.findNegativeAdjustmentsByYear(fromYear, toYear, companyId);
         for (Object[] row : adjLossRows) {
             String yStr = row[0].toString();
             Integer pId = ((Number) row[1]).intValue();
@@ -328,7 +333,7 @@ public class FinancialService {
             lossMap.put(yStr, lossMap.getOrDefault(yStr, BigDecimal.ZERO).add(qty.multiply(p)));
         }
         
-        Map<String, BigDecimal> qcLossMap = toNormalizedMap(detailRepo.sumDamagedValueGroupByYear(fromYear, toYear));
+        Map<String, BigDecimal> qcLossMap = toNormalizedMap(detailRepo.sumDamagedValueGroupByYear(fromYear, toYear, companyId));
         for (Map.Entry<String, BigDecimal> entry : qcLossMap.entrySet()) {
             lossMap.put(entry.getKey(), lossMap.getOrDefault(entry.getKey(), BigDecimal.ZERO).add(entry.getValue()));
         }
@@ -340,7 +345,7 @@ public class FinancialService {
         List<BigDecimal> profitData  = new ArrayList<>();
 
         for (int y = fromYear; y <= toYear; y++) {
-            labels.add("Năm " + y);
+            labels.add(String.valueOf(y));
             String lookupKey = String.valueOf(y);
             BigDecimal cogs = cogsMap.getOrDefault(lookupKey, BigDecimal.ZERO);
             BigDecimal r = revenueMap.getOrDefault(lookupKey, BigDecimal.ZERO);

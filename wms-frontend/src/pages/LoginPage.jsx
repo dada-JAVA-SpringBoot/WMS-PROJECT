@@ -1,9 +1,11 @@
 // src/pages/Login.jsx
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login({ onLoginSuccess }) {
     const { login } = useAuth();
+    const { t } = useTranslation();
 
     const [form, setForm]       = useState({ username: '', password: '' });
     const [error, setError]     = useState('');
@@ -16,8 +18,8 @@ export default function Login({ onLoginSuccess }) {
     };
 
     const handleSubmit = async () => {
-        if (!form.username.trim()) { setError('Vui lòng nhập tên đăng nhập'); return; }
-        if (!form.password)        { setError('Vui lòng nhập mật khẩu');       return; }
+        if (!form.username.trim()) { setError(t('login.err_empty_username')); return; }
+        if (!form.password)        { setError(t('login.err_empty_password'));       return; }
 
         setLoading(true);
         try {
@@ -39,8 +41,8 @@ export default function Login({ onLoginSuccess }) {
 
                 {/* ── Header ── */}
                 <div className="bg-gradient-to-r from-[#00529c] to-[#1192a8] px-8 py-8 text-center">
-                    <h1 className="text-white text-2xl font-black tracking-tight">WMS System</h1>
-                    <p className="text-white/70 text-sm mt-1">Hệ thống quản lý kho hàng</p>
+                    <h1 className="text-white text-2xl font-black tracking-tight">{t('login.title')}</h1>
+                    <p className="text-white/70 text-sm mt-1">{t('login.subtitle')}</p>
                 </div>
 
                 {/* ── Form ── */}
@@ -49,14 +51,14 @@ export default function Login({ onLoginSuccess }) {
                     {/* Username */}
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                            Tên đăng nhập
+                            {t('login.username')}
                         </label>
                         <input
                             type="text"
                             value={form.username}
                             onChange={e => handleChange('username', e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder="Nhập username..."
+                            placeholder={t('login.username_placeholder')}
                             autoFocus
                             autoComplete="username"
                             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
@@ -68,7 +70,7 @@ export default function Login({ onLoginSuccess }) {
                     {/* Password */}
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                            Mật khẩu
+                            {t('login.password')}
                         </label>
                         <div className="relative">
                             <input
@@ -76,7 +78,7 @@ export default function Login({ onLoginSuccess }) {
                                 value={form.password}
                                 onChange={e => handleChange('password', e.target.value)}
                                 onKeyDown={handleKeyDown}
-                                placeholder="Nhập mật khẩu..."
+                                placeholder={t('login.password_placeholder')}
                                 autoComplete="current-password"
                                 className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-12 text-sm
                                            focus:outline-none focus:ring-2 focus:ring-[#1192a8]/25
@@ -113,7 +115,7 @@ export default function Login({ onLoginSuccess }) {
                                    flex items-center justify-center gap-2"
                     >
                         {loading && <span className="animate-spin text-base">↻</span>}
-                        {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                        {loading ? t('login.btn_logging_in') : t('login.btn_login')}
                     </button>
                 </div>
             </div>

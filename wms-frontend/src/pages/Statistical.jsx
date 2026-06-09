@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import StatisticalOverview from './Statistical/StatisticalOverview';
 import StatisticalInventory from './Statistical/StatisticalInventory';
 import StatisticalOrders from './Statistical/StatisticalOrders';
@@ -6,16 +7,18 @@ import StatisticalFinance from './Statistical/StatisticalFinance';
 import StatisticalPartners from './Statistical/StatisticalPartners';
 import TopTabNav from '../components/statistical/TopTabNav';
 
-const topTabs = [
-    { id: 'overview',   label: 'Dashboard'    },
-    { id: 'inventory',  label: 'Tồn kho & ABC' },
-    { id: 'orders',     label: 'Nhập - Xuất'  },
-    { id: 'finance',    label: 'Tài chính'    },
-    { id: 'partners',   label: 'Đối tác'      },
-];
 
 export default function Statistical() {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('overview');
+
+    const topTabs = [
+        { id: 'overview', label: t('pages.Statistical.tabOverview') },
+        { id: 'inventory', label: t('pages.Statistical.tabInventory') },
+        { id: 'orders', label: t('pages.Statistical.tabOrders') },
+        { id: 'finance', label: t('pages.Statistical.tabFinance') },
+        { id: 'partners', label: t('pages.Statistical.tabPartners') },
+    ];
 
     const renderContent = () => {
         switch (activeTab) {

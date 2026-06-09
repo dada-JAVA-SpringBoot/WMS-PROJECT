@@ -45,6 +45,11 @@ public class SecurityConfig {
                         
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/api/network/**").permitAll()
+                        .requestMatchers("/api/scanner/**").permitAll()
+                        .requestMatchers("/api/companies/current").authenticated()
+                        .requestMatchers("/api/companies/**").hasRole("ADMIN")
                         .requestMatchers("/uploads/**").permitAll()
 
                         // Phân quyền chi tiết
@@ -79,7 +84,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173", "https://lib.id.vn", "http://lib.id.vn"));
+        config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

@@ -9,6 +9,7 @@ import com.wmsbackend.repository.InboundOrderDetailRepository;
 import com.wmsbackend.repository.InboundOrderRepository;
 import com.wmsbackend.repository.InventoryRepository;
 import com.wmsbackend.repository.LocationRepository;
+import com.wmsbackend.security.WorkspaceContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -53,6 +54,7 @@ public class LocationOverviewController {
                 wh.setWarehouseCode("WH-001");
                 wh.setName("Kho mặc định");
                 wh.setAddress("Hệ thống");
+                wh.setCompanyId(WorkspaceContext.getCurrentCompanyId());
                 warehouseRepo.save(wh);
                 System.out.println(">>> Đã tạo kho mặc định WH-001 thành công.");
             }
@@ -65,7 +67,10 @@ public class LocationOverviewController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL','CHECKER','HANDLER')")
     public ResponseEntity<List<LocationOverviewDTO>> getOverview() {
-        List<Location> locations = locationRepo.findAll();
+        Integer filterId = WorkspaceContext.getFilterCompanyId();
+        List<Location> locations = locationRepo.findAll().stream()
+                .filter(l -> filterId == null || filterId.equals(l.getCompanyId()))
+                .toList();
         if (locations.isEmpty()) {
             return ResponseEntity.ok(List.of());
         }
@@ -141,6 +146,7 @@ public class LocationOverviewController {
             // Gán kho mặc định nếu không có
             warehouseRepo.findAll().stream().findFirst().ifPresent(wh -> location.setWarehouseId(wh.getId()));
         }
+        location.setCompanyId(WorkspaceContext.getCurrentCompanyId());
         return ResponseEntity.ok(locationRepo.save(location));
     }
 

@@ -15,106 +15,126 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
     // ── Dòng chảy hàng hóa theo ngày (Dashboard chart) ────────────────────
     @Query("SELECT CAST(t.createdAt AS date), t.transactionType, COALESCE(SUM(t.quantityChange), 0) " +
             "FROM InventoryTransaction t " +
-            "WHERE t.createdAt >= :startDate AND t.createdAt < :endDate " +
+            "WHERE (:companyId IS NULL OR t.companyId = :companyId) " +
+            "AND t.createdAt >= :startDate AND t.createdAt < :endDate " +
             "GROUP BY CAST(t.createdAt AS date), t.transactionType " +
             "ORDER BY CAST(t.createdAt AS date)")
     List<Object[]> findDailyFlow(
             @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate);
+            @Param("endDate") LocalDateTime endDate,
+            @Param("companyId") Integer companyId);
 
     // ── Tổng nhập theo sản phẩm trong kỳ ──────────────────────────────────
     @Query("SELECT t.productId, COALESCE(SUM(t.quantityChange), 0) " +
             "FROM InventoryTransaction t " +
             "WHERE t.transactionType = 'INBOUND' " +
+            "AND (:companyId IS NULL OR t.companyId = :companyId) " +
             "AND t.createdAt >= :startDate AND t.createdAt < :endDate " +
             "GROUP BY t.productId")
     List<Object[]> sumInboundByProductInPeriod(
             @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate);
+            @Param("endDate") LocalDateTime endDate,
+            @Param("companyId") Integer companyId);
 
     // ── Tổng xuất theo sản phẩm trong kỳ ──────────────────────────────────
     @Query("SELECT t.productId, COALESCE(SUM(t.quantityChange), 0) " +
             "FROM InventoryTransaction t " +
             "WHERE t.transactionType = 'OUTBOUND' " +
+            "AND (:companyId IS NULL OR t.companyId = :companyId) " +
             "AND t.createdAt >= :startDate AND t.createdAt < :endDate " +
             "GROUP BY t.productId")
     List<Object[]> sumOutboundByProductInPeriod(
             @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate);
+            @Param("endDate") LocalDateTime endDate,
+            @Param("companyId") Integer companyId);
 
     // ── Tổng điều chỉnh (ADJUSTMENT) theo sản phẩm trong kỳ ──────────────────
     @Query("SELECT t.productId, COALESCE(SUM(t.quantityChange), 0) " +
             "FROM InventoryTransaction t " +
             "WHERE t.transactionType = 'ADJUSTMENT' " +
+            "AND (:companyId IS NULL OR t.companyId = :companyId) " +
             "AND t.createdAt >= :startDate AND t.createdAt < :endDate " +
             "GROUP BY t.productId")
     List<Object[]> sumAdjustmentsByProductInPeriod(
             @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate);
+            @Param("endDate") LocalDateTime endDate,
+            @Param("companyId") Integer companyId);
 
     // ── Thống kê hao hụt (Shrinkage) ──────────────────────────────────
     @Query("SELECT t.productId, SUM(t.quantityChange) " +
             "FROM InventoryTransaction t " +
             "WHERE t.transactionType = 'ADJUSTMENT' " +
             "AND t.quantityChange < 0 " +
+            "AND (:companyId IS NULL OR t.companyId = :companyId) " +
             "AND t.createdAt >= :startDate AND t.createdAt < :endDate " +
             "GROUP BY t.productId")
     List<Object[]> findNegativeAdjustmentsByProduct(
             @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate);
+            @Param("endDate") LocalDateTime endDate,
+            @Param("companyId") Integer companyId);
 
     @Query("SELECT CAST(t.createdAt AS date), t.productId, SUM(t.quantityChange) " +
             "FROM InventoryTransaction t " +
             "WHERE t.transactionType = 'ADJUSTMENT' " +
             "AND t.quantityChange < 0 " +
+            "AND (:companyId IS NULL OR t.companyId = :companyId) " +
             "AND t.createdAt >= :startDate AND t.createdAt < :endDate " +
             "GROUP BY CAST(t.createdAt AS date), t.productId")
     List<Object[]> findNegativeAdjustmentsByDay(
             @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate);
+            @Param("endDate") LocalDateTime endDate,
+            @Param("companyId") Integer companyId);
 
     @Query("SELECT MONTH(t.createdAt), t.productId, SUM(t.quantityChange) " +
             "FROM InventoryTransaction t " +
             "WHERE t.transactionType = 'ADJUSTMENT' " +
             "AND t.quantityChange < 0 " +
+            "AND (:companyId IS NULL OR t.companyId = :companyId) " +
             "AND YEAR(t.createdAt) = :year " +
             "GROUP BY MONTH(t.createdAt), t.productId")
-    List<Object[]> findNegativeAdjustmentsByMonth(@Param("year") int year);
+    List<Object[]> findNegativeAdjustmentsByMonth(@Param("year") int year, @Param("companyId") Integer companyId);
 
     @Query("SELECT YEAR(t.createdAt), t.productId, SUM(t.quantityChange) " +
             "FROM InventoryTransaction t " +
             "WHERE t.transactionType = 'ADJUSTMENT' " +
             "AND t.quantityChange < 0 " +
+            "AND (:companyId IS NULL OR t.companyId = :companyId) " +
             "AND YEAR(t.createdAt) >= :fromYear AND YEAR(t.createdAt) <= :toYear " +
             "GROUP BY YEAR(t.createdAt), t.productId")
     List<Object[]> findNegativeAdjustmentsByYear(
             @Param("fromYear") int fromYear,
-            @Param("toYear") int toYear);
+            @Param("toYear") int toYear,
+            @Param("companyId") Integer companyId);
 
     @Query("SELECT YEAR(t.createdAt), t.productId, SUM(t.quantityChange) " +
             "FROM InventoryTransaction t " +
             "WHERE t.transactionType = 'OUTBOUND' " +
+            "AND (:companyId IS NULL OR t.companyId = :companyId) " +
             "AND YEAR(t.createdAt) >= :fromYear AND YEAR(t.createdAt) <= :toYear " +
             "GROUP BY YEAR(t.createdAt), t.productId")
     List<Object[]> sumOutboundQtyGroupByYear(
             @Param("fromYear") int fromYear,
-            @Param("toYear") int toYear);
+            @Param("toYear") int toYear,
+            @Param("companyId") Integer companyId);
 
     @Query("SELECT CAST(t.createdAt AS date), t.productId, SUM(t.quantityChange) " +
             "FROM InventoryTransaction t " +
             "WHERE t.transactionType = 'OUTBOUND' " +
+            "AND (:companyId IS NULL OR t.companyId = :companyId) " +
             "AND t.createdAt >= :startDate AND t.createdAt < :endDate " +
             "GROUP BY CAST(t.createdAt AS date), t.productId")
     List<Object[]> sumOutboundQtyGroupByDay(
             @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate);
+            @Param("endDate") LocalDateTime endDate,
+            @Param("companyId") Integer companyId);
 
     @Query("SELECT MONTH(t.createdAt), t.productId, SUM(t.quantityChange) " +
             "FROM InventoryTransaction t " +
             "WHERE t.transactionType = 'OUTBOUND' " +
+            "AND (:companyId IS NULL OR t.companyId = :companyId) " +
             "AND YEAR(t.createdAt) = :year " +
             "GROUP BY MONTH(t.createdAt), t.productId")
-    List<Object[]> sumOutboundQtyGroupByMonthInYear(@Param("year") int year);
+    List<Object[]> sumOutboundQtyGroupByMonthInYear(@Param("year") int year, @Param("companyId") Integer companyId);
 
     // ── Lịch sử giao dịch chi tiết ─────────────────────────────────────────
     @Query("SELECT new com.wmsbackend.dto.InventoryTransactionDTO(" +

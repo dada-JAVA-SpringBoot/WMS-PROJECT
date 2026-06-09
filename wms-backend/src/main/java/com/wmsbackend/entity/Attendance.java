@@ -20,6 +20,9 @@ public class Attendance {
     @JoinColumn(name = "StaffId", nullable = false)
     private Staff staff;
 
+    @Column(name = "CompanyId")
+    private Integer companyId;
+
     @Column(name = "WorkDate", nullable = false)
     private LocalDate workDate;
 

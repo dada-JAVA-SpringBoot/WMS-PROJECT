@@ -6,6 +6,7 @@ package com.wmsbackend.controller;
 import com.wmsbackend.dto.CustomerDTO;
 import com.wmsbackend.entity.Customer;
 import com.wmsbackend.service.CustomerService;
+import com.wmsbackend.security.WorkspaceContext;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -36,6 +37,9 @@ public class CustomerController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public Customer createCustomer(@RequestBody Customer customer) {
+        if (customer.getCompanyId() == null) {
+            customer.setCompanyId(WorkspaceContext.getCurrentCompanyId());
+        }
         return customerService.createCustomer(customer);
     }
 

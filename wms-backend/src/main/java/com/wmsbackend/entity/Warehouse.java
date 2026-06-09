@@ -18,6 +18,9 @@ public class Warehouse {
     @Column(name = "Address", length = 500)
     private String address;
 
+    @Column(name = "CompanyId")
+    private Integer companyId;
+
     // Getter Setter
 
     public Integer getId() {
@@ -50,5 +53,13 @@ public class Warehouse {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public Integer getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Integer companyId) {
+        this.companyId = companyId;
     }
 }

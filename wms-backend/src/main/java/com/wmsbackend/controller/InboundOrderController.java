@@ -7,7 +7,9 @@ import com.wmsbackend.dto.InboundCreateRequest;
 import com.wmsbackend.dto.QCStatusUpdateRequest;
 import com.wmsbackend.entity.*;
 import com.wmsbackend.repository.*;
+import com.wmsbackend.security.WorkspaceContext;
 import com.wmsbackend.util.TimeUtils;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -45,14 +47,31 @@ public class InboundOrderController {
     // 1. GET ALL
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','WAREHOUSE_KEEPER','INBOUND_STAFF','QUALITY_CONTROL')")
-    public List<InboundOrder> getAll() {
-        return orderRepo.findAll();
+    public ResponseEntity<?> getAll(@RequestParam(defaultValue = "0") int page,
+                                    @RequestParam(defaultValue = "20") int size) {
+        Integer filterId = WorkspaceContext.getFilterCompanyId();
+        
+        if (page >= 0 && size > 0) {
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                page, size, org.springframework.data.domain.Sort.by("createdAt").descending());
+            return ResponseEntity.ok(orderRepo.findAllByCompanyId(filterId, pageable));
+        }
+
+        List<InboundOrder> orders = orderRepo.findAll().stream()
+                .filter(o -> filterId == null || filterId.equals(o.getCompanyId()))
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .toList();
+        return ResponseEntity.ok(orders);
     }
 
     // 2. GET DETAILS
     @GetMapping("/{id}/details")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STOREKEEPER','INBOUND_STAFF','OUTBOUND_STAFF','QUALITY_CONTROL','HANDLER')")
     public List<InboundOrderDetail> getDetails(@PathVariable Long id) {
+        InboundOrder order = orderRepo.findById(id).orElse(null);
+        if (order != null && !isAccessible(order.getCompanyId())) {
+            return List.of();
+        }
         return detailRepo.findByInboundOrderId(id);
     }
 
@@ -69,6 +88,7 @@ public class InboundOrderController {
     public InboundOrder create(@RequestBody InboundCreateRequest req) {
         InboundOrder order = new InboundOrder();
         order.setSupplierId(req.getSupplierId());
+        order.setCompanyId(WorkspaceContext.getCurrentCompanyId());
         order.setCreatedBy(req.getCreatedBy());
         order.setReferenceNumber(req.getReferenceNumber());
         order.setStatus(req.getStatus() != null ? req.getStatus() : "DRAFT");
@@ -102,6 +122,7 @@ public class InboundOrderController {
                 if (batch == null) {
                     batch = new Batch();
                     batch.setProductId(itemReq.getProductId());
+                    batch.setCompanyId(WorkspaceContext.getCurrentCompanyId());
                     batch.setBatchCode(itemReq.getBatchCode());
                     batch.setExpiryDate(itemReq.getExpiryDate() != null ? itemReq.getExpiryDate() : java.time.LocalDate.now().plusYears(1));
                     batch.setCreatedAt(TimeUtils.now());
@@ -126,6 +147,9 @@ public class InboundOrderController {
     @Transactional
     public String updateStatus(@PathVariable Long id, @RequestBody QCStatusUpdateRequest request) {
         InboundOrder order = orderRepo.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu nhập"));
+        if (!isAccessible(order.getCompanyId())) {
+            throw new RuntimeException("Không có quyền thao tác phiếu của công ty khác");
+        }
 
         String currentStatus = order.getStatus() != null ? order.getStatus() : "DRAFT";
         String nextStatus = request.getStatus() != null ? request.getStatus().trim().toUpperCase() : "";
@@ -164,6 +188,9 @@ public class InboundOrderController {
     @PreAuthorize("hasAnyRole('ADMIN','QUALITY_CONTROL','MANAGER')")
     public String confirmQC(@PathVariable Long id, @RequestBody List<InboundOrderDetail> inspectedItems) {
         InboundOrder order = orderRepo.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu nhập"));
+        if (!isAccessible(order.getCompanyId())) {
+            throw new RuntimeException("Không có quyền thao tác phiếu của công ty khác");
+        }
         
         if (inspectedItems != null) {
             for (InboundOrderDetail item : inspectedItems) {
@@ -192,6 +219,9 @@ public class InboundOrderController {
     @Transactional
     public String cancelOrder(@PathVariable Long id) {
         InboundOrder order = orderRepo.findById(id).orElse(null);
+        if (order != null && !isAccessible(order.getCompanyId())) {
+            return "Không có quyền";
+        }
         if (order != null) {
             if ("COMPLETED".equalsIgnoreCase(order.getStatus())) {
                 applyInventoryDelta(order, -1);
@@ -234,6 +264,7 @@ public class InboundOrderController {
                 stock.setProductId(item.getProductId());
                 stock.setLocationId(item.getLocationId());
                 stock.setBatchId(item.getBatchId());
+                stock.setCompanyId(WorkspaceContext.getCurrentCompanyId());
                 stock.setQuantityOnHand(delta);
             } else {
                 BigDecimal currentQty = stock.getQuantityOnHand() != null ? stock.getQuantityOnHand() : BigDecimal.ZERO;
@@ -246,6 +277,7 @@ public class InboundOrderController {
             tx.setProductId(item.getProductId());
             tx.setLocationId(item.getLocationId());
             tx.setBatchId(item.getBatchId());
+            tx.setCompanyId(order.getCompanyId());
             tx.setTransactionType(direction > 0 ? "INBOUND" : "ADJUSTMENT");
             tx.setQuantityChange(delta.multiply(BigDecimal.valueOf(direction)));
             tx.setReferenceId(order.getId());
@@ -253,5 +285,10 @@ public class InboundOrderController {
             tx.setCreatedAt(TimeUtils.now());
             transactionRepo.save(tx);
         }
+    }
+
+    private boolean isAccessible(Integer companyId) {
+        Integer currentCompanyId = WorkspaceContext.getCurrentCompanyId();
+        return WorkspaceContext.isGlobalAdmin() || currentCompanyId == null || companyId == null || currentCompanyId.equals(companyId);
     }
 }

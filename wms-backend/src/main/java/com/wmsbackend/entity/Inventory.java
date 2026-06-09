@@ -20,6 +20,9 @@ public class Inventory {
     @Column(name = "BatchId", nullable = false)
     private Integer batchId;
 
+    @Column(name = "CompanyId")
+    private Integer companyId;
+
     @Column(name = "QuantityOnHand")
     private BigDecimal quantityOnHand;
 
@@ -61,6 +64,14 @@ public class Inventory {
 
     public void setBatchId(Integer batchId) {
         this.batchId = batchId;
+    }
+
+    public Integer getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Integer companyId) {
+        this.companyId = companyId;
     }
 
     public BigDecimal getQuantityOnHand() {

@@ -16,6 +16,9 @@ public class InboundOrder {
     @Column(name = "SupplierId")
     private Integer supplierId;
 
+    @Column(name = "CompanyId")
+    private Integer companyId;
+
     @org.hibernate.annotations.Formula("(SELECT s.Name FROM Suppliers s WHERE s.Id = SupplierId)")
     private String supplierName;
 
@@ -79,6 +82,14 @@ public class InboundOrder {
 
     public void setSupplierId(Integer supplierId) {
         this.supplierId = supplierId;
+    }
+
+    public Integer getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Integer companyId) {
+        this.companyId = companyId;
     }
 
     public String getReferenceNumber() {

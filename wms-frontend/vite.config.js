@@ -7,10 +7,15 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     server: {
+      host: true, // Allow connections from local network (LAN)
       proxy: {
         '/api': {
           target: 'http://localhost:8080',
           changeOrigin: true,
+        },
+        '/ws': {
+          target: env.VITE_PROXY_TARGET || 'http://localhost:8085',
+          ws: true,
         }
       }
     }

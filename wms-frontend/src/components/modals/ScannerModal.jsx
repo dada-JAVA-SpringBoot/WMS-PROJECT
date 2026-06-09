@@ -26,10 +26,17 @@ export default function ScannerModal({ isOpen, onClose, onScanSuccess }) {
         const startCamera = async () => {
             try {
                 await html5QrCode.start(
-                    { facingMode: "environment" }, 
+                    { facingMode: { ideal: "environment" } }, 
                     {
                         fps: 10,
-                        qrbox: { width: 250, height: 250 },
+                        qrbox: { width: 300, height: 150 }, // Barcode-friendly aspect ratio
+                        formatsToSupport: [
+                            Html5Qrcode.Html5QrcodeSupportedFormats.QR_CODE,
+                            Html5Qrcode.Html5QrcodeSupportedFormats.CODE_128,
+                            Html5Qrcode.Html5QrcodeSupportedFormats.EAN_13,
+                            Html5Qrcode.Html5QrcodeSupportedFormats.EAN_8,
+                            Html5Qrcode.Html5QrcodeSupportedFormats.CODE_39
+                        ]
                     },
                     (decodedText) => {
                         onScanSuccess(decodedText);
@@ -43,7 +50,7 @@ export default function ScannerModal({ isOpen, onClose, onScanSuccess }) {
                 setErrorMsg('');
             } catch (err) {
                 console.error("Unable to start camera", err);
-                setErrorMsg("Không thể truy cập camera. Vui lòng cấp quyền hoặc kiểm tra thiết bị.");
+                setErrorMsg("Cannot access the camera. Please allow permission or check the device.");
                 setIsCameraStarted(false);
             }
         };
@@ -75,7 +82,7 @@ export default function ScannerModal({ isOpen, onClose, onScanSuccess }) {
             <div className="w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl relative">
                 {/* Header */}
                 <div className="p-4 border-b flex items-center justify-between bg-gray-50">
-                    <h3 className="font-black text-[#1192a8] uppercase text-sm tracking-wider">Quét mã sản phẩm</h3>
+                    <h3 className="font-black text-[#1192a8] uppercase text-sm tracking-wider">Scan Product Code</h3>
                     <button 
                         onClick={onClose}
                         className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 transition"
@@ -89,7 +96,7 @@ export default function ScannerModal({ isOpen, onClose, onScanSuccess }) {
                     {!isCameraStarted && !errorMsg && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 z-10 p-6 text-center">
                             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1192a8] mb-4"></div>
-                            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Đang khởi tạo camera...</p>
+                            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Initializing camera...</p>
                         </div>
                     )}
 
@@ -101,7 +108,7 @@ export default function ScannerModal({ isOpen, onClose, onScanSuccess }) {
                                 onClick={() => window.location.reload()}
                                 className="px-6 py-2 bg-red-600 text-white rounded-xl text-xs font-black uppercase"
                             >
-                                Thử lại
+                                Retry
                             </button>
                         </div>
                     )}
@@ -114,15 +121,18 @@ export default function ScannerModal({ isOpen, onClose, onScanSuccess }) {
                     {/* Scanner Overlay UI */}
                     {isCameraStarted && (
                         <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                            <div className="w-[250px] h-[250px] border-2 border-teal-400 rounded-3xl relative shadow-[0_0_0_999px_rgba(0,0,0,0.5)]">
-                                {/* Góc quét */}
-                                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-teal-400 rounded-tl-xl"></div>
-                                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-teal-400 rounded-tr-xl"></div>
-                                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-teal-400 rounded-bl-xl"></div>
-                                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-teal-400 rounded-br-xl"></div>
+                            <div className="w-[300px] h-[150px] relative shadow-[0_0_0_999px_rgba(0,0,0,0.5)] border-2 border-teal-400/50">
+                                {/* Laser line */}
+                                <div className="absolute top-1/2 left-0 w-full h-0.5 bg-red-500 shadow-[0_0_10px_rgba(255,0,0,0.8)] animate-scan-line-horizontal"></div>
+                                {/* Plus (+) crosshair */}
+                                <div className="absolute top-1/2 left-0 w-full h-0.5 bg-teal-400/50"></div>
+                                <div className="absolute top-0 left-1/2 w-0.5 h-full bg-teal-400/50"></div>
                                 
-                                {/* Tia quét hiệu ứng */}
-                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-teal-400 to-transparent animate-scan-line"></div>
+                                {/* Corner markers */}
+                                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-teal-400"></div>
+                                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-teal-400"></div>
+                                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-teal-400"></div>
+                                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-teal-400"></div>
                             </div>
                         </div>
                     )}
@@ -131,13 +141,13 @@ export default function ScannerModal({ isOpen, onClose, onScanSuccess }) {
                 {/* Footer / Instructions */}
                 <div className="p-6 bg-gray-50 text-center">
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">
-                        {isCameraStarted ? "Hướng camera về phía mã vạch hoặc mã QR" : "Vui lòng cho phép quyền truy cập camera"}
+                        {isCameraStarted ? "Aim the camera at a barcode or QR code" : "Please allow camera access"}
                     </p>
                     <button 
                         onClick={onClose}
                         className="mt-4 w-full py-4 bg-gray-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all"
                     >
-                        Đóng trình quét
+                        Close Scanner
                     </button>
                 </div>
             </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import axiosClient from '../../api/axiosClient';
 
 const KpiCard = ({ label, value, icon, color }) => (
@@ -11,17 +12,23 @@ const KpiCard = ({ label, value, icon, color }) => (
     </div>
 );
 
-const Spinner = () => (
-    <div className="flex items-center justify-center h-64 text-gray-400 dark:text-gray-500 text-sm gap-2">
-        <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-        </svg>
-        Đang tải dữ liệu...
-    </div>
-);
+const Spinner = () => {
+    const { t } = useTranslation();
+    return (
+        <div className="flex items-center justify-center h-64 text-gray-400 dark:text-gray-500 text-sm gap-2">
+            <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+            </svg>
+            {t('pages.StatisticalCustomers.loading')}
+        </div>
+    );
+};
+
+import { useWorkspaceRefresh } from '../../hooks/useWorkspaceRefresh';
 
 export default function StatisticalCustomers() {
+    const { t } = useTranslation();
     const [customers, setCustomers] = useState([]);
     const [keyword, setKeyword]     = useState('');
     const [loading, setLoading]     = useState(true);
@@ -32,7 +39,7 @@ export default function StatisticalCustomers() {
         axiosClient
             .get(`/api/customers`, { params })
             .then(r => setCustomers(r.data))
-            .catch(() => setError('Không thể tải danh sách khách hàng.'))
+            .catch(() => setError(t('pages.StatisticalCustomers.loadError')))
             .finally(() => setLoading(false));
     };
 
@@ -50,8 +57,8 @@ export default function StatisticalCustomers() {
         <div className="p-6 space-y-6 bg-[#f8f9fa] dark:bg-gray-900 min-h-full transition-colors duration-300">
             {/* KPI Cards */}
             <div className="grid grid-cols-2 gap-4">
-                <KpiCard label="Tổng khách hàng" value={customers.length} icon="🏪" color="text-blue-600 dark:text-blue-400" />
-                <KpiCard label="Đang hoạt động"  value={customers.length} icon="✅" color="text-emerald-600 dark:text-emerald-400" />
+                <KpiCard label={t('pages.StatisticalCustomers.kpiTotal')} value={customers.length} icon="🏪" color="text-blue-600" />
+                <KpiCard label={t('pages.StatisticalCustomers.kpiActive')}  value={customers.length} icon="✅" color="text-emerald-600" />
             </div>
 
             {/* Search */}
@@ -60,16 +67,16 @@ export default function StatisticalCustomers() {
                     type="text"
                     value={keyword}
                     onChange={e => setKeyword(e.target.value)}
-                    placeholder="Tìm theo tên, mã, SĐT..."
+                    placeholder={t('pages.StatisticalCustomers.placeholderSearch')}
                     className="flex-1 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 transition-colors"
                 />
                 <button type="submit" className="bg-blue-600 dark:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors">
-                    Tìm kiếm
+                    {t('pages.StatisticalCustomers.btnSearch')}
                 </button>
                 {keyword && (
                     <button type="button" onClick={() => { setKeyword(''); fetchCustomers(); }}
                             className="border border-gray-200 dark:border-gray-600 px-4 py-2 rounded-xl text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                        Xóa
+                        {t('pages.StatisticalCustomers.btnClear')}
                     </button>
                 )}
             </form>
@@ -79,9 +86,9 @@ export default function StatisticalCustomers() {
                 <div className="flex items-center gap-2 mb-4">
                     <span className="w-1 h-5 rounded bg-blue-500 dark:bg-blue-400 inline-block" />
                     <h3 className="text-sm font-bold text-gray-600 dark:text-gray-300">
-                        Danh sách khách hàng
+                        {t('pages.StatisticalCustomers.tblTitle')}
                         <span className="ml-2 text-xs font-normal text-gray-400 dark:text-gray-500">
-                            ({customers.length} kết quả)
+                            {t('pages.StatisticalCustomers.results', { count: customers.length })}
                         </span>
                     </h3>
                 </div>
@@ -89,17 +96,17 @@ export default function StatisticalCustomers() {
                 {loading ? <Spinner /> : error ? (
                     <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm">{error}</div>
                 ) : customers.length === 0 ? (
-                    <div className="py-12 text-center text-gray-400 dark:text-gray-600 text-sm">Không tìm thấy khách hàng nào.</div>
+                    <div className="py-12 text-center text-gray-400 dark:text-gray-600 text-sm">{t('pages.StatisticalCustomers.noData')}</div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
                             <tr className="text-left text-[11px] text-gray-400 dark:text-gray-500 uppercase border-b border-gray-100 dark:border-gray-700">
                                 <th className="pb-2 pr-4">#</th>
-                                <th className="pb-2 pr-4">Mã KH</th>
-                                <th className="pb-2 pr-4">Tên khách hàng</th>
-                                <th className="pb-2 pr-4">SĐT</th>
-                                <th className="pb-2">Địa chỉ</th>
+                                <th className="pb-2 pr-4">{t('pages.StatisticalCustomers.colCode')}</th>
+                                <th className="pb-2 pr-4">{t('pages.StatisticalCustomers.colName')}</th>
+                                <th className="pb-2 pr-4">{t('pages.StatisticalCustomers.colPhone')}</th>
+                                <th className="pb-2">{t('pages.StatisticalCustomers.colAddress')}</th>
                             </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">

@@ -15,5 +15,9 @@ public class LoginResponse {
     private String fullName;
     private String employeeCode;
     private String avatar;
+    private Integer companyId;
+    private String companyCode;
+    private String companyName;
+    private Boolean globalAdmin;
     private List<String> roles;
 }

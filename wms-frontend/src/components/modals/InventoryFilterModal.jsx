@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useModalDismiss } from './useModalDismiss';
 
 const defaultDraft = {
@@ -27,6 +28,8 @@ export default function InventoryFilterModal({ isOpen, value, categories = [], s
 }
 
 function InventoryFilterModalContent({ value, categories, suppliers, units, onApply, onClose }) {
+    const { i18n } = useTranslation();
+    const isEnglish = String(i18n.language || '').startsWith('en');
     const [draft, setDraft] = useState(value || defaultDraft);
     useModalDismiss(true, onClose);
 
@@ -39,21 +42,21 @@ function InventoryFilterModalContent({ value, categories, suppliers, units, onAp
             <div className="bg-white w-full max-w-2xl rounded-2xl md:rounded-xl shadow-2xl flex flex-col overflow-hidden max-h-[98vh] md:max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
                 <div className="bg-[#1192a8] text-white px-5 md:px-6 py-3 md:py-4 flex justify-between items-center shrink-0">
                     <div className="min-w-0">
-                        <h2 className="text-base md:text-xl font-bold uppercase tracking-wide truncate">Bộ lọc nâng cao</h2>
-                        <p className="text-[10px] md:text-sm opacity-90 truncate italic">Tìm kiếm & Sắp xếp tồn kho</p>
+                        <h2 className="text-base md:text-xl font-bold uppercase tracking-wide truncate">{isEnglish ? 'Advanced Filter' : 'Bộ lọc nâng cao'}</h2>
+                        <p className="text-[10px] md:text-sm opacity-90 truncate italic">{isEnglish ? 'Search & sort inventory' : 'Tìm kiếm & Sắp xếp tồn kho'}</p>
                     </div>
                     <button onClick={onClose} className="text-white hover:text-red-200 text-2xl md:text-3xl leading-none ml-4">&times;</button>
                 </div>
 
                 <div className="p-3 md:p-6 bg-gray-50 space-y-4 md:space-y-5 overflow-y-auto flex-1 no-scrollbar">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <FilterGroup title="Phân loại hàng hóa">
+                        <FilterGroup title={isEnglish ? 'Product Category' : 'Phân loại hàng hóa'}>
                             <select
                                 value={draft.categoryId}
                                 onChange={(e) => update('categoryId', e.target.value)}
                                 className="wms-select w-full !py-2 !text-xs md:!text-sm"
                             >
-                                <option value="ALL">Tất cả phân loại</option>
+                                <option value="ALL">{isEnglish ? 'All categories' : 'Tất cả phân loại'}</option>
                                 {categories.map((category) => (
                                     <option key={category.id} value={String(category.id)}>
                                         {category.categoryCode} - {category.name}
@@ -62,13 +65,13 @@ function InventoryFilterModalContent({ value, categories, suppliers, units, onAp
                             </select>
                         </FilterGroup>
 
-                        <FilterGroup title="Nhà cung cấp">
+                        <FilterGroup title={isEnglish ? 'Supplier' : 'Nhà cung cấp'}>
                             <select
                                 value={draft.supplierCode}
                                 onChange={(e) => update('supplierCode', e.target.value)}
                                 className="wms-select w-full !py-2 !text-xs md:!text-sm"
                             >
-                                <option value="ALL">Tất cả nhà cung cấp</option>
+                                <option value="ALL">{isEnglish ? 'All suppliers' : 'Tất cả nhà cung cấp'}</option>
                                 {suppliers.map((supplier) => (
                                     <option key={supplier.id} value={supplier.supplierCode}>
                                         {supplier.supplierCode} - {supplier.name}
@@ -77,13 +80,13 @@ function InventoryFilterModalContent({ value, categories, suppliers, units, onAp
                             </select>
                         </FilterGroup>
 
-                        <FilterGroup title="Đơn vị tính">
+                        <FilterGroup title={isEnglish ? 'Unit' : 'Đơn vị tính'}>
                             <select
                                 value={draft.baseUnit}
                                 onChange={(e) => update('baseUnit', e.target.value)}
                                 className="wms-select w-full !py-2 !text-xs md:!text-sm"
                             >
-                                <option value="ALL">Tất cả đơn vị</option>
+                                <option value="ALL">{isEnglish ? 'All units' : 'Tất cả đơn vị'}</option>
                                 {units.map((unit) => (
                                     <option key={unit.id} value={unit.name}>
                                         {unit.unitCode} - {unit.name}
@@ -92,40 +95,40 @@ function InventoryFilterModalContent({ value, categories, suppliers, units, onAp
                             </select>
                         </FilterGroup>
 
-                        <FilterGroup title="Điều kiện lưu kho">
+                        <FilterGroup title={isEnglish ? 'Storage Condition' : 'Điều kiện lưu kho'}>
                             <select
                                 value={draft.storageTemp}
                                 onChange={(e) => update('storageTemp', e.target.value)}
                                 className="wms-select w-full !py-2 !text-xs md:!text-sm"
                             >
-                                <option value="ALL">Tất cả điều kiện</option>
-                                <option value="Bình thường">Bình thường</option>
-                                <option value="Kho Mát">Kho Mát</option>
-                                <option value="Kho Lạnh">Kho Lạnh</option>
+                                <option value="ALL">{isEnglish ? 'All conditions' : 'Tất cả điều kiện'}</option>
+                                <option value="Bình thường">{isEnglish ? 'Normal' : 'Bình thường'}</option>
+                                <option value="Kho Mát">{isEnglish ? 'Cool Storage' : 'Kho Mát'}</option>
+                                <option value="Kho Lạnh">{isEnglish ? 'Cold Storage' : 'Kho Lạnh'}</option>
                             </select>
                         </FilterGroup>
                     </div>
 
-                    <FilterGroup title="Trạng thái kinh doanh">
-                        <SegmentButton active={draft.status === 'ALL'} label="Tất cả" onClick={() => update('status', 'ALL')} />
-                        <SegmentButton active={draft.status === 'ACTIVE'} label="Đang KD" onClick={() => update('status', 'ACTIVE')} />
-                        <SegmentButton active={draft.status === 'INACTIVE'} label="Ngừng KD" onClick={() => update('status', 'INACTIVE')} />
+                    <FilterGroup title={isEnglish ? 'Business Status' : 'Trạng thái kinh doanh'}>
+                        <SegmentButton active={draft.status === 'ALL'} label={isEnglish ? 'All' : 'Tất cả'} onClick={() => update('status', 'ALL')} />
+                        <SegmentButton active={draft.status === 'ACTIVE'} label={isEnglish ? 'Active' : 'Đang KD'} onClick={() => update('status', 'ACTIVE')} />
+                        <SegmentButton active={draft.status === 'INACTIVE'} label={isEnglish ? 'Inactive' : 'Ngừng KD'} onClick={() => update('status', 'INACTIVE')} />
                     </FilterGroup>
 
-                    <FilterGroup title="Tình trạng tồn kho">
-                        <SegmentButton active={draft.stock === 'ALL'} label="Tất cả" onClick={() => update('stock', 'ALL')} />
-                        <SegmentButton active={draft.stock === 'HAS'} label="Có sẵn" onClick={() => update('stock', 'HAS')} />
-                        <SegmentButton active={draft.stock === 'LOW'} label="Sắp hết" onClick={() => update('stock', 'LOW')} />
-                        <SegmentButton active={draft.stock === 'ZERO'} label="Hết hàng" onClick={() => update('stock', 'ZERO')} />
-                        <SegmentButton active={draft.stock === 'ALLOCATED'} label="Đã P/B" onClick={() => update('stock', 'ALLOCATED')} />
+                    <FilterGroup title={isEnglish ? 'Stock Status' : 'Tình trạng tồn kho'}>
+                        <SegmentButton active={draft.stock === 'ALL'} label={isEnglish ? 'All' : 'Tất cả'} onClick={() => update('stock', 'ALL')} />
+                        <SegmentButton active={draft.stock === 'HAS'} label={isEnglish ? 'Available' : 'Có sẵn'} onClick={() => update('stock', 'HAS')} />
+                        <SegmentButton active={draft.stock === 'LOW'} label={isEnglish ? 'Low stock' : 'Sắp hết'} onClick={() => update('stock', 'LOW')} />
+                        <SegmentButton active={draft.stock === 'ZERO'} label={isEnglish ? 'Out of stock' : 'Hết hàng'} onClick={() => update('stock', 'ZERO')} />
+                        <SegmentButton active={draft.stock === 'ALLOCATED'} label={isEnglish ? 'Allocated' : 'Đã P/B'} onClick={() => update('stock', 'ALLOCATED')} />
                     </FilterGroup>
 
-                    <FilterGroup title="Tiêu chí sắp xếp">
+                    <FilterGroup title={isEnglish ? 'Sort Criteria' : 'Tiêu chí sắp xếp'}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 w-full">
-                            <SortRow title="Mã SKU" activeSortBy={draft.sortBy} ascValue="SKU_ASC" descValue="SKU_DESC" ascLabel="A-Z" descLabel="Z-A" onChange={update} />
-                            <SortRow title="Tên sản phẩm" activeSortBy={draft.sortBy} ascValue="NAME_ASC" descValue="NAME_DESC" ascLabel="A-Z" descLabel="Z-A" onChange={update} />
-                            <SortRow title="Tồn khả dụng" activeSortBy={draft.sortBy} ascValue="AVAILABLE_ASC" descValue="AVAILABLE_DESC" ascLabel="Tăng" descLabel="Giảm" onChange={update} />
-                            <SortRow title="Lô gần nhất" activeSortBy={draft.sortBy} ascValue="BATCH_EXPIRY_ASC" descValue="BATCH_EXPIRY_DESC" ascLabel="Cận date" descLabel="Xa date" onChange={update} />
+                            <SortRow title={isEnglish ? 'SKU Code' : 'Mã SKU'} activeSortBy={draft.sortBy} ascValue="SKU_ASC" descValue="SKU_DESC" ascLabel="A-Z" descLabel="Z-A" onChange={update} />
+                            <SortRow title={isEnglish ? 'Product Name' : 'Tên sản phẩm'} activeSortBy={draft.sortBy} ascValue="NAME_ASC" descValue="NAME_DESC" ascLabel="A-Z" descLabel="Z-A" onChange={update} />
+                            <SortRow title={isEnglish ? 'Available Stock' : 'Tồn khả dụng'} activeSortBy={draft.sortBy} ascValue="AVAILABLE_ASC" descValue="AVAILABLE_DESC" ascLabel={isEnglish ? 'Asc' : 'Tăng'} descLabel={isEnglish ? 'Desc' : 'Giảm'} onChange={update} />
+                            <SortRow title={isEnglish ? 'Nearest Batch' : 'Lô gần nhất'} activeSortBy={draft.sortBy} ascValue="BATCH_EXPIRY_ASC" descValue="BATCH_EXPIRY_DESC" ascLabel={isEnglish ? 'Sooner' : 'Cận date'} descLabel={isEnglish ? 'Later' : 'Xa date'} onChange={update} />
                         </div>
                     </FilterGroup>
                 </div>
@@ -136,7 +139,7 @@ function InventoryFilterModalContent({ value, categories, suppliers, units, onAp
                         onClick={() => onApply(defaultDraft)}
                         className="order-3 sm:order-1 py-2.5 px-6 rounded-xl bg-gray-100 text-gray-500 font-black text-[10px] md:text-xs uppercase tracking-widest hover:bg-gray-200 transition"
                     >
-                        Xóa bộ lọc
+                        {isEnglish ? 'Clear filters' : 'Xóa bộ lọc'}
                     </button>
                     <div className="flex gap-3 order-1 sm:order-2">
                         <button
@@ -144,14 +147,14 @@ function InventoryFilterModalContent({ value, categories, suppliers, units, onAp
                             onClick={onClose}
                             className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-gray-400 font-black text-[10px] md:text-xs uppercase tracking-widest hover:underline transition"
                         >
-                            Đóng
+                            {isEnglish ? 'Close' : 'Đóng'}
                         </button>
                         <button
                             type="button"
                             onClick={() => onApply(draft)}
                             className="flex-1 sm:flex-none px-10 py-3 rounded-xl bg-[#1192a8] text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-teal-500/20 active:scale-95 transition-all"
                         >
-                            Áp dụng
+                            {isEnglish ? 'Apply' : 'Áp dụng'}
                         </button>
                     </div>
                 </div>

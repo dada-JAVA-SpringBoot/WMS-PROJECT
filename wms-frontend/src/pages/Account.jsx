@@ -2,8 +2,11 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getAvatarSrc } from '../components/common/avatarUtils';
 import { getRoleLabel } from '../api/roleUtils';
+import { useTranslation } from 'react-i18next';
 
 const Account = () => {
+    const { t } = useTranslation();
+    const { user } = useAuth();
 
     const InfoRow = ({ label, value, isMono = false }) => (
         <div className="flex flex-col gap-1">
@@ -42,34 +45,34 @@ const Account = () => {
                             </span>
                         </div>
                         <p className="mt-4 text-xs text-gray-400 font-medium italic">
-                            * Ảnh chân dung và thông tin tài khoản được quản lý bởi Quản trị viên (ADMIN/MANAGER).
+                            {t('pages.Account.adminManagedNote')}
                         </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <InfoRow label="Mã nhân viên" value={user?.employeeCode} isMono={true} />
-                        <InfoRow label="Tên đăng nhập" value={user?.username} isMono={true} />
+                        <InfoRow label={t('pages.Account.employeeCode')} value={user?.employeeCode} isMono={true} />
+                        <InfoRow label={t('pages.Account.username')} value={user?.username} isMono={true} />
                         <div className="md:col-span-2">
                             <div className="h-px bg-gray-100 my-2"></div>
                         </div>
-                        <InfoRow label="Email liên hệ" value={user?.email || `${user?.username}@wms.com`} />
-                        <InfoRow label="Số điện thoại" value={user?.phone || 'Chưa cập nhật'} />
+                        <InfoRow label={t('pages.Account.email')} value={user?.email || `${user?.username}@wms.com`} />
+                        <InfoRow label={t('pages.Account.phone')} value={user?.phone || t('pages.Account.notUpdated')} />
                     </div>
 
                     <div className="mt-12 p-6 bg-teal-50/50 rounded-3xl border border-teal-100/50">
-                        <h3 className="text-xs font-black text-teal-800 uppercase tracking-widest mb-4">Hướng dẫn bảo mật</h3>
+                        <h3 className="text-xs font-black text-teal-800 uppercase tracking-widest mb-4">{t('pages.Account.securityGuidelines')}</h3>
                         <ul className="text-xs text-teal-700/80 space-y-2 font-medium">
                             <li className="flex gap-2">
                                 <span className="text-teal-500">•</span>
-                                Không chia sẻ tài khoản cho người khác sử dụng.
+                                {t('pages.Account.guideline1')}
                             </li>
                             <li className="flex gap-2">
                                 <span className="text-teal-500">•</span>
-                                Liên hệ Quản trị viên nếu bạn quên mật khẩu hoặc cần thay đổi thông tin cá nhân.
+                                {t('pages.Account.guideline2')}
                             </li>
                             <li className="flex gap-2">
                                 <span className="text-teal-500">•</span>
-                                Luôn đăng xuất khỏi hệ thống sau khi kết thúc ca làm việc trên thiết bị công cộng.
+                                {t('pages.Account.guideline3')}
                             </li>
                         </ul>
                     </div>

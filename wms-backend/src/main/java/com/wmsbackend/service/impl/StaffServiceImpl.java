@@ -6,6 +6,7 @@ import com.wmsbackend.entity.Staff;
 import com.wmsbackend.repository.RoleRepository;
 import com.wmsbackend.repository.StaffRepository;
 import com.wmsbackend.service.StaffService;
+import com.wmsbackend.security.WorkspaceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,17 +26,16 @@ public class StaffServiceImpl implements StaffService {
 
     @Override
     public List<StaffDTO> getAllStaff() {
-        return staffRepository.findAll().stream()
+        Integer companyId = WorkspaceContext.getFilterCompanyId();
+        return staffRepository.findAllByCompanyId(companyId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<StaffDTO> searchStaff(String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) return getAllStaff();
-        return staffRepository.findAll().stream()
-                .filter(s -> (s.getFullName() != null && s.getFullName().toLowerCase().contains(keyword.toLowerCase())) ||
-                             (s.getEmployeeCode() != null && s.getEmployeeCode().toLowerCase().contains(keyword.toLowerCase())))
+        Integer companyId = WorkspaceContext.getFilterCompanyId();
+        return staffRepository.searchStaffByCompany(keyword, companyId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -48,13 +48,15 @@ public class StaffServiceImpl implements StaffService {
         String start = s.getShiftStartTime() != null ? s.getShiftStartTime().toString() : null;
         String end   = s.getShiftEndTime() != null ? s.getShiftEndTime().toString() : null;
 
-        return new StaffDTO(
+        StaffDTO dto = new StaffDTO(
                 s.getId(), s.getEmployeeCode(), s.getFullName(), s.getGender(),
                 s.getDateOfBirth(), s.getPhone(), s.getEmail(), s.getHireDate(),
                 s.getContractType(), s.getWarehouseRole(), s.getWorkStatus(), s.getNotes(),
                 s.getUsername(), s.getEnabled(), s.getAvatar(), roleNames,
                 start, end, s.getLastActiveAt()
         );
+        dto.setCompanyId(s.getCompanyId());
+        return dto;
     }
     @Override
     @Transactional
@@ -72,6 +74,10 @@ public class StaffServiceImpl implements StaffService {
         } else {
             // Mật khẩu mặc định nếu không nhập
             staff.setPassword(passwordEncoder.encode("Staff@123"));
+        }
+
+        if (staff.getCompanyId() == null) {
+            staff.setCompanyId(WorkspaceContext.getCurrentCompanyId());
         }
 
         // Tự động gán Role dựa trên warehouseRole
@@ -95,6 +101,9 @@ public class StaffServiceImpl implements StaffService {
         existing.setEmail(updated.getEmail());
         existing.setHireDate(updated.getHireDate());
         existing.setContractType(updated.getContractType());
+        if (updated.getCompanyId() != null) {
+            existing.setCompanyId(updated.getCompanyId());
+        }
         
         // Nếu thay đổi warehouseRole, cập nhật lại Roles thực tế
         if (!existing.getWarehouseRole().equals(updated.getWarehouseRole())) {

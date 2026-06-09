@@ -1,19 +1,29 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import SubTabNav from '../../components/statistical/SubTabNav';
 import RevenueByYear from './Revenue/RevenueByYear';
 import RevenueByMonth from './Revenue/RevenueByMonth';
 import RevenueByDayInMonth from './Revenue/RevenueByDayInMonth';
 import RevenueByDateRange from './Revenue/RevenueByDateRange';
 
-const revenueTabs = [
-    { id: 'year', label: 'Thống kê theo năm' },
-    { id: 'month', label: 'Thống kê từng tháng trong năm' },
-    { id: 'dayInMonth', label: 'Thống kê từng ngày trong tháng' },
-    { id: 'dateRange', label: 'Thống kê từ ngày đến ngày' },
-];
+import { useWorkspaceRefresh } from '../../hooks/useWorkspaceRefresh';
 
 export default function StatisticalFinance() {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('year');
+
+    // Cần thêm logic fetch dữ liệu nếu cần, nhưng trang này là wrapper
+    // Nếu các trang con cần làm mới, chúng nên tự implement hook hoặc nhận prop
+    useWorkspaceRefresh(() => {
+        // Tự động làm mới khi đổi công ty
+    });
+
+    const revenueTabs = [
+        { id: 'year', label: t('pages.StatisticalFinance.tabYear') },
+        { id: 'month', label: t('pages.StatisticalFinance.tabMonth') },
+        { id: 'dayInMonth', label: t('pages.StatisticalFinance.tabDayInMonth') },
+        { id: 'dateRange', label: t('pages.StatisticalFinance.tabDateRange') },
+    ];
 
     const renderContent = () => {
         switch (activeTab) {

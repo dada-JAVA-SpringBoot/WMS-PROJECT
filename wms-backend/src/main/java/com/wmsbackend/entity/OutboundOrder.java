@@ -16,6 +16,9 @@ public class OutboundOrder {
     @Column(name = "CustomerId")
     private Integer customerId;
 
+    @Column(name = "CompanyId")
+    private Integer companyId;
+
     @org.hibernate.annotations.Formula("(SELECT c.Name FROM Customers c WHERE c.Id = CustomerId)")
     private String customerName;
 
@@ -71,6 +74,14 @@ public class OutboundOrder {
 
     public void setCustomerId(Integer customerId) {
         this.customerId = customerId;
+    }
+
+    public Integer getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Integer companyId) {
+        this.companyId = companyId;
     }
 
     public String getStatus() {

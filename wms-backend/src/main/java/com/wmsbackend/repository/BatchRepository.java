@@ -22,11 +22,15 @@ public interface BatchRepository extends JpaRepository<Batch, Integer> {
             "FROM Batch b " +
             "JOIN Product p ON b.productId = p.id " +
             "JOIN Inventory i ON i.batchId = b.id AND i.productId = p.id " +
-            "WHERE b.expiryDate <= :thresholdDate AND b.expiryDate >= :today " +
+            "WHERE (:companyId IS NULL OR b.companyId = :companyId) " +
+            "AND (:companyId IS NULL OR p.companyId = :companyId) " +
+            "AND (:companyId IS NULL OR i.companyId = :companyId) " +
+            "AND b.expiryDate <= :thresholdDate AND b.expiryDate >= :today " +
             "GROUP BY p.name, p.sku, b.batchCode, b.expiryDate " +
             "HAVING SUM(i.quantityOnHand) > 0 " +
             "ORDER BY b.expiryDate ASC")
     List<Object[]> findNearExpiryBatchesWithStock(
             @Param("today") LocalDate today,
-            @Param("thresholdDate") LocalDate thresholdDate);
+            @Param("thresholdDate") LocalDate thresholdDate,
+            @Param("companyId") Integer companyId);
 }

@@ -4,17 +4,23 @@ import com.wmsbackend.dto.DashboardDTO;
 import com.wmsbackend.dto.DailyFlowDTO;
 import com.wmsbackend.dto.InventoryStatsDTO;
 import com.wmsbackend.dto.StatisticalSummaryDTO;
+import com.wmsbackend.entity.Inventory;
+import com.wmsbackend.entity.Product;
+import com.wmsbackend.entity.Supplier;
 import com.wmsbackend.repository.*;
 import com.wmsbackend.service.FinancialService;
 import com.wmsbackend.service.StatisticalService;
+import com.wmsbackend.security.WorkspaceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/stats")
@@ -30,6 +36,7 @@ public class StatisticalController {
     @Autowired private OutboundOrderRepository outboundOrderRepository;
     @Autowired private LocationRepository locationRepository;
     @Autowired private CustomerRepository customerRepository;
+    @Autowired private SupplierRepository supplierRepository;
 
     // ════════════════════════════════════════════════════════════════════════
     // 1. Dashboard Overview (MỚI)
@@ -70,30 +77,97 @@ public class StatisticalController {
     @GetMapping("/summary")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public StatisticalSummaryDTO getSummary() {
+        Integer companyId = WorkspaceContext.getCurrentCompanyId();
         StatisticalSummaryDTO dto = new StatisticalSummaryDTO();
-        dto.setTotalSkus(productRepository.count());
+        List<Product> products = productRepository.findAll().stream()
+                .filter(p -> companyId == null || companyId.equals(p.getCompanyId()))
+                .collect(Collectors.toList());
+        dto.setTotalSkus(products.size());
 
-        // 2. Total Stock Quantity
-        Double totalQty = inventoryRepository.sumTotalQuantityOnHand().doubleValue();
+        Map<Integer, BigDecimal> stockByProduct = inventoryRepository.findAll().stream()
+                .filter(i -> companyId == null || companyId.equals(i.getCompanyId()))
+                .collect(Collectors.groupingBy(
+                        Inventory::getProductId,
+                        Collectors.reducing(BigDecimal.ZERO,
+                                i -> i.getQuantityOnHand() != null ? i.getQuantityOnHand() : BigDecimal.ZERO,
+                                BigDecimal::add)));
+
+        double totalQty = stockByProduct.values().stream()
+                .mapToDouble(BigDecimal::doubleValue)
+                .sum();
         dto.setTotalStockQuantity(totalQty);
 
-        dto.setPendingInbound(inboundOrderRepository.countByStatus("PENDING"));
-        dto.setPendingOutbound(outboundOrderRepository.countByStatus("PENDING"));
+        List<String> pendingInboundStatuses = List.of("DRAFT", "ORDERED", "IN_TRANSIT", "PENDING");
+        List<String> pendingOutboundStatuses = List.of("DRAFT", "ALLOCATED", "PENDING");
+        dto.setPendingInbound(companyId == null
+                ? inboundOrderRepository.countByStatusIn(pendingInboundStatuses)
+                : inboundOrderRepository.countByStatusInAndCompanyId(pendingInboundStatuses, companyId));
+        dto.setPendingOutbound(companyId == null
+                ? outboundOrderRepository.countByStatusIn(pendingOutboundStatuses)
+                : outboundOrderRepository.countByStatusInAndCompanyId(pendingOutboundStatuses, companyId));
 
-        Long totalCapacity = locationRepository.sumTotalCapacity();
+        Long totalCapacity = locationRepository.findAll().stream()
+                .filter(l -> companyId == null || companyId.equals(l.getCompanyId()))
+                .mapToLong(l -> l.getCapacity() != null ? l.getCapacity() : 0)
+                .sum();
         dto.setWarehouseOccupancyRate(
                 (totalCapacity != null && totalCapacity > 0) 
                 ? (totalQty / totalCapacity * 100) 
                 : 0);
 
-        List<Map<String, Object>> stores = new ArrayList<>();
-        customerRepository.findAll().stream().limit(5).forEach(c -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("name", c.getName());
-            map.put("value", 1000000);
-            stores.add(map);
-        });
+        List<Map<String, Object>> lowStockItems = products.stream()
+                .filter(p -> p.getSafetyStock() != null && p.getSafetyStock() > 0)
+                .filter(p -> stockByProduct.getOrDefault(p.getId(), BigDecimal.ZERO).doubleValue() < p.getSafetyStock())
+                .limit(5)
+                .map(p -> {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("name", p.getName());
+                    item.put("sku", p.getSku());
+                    item.put("current", stockByProduct.getOrDefault(p.getId(), BigDecimal.ZERO).doubleValue());
+                    item.put("safety", p.getSafetyStock());
+                    return item;
+                })
+                .collect(Collectors.toList());
+        dto.setLowStockItems(lowStockItems);
+
+        InventoryStatsDTO inventoryStats = statisticalService.getInventoryStats(
+                LocalDate.now().withDayOfMonth(1),
+                LocalDate.now());
+        List<Map<String, Object>> abcAnalysis = inventoryStats.getAbcAnalysis().stream()
+                .map(item -> {
+                    Map<String, Object> map = new LinkedHashMap<>();
+                    map.put("category", item.getClassName());
+                    map.put("value", item.getTotalValue());
+                    map.put("percentage", item.getPercentage());
+                    map.put("count", item.getProductCount());
+                    return map;
+                })
+                .collect(Collectors.toList());
+        dto.setAbcAnalysis(abcAnalysis);
+
+        List<Map<String, Object>> stores = customerRepository.findAll().stream()
+                .filter(c -> companyId == null || companyId.equals(c.getCompanyId()))
+                .limit(5)
+                .map(c -> {
+                    Map<String, Object> map = new LinkedHashMap<>();
+                    map.put("name", c.getName());
+                    map.put("value", 1000000);
+                    return map;
+                })
+                .collect(Collectors.toList());
         dto.setTopStores(stores);
+
+        List<Map<String, Object>> suppliers = supplierRepository.findAll().stream()
+                .filter(s -> companyId == null || companyId.equals(s.getCompanyId()))
+                .limit(5)
+                .map(s -> {
+                    Map<String, Object> map = new LinkedHashMap<>();
+                    map.put("name", s.getName());
+                    map.put("value", 1000000);
+                    return map;
+                })
+                .collect(Collectors.toList());
+        dto.setTopSuppliers(suppliers);
         return dto;
     }
 
