@@ -58,7 +58,10 @@ export default function StatisticalOrders() {
         const endpoint = tab === 'inbound' ? '/api/inbound' : '/api/outbound-orders';
         axiosClient
             .get(endpoint, {
-                params: kw.trim() ? { keyword: kw.trim() } : {},
+                params: {
+                    ...(kw.trim() ? { keyword: kw.trim() } : {}),
+                    size: 1000 // Tăng size để lấy đủ dữ liệu cho thống kê
+                },
             })
             .then(r => {
                 setOrders(Array.isArray(r.data) ? r.data : (r.data?.content ?? []));

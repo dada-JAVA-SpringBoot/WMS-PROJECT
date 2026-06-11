@@ -101,7 +101,18 @@ export default function MobileScannerPairingModal({ isOpen, onClose, onScanSucce
             const newCode = Math.floor(1000 + Math.random() * 9000).toString();
             setPairingCode(newCode);
 
-            const host = currentIps.length > 0 ? currentIps[0] : window.location.hostname;
+            // Nếu đang chạy HTTPS (Production), bắt buộc dùng hostname hiện tại (Domain)
+            // Nếu chạy HTTP (Local), mới cân nhắc dùng IP LAN để điện thoại kết nối được
+            const isHttps = window.location.protocol === 'https:';
+            const isLocal = window.location.hostname === 'localhost' || 
+                            window.location.hostname.startsWith('192.168.') || 
+                            window.location.hostname.startsWith('10.') ||
+                            window.location.hostname.startsWith('172.'); // Thêm dải IP Docker/Private
+
+            const host = (isHttps || !isLocal || currentIps.length === 0) 
+                         ? window.location.hostname 
+                         : currentIps[0];
+            
             const port = window.location.port ? `:${window.location.port}` : '';
             const scheme = window.location.protocol;
             const url = `${scheme}//${host}${port}/mobile-scanner?session=${sessionId}&code=${newCode}`;

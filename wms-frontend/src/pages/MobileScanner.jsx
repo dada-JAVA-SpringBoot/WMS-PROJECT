@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import axiosClient from '../api/axiosClient';
-import jsQR from 'jsqr';
 
 export default function MobileScanner() {
     const [searchParams] = useSearchParams();
@@ -13,6 +12,9 @@ export default function MobileScanner() {
     const [statusMsg, setStatusMsg] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
     const [history, setHistory] = useState([]);
+    const [scannedProduct, setScannedProduct] = useState(null);
+    const [isFetchingProduct, setIsFetchingProduct] = useState(false);
+    const [showProductCard, setShowProductCard] = useState(false);
     const scannerRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -68,20 +70,38 @@ export default function MobileScanner() {
         };
         setHistory(prev => [newEntry, ...prev.slice(0, 19)]); // Giữ tối đa 20 mục
 
+        // Rung báo hiệu quét thành công
+        if (navigator.vibrate) navigator.vibrate(100);
+
+        // Gửi lên server cho máy tính
         try {
             setStatusMsg(`Đã gửi: ${decodedText}`);
-            
             await axiosClient.post('/api/scanner/send', {
                 sessionId: sessionId,
                 pairingCode: pairingCode,
                 scannedData: decodedText
             });
-            
-            if (navigator.vibrate) navigator.vibrate(100);
-
         } catch (err) {
             console.error(err);
             setStatusMsg('Gửi thất bại. Kiểm tra mạng.');
+        }
+
+        // Tìm sản phẩm và hiện thông tin ngay trên điện thoại
+        setIsFetchingProduct(true);
+        setScannedProduct(null);
+        setShowProductCard(true);
+        try {
+            const res = await axiosClient.get(`/api/products/search?keyword=${encodeURIComponent(decodedText.trim())}`);
+            if (res.data && res.data.length > 0) {
+                setScannedProduct(res.data[0]);
+            } else {
+                setScannedProduct(null);
+            }
+        } catch (err) {
+            console.error('Không thể tìm sản phẩm:', err);
+            setScannedProduct(null);
+        } finally {
+            setIsFetchingProduct(false);
         }
     };
 
@@ -100,54 +120,85 @@ export default function MobileScanner() {
         setErrorMsg('');
         setStatusMsg('');
         
-        try {
-            const html5QrCode = new Html5Qrcode("mobile-camera-reader");
-            scannerRef.current = html5QrCode;
+        const html5QrCode = new Html5Qrcode("mobile-camera-reader");
+        scannerRef.current = html5QrCode;
 
+        const config = {
+            fps: 15,
+            qrbox: { width: 250, height: 250 },
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.QR_CODE,
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.ITF,
+                Html5QrcodeSupportedFormats.DATA_MATRIX
+            ]
+        };
+
+        try {
             await html5QrCode.start(
-                { facingMode: "environment" }, 
-                {
-                    fps: 15,
-                    qrbox: { width: 250, height: 250 },
-                },
+                { facingMode: { ideal: "environment" } }, 
+                config,
                 (decodedText) => handleScanSuccess(decodedText),
                 () => {}
             );
             setIsScanning(true);
         } catch (err) {
-            console.warn("Unable to start camera - likely due to insecure context (no HTTPS)");
-            // Không set errorMsg ở đây để người dùng vẫn thấy giao diện upload ảnh
-            setIsScanning(false);
+            // Thử lại với facingMode đơn giản hơn
+            try {
+                await html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 15, qrbox: { width: 250, height: 250 } },
+                    (decodedText) => handleScanSuccess(decodedText),
+                    () => {}
+                );
+                setIsScanning(true);
+            } catch (err2) {
+                console.warn("Unable to start camera", err2);
+                setIsScanning(false);
+            }
         }
     };
 
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
+        // Reset input để có thể chọn lại cùng 1 file
+        e.target.value = '';
 
         setStatusMsg('Đang phân tích ảnh...');
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                context.drawImage(img, 0, 0, img.width, img.height);
-                
-                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                const code = jsQR(imageData.data, imageData.width, imageData.height);
-                
-                if (code) {
-                    handleScanSuccess(code.data);
+        
+        try {
+            // Dùng Html5Qrcode.scanFile hỗ trợ cả barcode + QR code
+            const tempScanner = new Html5Qrcode("mobile-file-scanner-tmp");
+            const result = await tempScanner.scanFileV2(file, false);
+            await tempScanner.clear();
+            if (result && result.decodedText) {
+                await handleScanSuccess(result.decodedText);
+            } else {
+                setStatusMsg('Không tìm thấy mã nào trong ảnh này.');
+            }
+        } catch (err) {
+            console.warn('scanFileV2 failed, trying scanFile...', err);
+            // Fallback sang scanFile API cũ
+            try {
+                const tempScanner2 = new Html5Qrcode("mobile-file-scanner-tmp2");
+                const decodedText = await tempScanner2.scanFile(file, false);
+                await tempScanner2.clear();
+                if (decodedText) {
+                    await handleScanSuccess(decodedText);
                 } else {
-                    setStatusMsg('Không tìm thấy mã QR trong ảnh này.');
+                    setStatusMsg('Không tìm thấy mã nào trong ảnh này.');
                 }
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
+            } catch (err2) {
+                console.error('Cả 2 phương pháp đều thất bại:', err2);
+                setStatusMsg('❌ Không nhận diện được mã. Thử ảnh khác hoặc chụp gần hơn.');
+            }
+        }
     };
 
     const clearHistory = () => {
@@ -194,9 +245,13 @@ export default function MobileScanner() {
                     ref={fileInputRef} 
                     className="hidden" 
                     accept="image/*" 
+                    capture="environment"
                     onChange={handleFileChange} 
                 />
             </header>
+            {/* Hidden divs required by Html5Qrcode.scanFile API */}
+            <div id="mobile-file-scanner-tmp" style={{display:'none'}}></div>
+            <div id="mobile-file-scanner-tmp2" style={{display:'none'}}></div>
 
             <main className="flex-1 flex flex-col overflow-hidden">
                 <div className="flex-1 flex flex-col relative bg-black">
@@ -282,6 +337,153 @@ export default function MobileScanner() {
                 </div>
             </main>
 
+            {/* ── Product Info Bottom Sheet ─────────────────────────────── */}
+            {showProductCard && (
+                <div
+                    className="fixed inset-0 z-[100] flex flex-col justify-end"
+                    onClick={() => setShowProductCard(false)}
+                >
+                    {/* Backdrop */}
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+                    {/* Sheet */}
+                    <div
+                        className="relative w-full bg-gray-900 rounded-t-3xl border-t border-white/10 animate-slide-up overflow-hidden"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Drag handle */}
+                        <div className="flex justify-center pt-3 pb-1">
+                            <div className="w-10 h-1 bg-white/20 rounded-full" />
+                        </div>
+
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
+                            <span className="text-[10px] font-black text-teal-400 uppercase tracking-widest">Thông tin sản phẩm</span>
+                            <button
+                                onClick={() => setShowProductCard(false)}
+                                className="w-7 h-7 flex items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 transition text-base font-bold"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        {/* Loading */}
+                        {isFetchingProduct && (
+                            <div className="flex flex-col items-center justify-center py-12 gap-3">
+                                <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+                                <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Đang tìm sản phẩm...</p>
+                            </div>
+                        )}
+
+                        {/* Not found */}
+                        {!isFetchingProduct && !scannedProduct && (
+                            <div className="flex flex-col items-center justify-center py-12 gap-3 px-6 text-center">
+                                <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center text-3xl">🔍</div>
+                                <p className="text-white font-black text-base">Không tìm thấy</p>
+                                <p className="text-gray-500 text-xs">
+                                    Mã vừa quét chưa có trong hệ thống hoặc chưa được gán sản phẩm.
+                                </p>
+                                <button
+                                    onClick={() => setShowProductCard(false)}
+                                    className="mt-2 px-8 py-3 bg-white/10 rounded-2xl text-white font-black text-xs uppercase tracking-widest active:scale-95 transition-all"
+                                >
+                                    Đóng
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Product Info */}
+                        {!isFetchingProduct && scannedProduct && (() => {
+                            const p = scannedProduct;
+                            const stock = p.totalQuantity ?? p.stock ?? p.quantity ?? 0;
+                            const price = p.costPrice ?? p.sellingPrice ?? p.price ?? null;
+                            const sku   = p.sku || p.productCode || '—';
+                            const bc    = p.barcode || '—';
+                            const imgSrc = p.imageUrl
+                                ? (p.imageUrl.startsWith('http') ? p.imageUrl : `/uploads/${p.imageUrl}`)
+                                : null;
+                            const statusColor = stock > 0 ? 'text-green-400' : 'text-red-400';
+                            const statusLabel = stock > 0 ? 'Còn hàng' : 'Hết hàng';
+
+                            return (
+                                <div className="px-5 pt-4 pb-8">
+                                    {/* Product header */}
+                                    <div className="flex gap-4 items-start mb-5">
+                                        {/* Image */}
+                                        <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-800 border border-white/10 shrink-0 flex items-center justify-center">
+                                            {imgSrc ? (
+                                                <img src={imgSrc} alt={p.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                        {/* Name & status */}
+                                        <div className="flex-1 min-w-0">
+                                            <p className={`text-xs font-black uppercase tracking-widest mb-1 ${statusColor}`}>{statusLabel}</p>
+                                            <h2 className="text-white font-black text-lg leading-tight line-clamp-2">{p.name || p.productName}</h2>
+                                            {p.category && (
+                                                <span className="inline-block mt-1 text-[10px] bg-teal-500/20 text-teal-400 px-2 py-0.5 rounded-full font-bold">
+                                                    {p.category}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Info grid */}
+                                    <div className="grid grid-cols-2 gap-3 mb-5">
+                                        <div className="bg-gray-800/60 rounded-2xl p-3 border border-white/5">
+                                            <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">SKU</p>
+                                            <p className="text-white font-bold text-sm truncate">{sku}</p>
+                                        </div>
+                                        <div className="bg-gray-800/60 rounded-2xl p-3 border border-white/5">
+                                            <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">Barcode</p>
+                                            <p className="text-white font-bold text-sm truncate">{bc}</p>
+                                        </div>
+                                        <div className="bg-gray-800/60 rounded-2xl p-3 border border-white/5">
+                                            <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">Tồn kho</p>
+                                            <p className={`font-black text-xl ${stock > 0 ? 'text-teal-400' : 'text-red-400'}`}>{stock.toLocaleString()}</p>
+                                        </div>
+                                        {price !== null && (
+                                            <div className="bg-gray-800/60 rounded-2xl p-3 border border-white/5">
+                                                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">Đơn giá</p>
+                                                <p className="text-yellow-400 font-black text-base">
+                                                    {Number(price).toLocaleString('vi-VN')} ₫
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Unit & weight extra info */}
+                                    {(p.unit || p.weight) && (
+                                        <div className="flex gap-2 mb-5">
+                                            {p.unit && (
+                                                <span className="bg-gray-800 text-gray-400 text-xs font-bold px-3 py-1.5 rounded-xl border border-white/5">
+                                                    Đơn vị: {p.unit}
+                                                </span>
+                                            )}
+                                            {p.weight && (
+                                                <span className="bg-gray-800 text-gray-400 text-xs font-bold px-3 py-1.5 rounded-xl border border-white/5">
+                                                    KL: {p.weight} kg
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <button
+                                        onClick={() => setShowProductCard(false)}
+                                        className="w-full py-4 bg-teal-500 hover:bg-teal-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-teal-500/20 active:scale-95 transition-all"
+                                    >
+                                        Đóng
+                                    </button>
+                                </div>
+                            );
+                        })()}
+                    </div>
+                </div>
+            )}
+
             <style jsx>{`
                 @keyframes scanner-line {
                     0% { transform: translateY(-100px); opacity: 0; }
@@ -298,6 +500,13 @@ export default function MobileScanner() {
                 @keyframes slide-in {
                     from { transform: translateX(20px); opacity: 0; }
                     to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slide-up {
+                    from { transform: translateY(100%); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+                .animate-slide-up {
+                    animation: slide-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
                 }
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 4px;
